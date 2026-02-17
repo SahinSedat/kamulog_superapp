@@ -68,6 +68,7 @@ class _BecayisScreenState extends ConsumerState<BecayisScreen> {
                   Expanded(
                     child: DropdownButtonFormField<String>(
                       initialValue: _selectedCity,
+                      isExpanded: true,
                       decoration: const InputDecoration(
                         labelText: 'Şehir',
                         prefixIcon: Icon(Icons.location_city, size: 20),
@@ -99,6 +100,7 @@ class _BecayisScreenState extends ConsumerState<BecayisScreen> {
                   Expanded(
                     child: DropdownButtonFormField<String>(
                       initialValue: _selectedInstitution,
+                      isExpanded: true,
                       decoration: const InputDecoration(
                         labelText: 'Kurum',
                         prefixIcon: Icon(Icons.business, size: 20),

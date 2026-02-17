@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kamulog_superapp/core/theme/app_theme.dart';
+import 'package:kamulog_superapp/core/widgets/animated_bottom_nav.dart';
 import 'package:kamulog_superapp/features/auth/presentation/providers/auth_provider.dart';
 import 'package:kamulog_superapp/features/stk/presentation/screens/stk_screen.dart';
 import 'package:kamulog_superapp/features/becayis/presentation/screens/becayis_screen.dart';
 import 'package:kamulog_superapp/features/kariyer/presentation/screens/kariyer_screen.dart';
 import 'package:kamulog_superapp/features/home/presentation/widgets/home_dashboard.dart';
+import 'package:kamulog_superapp/features/ai/presentation/screens/ai_assistant_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -16,15 +18,17 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen>
     with TickerProviderStateMixin {
-  int _currentIndex = 0;
+  // Tabs: 0=STK, 1=Becayiş, 2=HomeDashboard, 3=Kariyer, 4=AI Asistan
+  int _currentIndex = 2; // Start on Home
   late final AnimationController _fadeController;
   late final Animation<double> _fadeAnimation;
 
   final _screens = const [
-    HomeDashboard(),
     StkScreen(),
     BecayisScreen(),
+    HomeDashboard(),
     KariyerScreen(),
+    AiAssistantScreen(),
   ];
 
   @override
@@ -32,7 +36,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     super.initState();
     _fadeController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 250),
     );
     _fadeAnimation = CurvedAnimation(
       parent: _fadeController,
@@ -57,44 +61,59 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   Widget build(BuildContext context) {
     final user = ref.watch(currentUserProvider);
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
         elevation: 0,
-        scrolledUnderElevation: 0.5,
-        backgroundColor: theme.scaffoldBackgroundColor,
-        foregroundColor: theme.textTheme.bodyLarge?.color,
+        scrolledUnderElevation: 0,
+        backgroundColor: isDark ? AppTheme.surfaceDark : Colors.white,
         title: Row(
           children: [
+            // AI gradient logo
             Container(
               width: 34,
               height: 34,
               decoration: BoxDecoration(
-                gradient: AppTheme.primaryGradient,
+                gradient: AppTheme.aiGradient,
                 borderRadius: BorderRadius.circular(10),
                 boxShadow: [
                   BoxShadow(
-                    color: AppTheme.primaryColor.withValues(alpha: 0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
+                    color: AppTheme.primaryColor.withValues(alpha: 0.25),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
                   ),
                 ],
               ),
               child: const Icon(
-                Icons.account_balance,
+                Icons.auto_awesome,
                 size: 18,
                 color: Colors.white,
               ),
             ),
             const SizedBox(width: 10),
-            Text(
-              'Kamulog',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w800,
-                letterSpacing: -0.5,
-                color: theme.textTheme.bodyLarge?.color,
-              ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Kamulog',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.5,
+                    color: theme.textTheme.bodyLarge?.color,
+                  ),
+                ),
+                Text(
+                  'AI Destekli Platform',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                    color: isDark ? AppTheme.accentLight : AppTheme.accentColor,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -103,10 +122,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           IconButton(
             icon: Badge(
               smallSize: 8,
-              backgroundColor: const Color(0xFFEF4444),
+              backgroundColor: AppTheme.errorColor,
               child: Icon(
                 Icons.notifications_outlined,
-                color: theme.textTheme.bodyLarge?.color?.withValues(alpha: 0.7),
+                color: theme.textTheme.bodyLarge?.color?.withValues(alpha: 0.6),
               ),
             ),
             onPressed: () {},
@@ -119,16 +138,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 width: 34,
                 height: 34,
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  gradient: AppTheme.aiGradient,
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF667EEA).withValues(alpha: 0.3),
-                      blurRadius: 6,
+                      color: AppTheme.primaryColor.withValues(alpha: 0.2),
+                      blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
                   ],
@@ -211,50 +226,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         opacity: _fadeAnimation,
         child: IndexedStack(index: _currentIndex, children: _screens),
       ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: theme.cardTheme.color ?? Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
-              blurRadius: 10,
-              offset: const Offset(0, -2),
-            ),
-          ],
-        ),
-        child: NavigationBar(
-          selectedIndex: _currentIndex,
-          onDestinationSelected: _onTabChanged,
-          elevation: 0,
-          backgroundColor: Colors.transparent,
-          indicatorColor: AppTheme.primaryColor.withValues(alpha: 0.1),
-          animationDuration: const Duration(milliseconds: 400),
-          destinations: const [
-            NavigationDestination(
-              icon: Icon(Icons.home_outlined),
-              selectedIcon: Icon(Icons.home, color: AppTheme.primaryColor),
-              label: 'Ana Sayfa',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.groups_outlined),
-              selectedIcon: Icon(Icons.groups, color: AppTheme.primaryColor),
-              label: 'STK',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.swap_horiz_outlined),
-              selectedIcon: Icon(
-                Icons.swap_horiz,
-                color: AppTheme.primaryColor,
-              ),
-              label: 'Becayiş',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.work_outline),
-              selectedIcon: Icon(Icons.work, color: AppTheme.primaryColor),
-              label: 'Kariyer',
-            ),
-          ],
-        ),
+      bottomNavigationBar: AnimatedBottomNavBar(
+        currentIndex: _currentIndex,
+        onTap: _onTabChanged,
       ),
     );
   }
