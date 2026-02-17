@@ -95,14 +95,42 @@ class AppTheme {
       ),
       appBarTheme: AppBarTheme(
         elevation: 0,
-        centerTitle: true,
-        backgroundColor: primaryColor,
-        foregroundColor: Colors.white,
+        scrolledUnderElevation: 0.5,
+        centerTitle: false,
+        backgroundColor: surfaceLight,
+        foregroundColor: textPrimaryLight,
         titleTextStyle: GoogleFonts.inter(
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
-          color: Colors.white,
+          fontSize: 20,
+          fontWeight: FontWeight.w800,
+          color: textPrimaryLight,
+          letterSpacing: -0.5,
         ),
+      ),
+      navigationBarTheme: NavigationBarThemeData(
+        elevation: 0,
+        backgroundColor: Colors.white,
+        indicatorColor: primaryColor.withValues(alpha: 0.1),
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return GoogleFonts.inter(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: primaryColor,
+            );
+          }
+          return GoogleFonts.inter(
+            fontSize: 11,
+            fontWeight: FontWeight.w400,
+            color: textSecondaryLight,
+          );
+        }),
+      ),
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
+        },
       ),
       cardTheme: CardThemeData(
         color: cardLight,
@@ -239,14 +267,42 @@ class AppTheme {
       ),
       appBarTheme: AppBarTheme(
         elevation: 0,
-        centerTitle: true,
-        backgroundColor: const Color(0xFF1E1E1E),
-        foregroundColor: Colors.white,
+        scrolledUnderElevation: 0.5,
+        centerTitle: false,
+        backgroundColor: surfaceDark,
+        foregroundColor: textPrimaryDark,
         titleTextStyle: GoogleFonts.inter(
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
-          color: Colors.white,
+          fontSize: 20,
+          fontWeight: FontWeight.w800,
+          color: textPrimaryDark,
+          letterSpacing: -0.5,
         ),
+      ),
+      navigationBarTheme: NavigationBarThemeData(
+        elevation: 0,
+        backgroundColor: const Color(0xFF1E1E1E),
+        indicatorColor: primaryLight.withValues(alpha: 0.15),
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return GoogleFonts.inter(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: primaryLight,
+            );
+          }
+          return GoogleFonts.inter(
+            fontSize: 11,
+            fontWeight: FontWeight.w400,
+            color: textSecondaryDark,
+          );
+        }),
+      ),
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
+        },
       ),
       cardTheme: CardThemeData(
         color: cardDark,

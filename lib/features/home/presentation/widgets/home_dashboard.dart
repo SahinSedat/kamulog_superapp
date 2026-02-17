@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kamulog_superapp/core/theme/app_theme.dart';
-import 'package:kamulog_superapp/core/widgets/common_widgets.dart';
+import 'package:kamulog_superapp/features/home/presentation/widgets/stories_and_banners.dart';
 
 class HomeDashboard extends ConsumerWidget {
   const HomeDashboard({super.key});
@@ -16,116 +16,150 @@ class HomeDashboard extends ConsumerWidget {
         // TODO: Refresh data
       },
       child: ListView(
-        padding: const EdgeInsets.all(AppTheme.spacingMd),
+        padding: EdgeInsets.zero,
         children: [
-          // Welcome card
-          Container(
-            padding: const EdgeInsets.all(AppTheme.spacingLg),
-            decoration: BoxDecoration(
-              gradient: AppTheme.primaryGradient,
-              borderRadius: BorderRadius.circular(AppTheme.radiusLg),
-              boxShadow: [
-                BoxShadow(
-                  color: AppTheme.primaryColor.withValues(alpha: 0.3),
-                  blurRadius: 16,
-                  offset: const Offset(0, 6),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          const SizedBox(height: 12),
+
+          // ── Stories Row (Instagram-like) ──
+          const StoriesRow(),
+          const SizedBox(height: 16),
+
+          // ── Banner Carousel ──
+          const BannerCarousel(),
+          const SizedBox(height: 20),
+
+          // ── Quick Actions  ──
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacingMd),
+            child: Row(
               children: [
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.wb_sunny_outlined,
-                      color: Colors.white70,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Hoş Geldiniz',
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: Colors.white70,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppTheme.spacingSm),
                 Text(
-                  'Kamulog Platform',
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    color: Colors.white,
+                  'Hızlı Erişim',
+                  style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w700,
+                    fontSize: 17,
                   ),
                 ),
-                const SizedBox(height: AppTheme.spacingMd),
-                Text(
-                  'Ücretli çalışanlar için hepsi bir arada platform',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: Colors.white60,
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusFull),
+                  ),
+                  child: Text(
+                    'Tümü',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.primaryColor,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: AppTheme.spacingLg),
-
-          // Quick actions grid
-          Text('Hızlı Erişim', style: theme.textTheme.titleMedium),
           const SizedBox(height: AppTheme.spacingSm),
-          GridView.count(
-            crossAxisCount: 2,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: AppTheme.spacingSm,
-            crossAxisSpacing: AppTheme.spacingSm,
-            childAspectRatio: 1.4,
-            children: [
-              _QuickActionCard(
-                icon: Icons.swap_horiz,
-                title: 'Becayiş',
-                subtitle: 'Yer değiştirme',
-                color: const Color(0xFF4CAF50),
-                onTap: () {},
-              ),
-              _QuickActionCard(
-                icon: Icons.work_outline,
-                title: 'İş İlanları',
-                subtitle: 'Kariyer fırsatları',
-                color: const Color(0xFF2196F3),
-                onTap: () {},
-              ),
-              _QuickActionCard(
-                icon: Icons.support_agent,
-                title: 'Danışmanlık',
-                subtitle: 'Uzman desteği',
-                color: const Color(0xFFFF9800),
-                onTap: () => context.push('/consultation'),
-              ),
-              _QuickActionCard(
-                icon: Icons.groups,
-                title: 'STK',
-                subtitle: 'Topluluk',
-                color: const Color(0xFF9C27B0),
-                onTap: () {},
-              ),
-            ],
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacingMd),
+            child: GridView.count(
+              crossAxisCount: 4,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              mainAxisSpacing: 8,
+              crossAxisSpacing: 8,
+              childAspectRatio: 0.85,
+              children: [
+                _QuickActionIcon(
+                  icon: Icons.swap_horiz,
+                  label: 'Becayiş',
+                  color: const Color(0xFF10B981),
+                  onTap: () {},
+                ),
+                _QuickActionIcon(
+                  icon: Icons.work_outline,
+                  label: 'İş İlanları',
+                  color: const Color(0xFF3B82F6),
+                  onTap: () {},
+                ),
+                _QuickActionIcon(
+                  icon: Icons.support_agent,
+                  label: 'Danışmanlık',
+                  color: const Color(0xFFF59E0B),
+                  onTap: () => context.push('/consultation'),
+                ),
+                _QuickActionIcon(
+                  icon: Icons.groups,
+                  label: 'STK',
+                  color: const Color(0xFF8B5CF6),
+                  onTap: () {},
+                ),
+                _QuickActionIcon(
+                  icon: Icons.school_outlined,
+                  label: 'Eğitim',
+                  color: const Color(0xFFEC4899),
+                  onTap: () {},
+                ),
+                _QuickActionIcon(
+                  icon: Icons.gavel_outlined,
+                  label: 'Hukuk',
+                  color: const Color(0xFFEF4444),
+                  onTap: () {},
+                ),
+                _QuickActionIcon(
+                  icon: Icons.newspaper_outlined,
+                  label: 'Haberler',
+                  color: const Color(0xFF06B6D4),
+                  onTap: () {},
+                ),
+                _QuickActionIcon(
+                  icon: Icons.more_horiz,
+                  label: 'Daha Fazla',
+                  color: const Color(0xFF6B7280),
+                  onTap: () {},
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: AppTheme.spacingLg),
+          const SizedBox(height: 20),
 
-          // Recent announcements
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('Son Duyurular', style: theme.textTheme.titleMedium),
-              TextButton(onPressed: () {}, child: const Text('Tümünü Gör')),
-            ],
+          // ── Recent Announcements ──
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacingMd),
+            child: Row(
+              children: [
+                Text(
+                  'Son Duyurular',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 17,
+                  ),
+                ),
+                const Spacer(),
+                TextButton(
+                  onPressed: () {},
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: const Text(
+                    'Tümünü Gör',
+                    style: TextStyle(fontSize: 13),
+                  ),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: AppTheme.spacingSm),
+          const SizedBox(height: 4),
 
-          // Placeholder announcements
+          // Announcement cards
           ..._buildAnnouncementCards(theme),
+
+          const SizedBox(height: 24),
         ],
       ),
     );
@@ -139,121 +173,137 @@ class HomeDashboard extends ConsumerWidget {
             'Ücretli çalışanlar için yer değiştirme başvuruları açıldı.',
         'date': '15 Şubat 2026',
         'icon': Icons.campaign_outlined,
+        'color': const Color(0xFF4CAF50),
       },
       {
         'title': 'Kariyer Günleri Yaklaşıyor',
-        'subtitle': 'Kamu kurumları kariyer fuarında sizi bekliyor.',
+        'subtitle': 'Kurumlar kariyer fuarında sizi bekliyor.',
         'date': '14 Şubat 2026',
         'icon': Icons.event_outlined,
+        'color': const Color(0xFF2196F3),
       },
       {
         'title': 'Hukuki Danışmanlık Hizmeti',
         'subtitle': 'Ücretsiz hukuki danışmanlık hizmetimiz başlamıştır.',
         'date': '12 Şubat 2026',
         'icon': Icons.gavel_outlined,
+        'color': const Color(0xFFFF9800),
       },
     ];
 
     return announcements.map((a) {
-      return KamulogCard(
-        onTap: () {},
-        child: Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(AppTheme.radiusSm),
-              ),
-              child: Icon(
-                a['icon'] as IconData,
-                color: AppTheme.primaryColor,
-                size: 22,
-              ),
-            ),
-            const SizedBox(width: AppTheme.spacingMd),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+      final color = a['color'] as Color;
+      return Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppTheme.spacingMd,
+          vertical: 4,
+        ),
+        child: Material(
+          color: theme.cardTheme.color ?? Colors.white,
+          borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+          elevation: 1,
+          shadowColor: Colors.black.withValues(alpha: 0.06),
+          child: InkWell(
+            onTap: () {},
+            borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Row(
                 children: [
-                  Text(
-                    a['title'] as String,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
+                  Container(
+                    width: 46,
+                    height: 46,
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(a['icon'] as IconData, color: color, size: 24),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          a['title'] as String,
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          a['subtitle'] as String,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.textTheme.bodySmall?.color?.withValues(
+                              alpha: 0.7,
+                            ),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          a['date'] as String,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: theme.textTheme.bodySmall?.color?.withValues(
+                              alpha: 0.5,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    a['subtitle'] as String,
-                    style: theme.textTheme.bodySmall,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    a['date'] as String,
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: theme.textTheme.bodySmall?.color?.withValues(
-                        alpha: 0.6,
-                      ),
-                    ),
+                  Icon(
+                    Icons.chevron_right,
+                    size: 20,
+                    color: Colors.grey.shade400,
                   ),
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right, size: 20),
-          ],
+          ),
         ),
       );
     }).toList();
   }
 }
 
-class _QuickActionCard extends StatelessWidget {
+class _QuickActionIcon extends StatelessWidget {
   final IconData icon;
-  final String title;
-  final String subtitle;
+  final String label;
   final Color color;
   final VoidCallback onTap;
 
-  const _QuickActionCard({
+  const _QuickActionIcon({
     required this.icon,
-    required this.title,
-    required this.subtitle,
+    required this.label,
     required this.color,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return KamulogCard(
+    return GestureDetector(
       onTap: onTap,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            width: 40,
-            height: 40,
+            width: 52,
+            height: 52,
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+              color: color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(16),
             ),
-            child: Icon(icon, color: color, size: 22),
+            child: Icon(icon, color: color, size: 26),
           ),
-          const SizedBox(height: AppTheme.spacingSm),
+          const SizedBox(height: 6),
           Text(
-            title,
-            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-          ),
-          Text(
-            subtitle,
-            style: TextStyle(
-              fontSize: 11,
-              color: Theme.of(context).textTheme.bodySmall?.color,
-            ),
+            label,
+            style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 11),
+            textAlign: TextAlign.center,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
