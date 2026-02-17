@@ -79,7 +79,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     try {
       final response = await apiClient.post(
         ApiEndpoints.register,
-        data: {'phone': phone, 'name': name, 'email': ?email},
+        data: {'phone': phone, 'name': name, if (email != null) 'email': email},
       );
       return response.statusCode == 200 || response.statusCode == 201;
     } on ServerException {
