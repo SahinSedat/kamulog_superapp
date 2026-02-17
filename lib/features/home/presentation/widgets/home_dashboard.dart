@@ -61,7 +61,7 @@ class HomeDashboard extends ConsumerWidget {
                 ),
                 const SizedBox(height: AppTheme.spacingMd),
                 Text(
-                  'Kamu çalışanları için hepsi bir arada platform',
+                  'Ücretli çalışanlar için hepsi bir arada platform',
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: Colors.white60,
                   ),
@@ -135,7 +135,8 @@ class HomeDashboard extends ConsumerWidget {
     final announcements = [
       {
         'title': 'Yeni Becayiş Dönemi Başladı',
-        'subtitle': 'Kamu çalışanları için yer değiştirme başvuruları açıldı.',
+        'subtitle':
+            'Ücretli çalışanlar için yer değiştirme başvuruları açıldı.',
         'date': '15 Şubat 2026',
         'icon': Icons.campaign_outlined,
       },

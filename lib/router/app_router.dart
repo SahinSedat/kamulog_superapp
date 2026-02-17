@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kamulog_superapp/features/auth/presentation/providers/auth_provider.dart';
@@ -6,13 +7,33 @@ import 'package:kamulog_superapp/features/auth/presentation/screens/otp_verifica
 import 'package:kamulog_superapp/features/home/presentation/screens/home_screen.dart';
 import 'package:kamulog_superapp/features/danismanlik/presentation/screens/danismanlik_screen.dart';
 
+/// Bridges Riverpod state changes to GoRouter's refreshListenable
+class AuthChangeNotifier extends ChangeNotifier {
+  AuthChangeNotifier(Ref ref) {
+    _sub = ref.listen<AuthState>(authProvider, (_, __) {
+      notifyListeners();
+    });
+  }
+
+  late final ProviderSubscription<AuthState> _sub;
+
+  @override
+  void dispose() {
+    _sub.close();
+    super.dispose();
+  }
+}
+
 final routerProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authProvider);
+  final notifier = AuthChangeNotifier(ref);
+  ref.onDispose(notifier.dispose);
 
   return GoRouter(
     initialLocation: '/',
     debugLogDiagnostics: true,
+    refreshListenable: notifier,
     redirect: (context, state) {
+      final authState = ref.read(authProvider);
       final isAuth = authState.status == AuthStatus.authenticated;
       final isAuthRoute =
           state.matchedLocation == '/login' || state.matchedLocation == '/otp';
@@ -23,7 +44,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Still checking auth state
       if (isLoading) return null;
 
-      // Not authenticated — redirect to login
+      // Not authenticated — redirect to login (except auth routes)
       if (!isAuth && !isAuthRoute) return '/login';
 
       // Already authenticated — redirect away from auth pages

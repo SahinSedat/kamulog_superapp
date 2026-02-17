@@ -103,14 +103,14 @@ class _AnnouncementsTab extends StatelessWidget {
               ),
               const SizedBox(height: AppTheme.spacingMd),
               Text(
-                'Kamu Çalışanları İçin Önemli Duyuru #${index + 1}',
+                'Çalışanlar İçin Önemli Duyuru #${index + 1}',
                 style: theme.textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
               ),
               const SizedBox(height: AppTheme.spacingXs),
               Text(
-                'Bu duyuru kamu çalışanlarını ilgilendiren önemli gelişmeleri içermektedir. Detaylı bilgi için tıklayınız.',
+                'Bu duyuru tüm çalışanları ilgilendiren önemli gelişmeleri içermektedir. Detaylı bilgi için tıklayınız.',
                 style: theme.textTheme.bodyMedium,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -260,7 +260,7 @@ class _OrganizationsTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final orgs = [
       {'name': 'Kamulog STK Derneği', 'members': 15420, 'type': 'Dernek'},
-      {'name': 'Kamu Çalışanları Birliği', 'members': 8750, 'type': 'Sendika'},
+      {'name': 'Çalışanlar Birliği', 'members': 8750, 'type': 'Sendika'},
       {'name': 'Eğitimciler Derneği', 'members': 6200, 'type': 'Dernek'},
       {
         'name': 'Sağlık Çalışanları Platformu',

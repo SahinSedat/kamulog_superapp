@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kamulog_superapp/core/theme/app_theme.dart';
@@ -22,13 +21,10 @@ class _PhoneInputScreenState extends ConsumerState<PhoneInputScreen> {
     mask: '### ### ## ##',
     filter: {'#': RegExp(r'[0-9]')},
   );
-  bool _isLogin = true;
-  final _nameController = TextEditingController();
 
   @override
   void dispose() {
     _phoneController.dispose();
-    _nameController.dispose();
     super.dispose();
   }
 
@@ -37,14 +33,7 @@ class _PhoneInputScreenState extends ConsumerState<PhoneInputScreen> {
 
     final phone = _phoneMask.getUnmaskedText();
     final formattedPhone = Formatters.formatPhoneForApi(phone);
-
-    if (_isLogin) {
-      ref.read(authProvider.notifier).sendOtp(formattedPhone);
-    } else {
-      ref
-          .read(authProvider.notifier)
-          .register(phone: formattedPhone, name: _nameController.text.trim());
-    }
+    ref.read(authProvider.notifier).sendOtp(formattedPhone);
   }
 
   @override
@@ -112,71 +101,29 @@ class _PhoneInputScreenState extends ConsumerState<PhoneInputScreen> {
                   ),
                   const SizedBox(height: AppTheme.spacingSm),
                   Text(
-                    'Kamu çalışanları platformu',
+                    'Ücretli çalışan platformu',
                     style: theme.textTheme.bodyLarge?.copyWith(
                       color: theme.textTheme.bodyMedium?.color,
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: AppTheme.spacingXxl),
-
-                  // Toggle Login/Register
-                  Container(
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primary.withValues(alpha: 0.06),
-                      borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: _TabButton(
-                            text: 'Giriş Yap',
-                            isSelected: _isLogin,
-                            onTap: () => setState(() => _isLogin = true),
-                          ),
-                        ),
-                        Expanded(
-                          child: _TabButton(
-                            text: 'Kayıt Ol',
-                            isSelected: !_isLogin,
-                            onTap: () => setState(() => _isLogin = false),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: AppTheme.spacingXl),
-
-                  // Name field (register only)
-                  if (!_isLogin) ...[
-                    KamulogTextField(
-                      controller: _nameController,
-                      labelText: 'Ad Soyad',
-                      hintText: 'Adınızı giriniz',
-                      prefixIcon: Icons.person_outline,
-                      validator: (v) =>
-                          Validators.validateRequired(v, 'Ad Soyad'),
-                    ),
-                    const SizedBox(height: AppTheme.spacingMd),
-                  ],
+                  const SizedBox(height: AppTheme.spacingXxl * 1.5),
 
                   // Phone field
                   TextFormField(
                     controller: _phoneController,
                     keyboardType: TextInputType.phone,
-                    inputFormatters: [
-                      _phoneMask,
-                      FilteringTextInputFormatter.allow(RegExp(r'[\d\s]')),
-                    ],
-                    validator: (v) =>
-                        Validators.validatePhone(_phoneMask.getUnmaskedText()),
+                    inputFormatters: [_phoneMask],
+                    autofocus: true,
+                    validator:
+                        (v) => Validators.validatePhone(
+                          _phoneMask.getUnmaskedText(),
+                        ),
                     decoration: InputDecoration(
                       labelText: 'Telefon Numarası',
                       hintText: '5XX XXX XX XX',
-                      prefixIcon: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppTheme.spacingMd,
-                        ),
+                      prefixIcon: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -197,6 +144,10 @@ class _PhoneInputScreenState extends ConsumerState<PhoneInputScreen> {
                           ],
                         ),
                       ),
+                      prefixIconConstraints: const BoxConstraints(
+                        minWidth: 0,
+                        minHeight: 0,
+                      ),
                       helperText: 'WhatsApp doğrulaması için zorunlu',
                       helperStyle: TextStyle(
                         fontSize: 12,
@@ -208,7 +159,7 @@ class _PhoneInputScreenState extends ConsumerState<PhoneInputScreen> {
 
                   // Submit button
                   KamulogButton(
-                    text: _isLogin ? 'Doğrulama Kodu Gönder' : 'Kayıt Ol',
+                    text: 'Doğrulama Kodu Gönder',
                     onPressed: _submit,
                     isLoading: authState.status == AuthStatus.loading,
                     icon: Icons.sms_outlined,
@@ -279,45 +230,6 @@ class _PhoneInputScreenState extends ConsumerState<PhoneInputScreen> {
                 ],
               ),
             ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _TabButton extends StatelessWidget {
-  final String text;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _TabButton({
-    required this.text,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? Theme.of(context).colorScheme.primary
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-        ),
-        child: Text(
-          text,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            color: isSelected
-                ? Colors.white
-                : Theme.of(context).colorScheme.primary,
           ),
         ),
       ),
