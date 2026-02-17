@@ -11,9 +11,8 @@ class EnvConfig {
 
   static Future<void> init({Environment env = Environment.staging}) async {
     _environment = env;
-    final fileName = env == Environment.production
-        ? '.env.production'
-        : '.env.staging';
+    final fileName =
+        env == Environment.production ? '.env.production' : '.env.staging';
     await dotenv.load(fileName: fileName);
   }
 
@@ -23,6 +22,9 @@ class EnvConfig {
   static bool get enableSslPinning =>
       dotenv.env['ENABLE_SSL_PINNING']?.toLowerCase() == 'true';
 
-  static String get logLevel =>
-      dotenv.env['LOG_LEVEL'] ?? 'error';
+  static String get logLevel => dotenv.env['LOG_LEVEL'] ?? 'error';
+
+  static String get openAiApiKey => dotenv.env['OPENAI_API_KEY'] ?? '';
+
+  static String get openAiModel => dotenv.env['OPENAI_MODEL'] ?? 'gpt-4o';
 }

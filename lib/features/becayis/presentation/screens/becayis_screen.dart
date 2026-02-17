@@ -63,74 +63,56 @@ class _BecayisScreenState extends ConsumerState<BecayisScreen> {
           ),
           child: Column(
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      initialValue: _selectedCity,
-                      isExpanded: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Şehir',
-                        prefixIcon: Icon(Icons.location_city, size: 20),
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
-                        ),
-                        isDense: true,
-                      ),
-                      items: [
-                        const DropdownMenuItem(
-                          value: null,
-                          child: Text('Tümü'),
-                        ),
-                        ..._cities.map(
-                          (c) => DropdownMenuItem(
-                            value: c,
-                            child: Text(
-                              c,
-                              style: const TextStyle(fontSize: 13),
-                            ),
-                          ),
-                        ),
-                      ],
-                      onChanged: (v) => setState(() => _selectedCity = v),
-                    ),
+              DropdownButtonFormField<String>(
+                initialValue: _selectedCity,
+                isExpanded: true,
+                decoration: const InputDecoration(
+                  labelText: 'Şehir',
+                  prefixIcon: Icon(Icons.location_city, size: 20),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
                   ),
-                  const SizedBox(width: AppTheme.spacingSm),
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      initialValue: _selectedInstitution,
-                      isExpanded: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Kurum',
-                        prefixIcon: Icon(Icons.business, size: 20),
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
-                        ),
-                        isDense: true,
-                      ),
-                      items: [
-                        const DropdownMenuItem(
-                          value: null,
-                          child: Text('Tümü'),
-                        ),
-                        ..._institutions.map(
-                          (i) => DropdownMenuItem(
-                            value: i,
-                            child: Text(
-                              i,
-                              style: const TextStyle(fontSize: 11),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ),
-                      ],
-                      onChanged:
-                          (v) => setState(() => _selectedInstitution = v),
+                  isDense: true,
+                ),
+                items: [
+                  const DropdownMenuItem(value: null, child: Text('Tümü')),
+                  ..._cities.map(
+                    (c) => DropdownMenuItem(
+                      value: c,
+                      child: Text(c, style: const TextStyle(fontSize: 13)),
                     ),
                   ),
                 ],
+                onChanged: (v) => setState(() => _selectedCity = v),
+              ),
+              const SizedBox(height: AppTheme.spacingSm),
+              DropdownButtonFormField<String>(
+                initialValue: _selectedInstitution,
+                isExpanded: true,
+                decoration: const InputDecoration(
+                  labelText: 'Kurum',
+                  prefixIcon: Icon(Icons.business, size: 20),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  isDense: true,
+                ),
+                items: [
+                  const DropdownMenuItem(value: null, child: Text('Tümü')),
+                  ..._institutions.map(
+                    (i) => DropdownMenuItem(
+                      value: i,
+                      child: Text(
+                        i,
+                        style: const TextStyle(fontSize: 13),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                ],
+                onChanged: (v) => setState(() => _selectedInstitution = v),
               ),
               const SizedBox(height: AppTheme.spacingSm),
               Row(
