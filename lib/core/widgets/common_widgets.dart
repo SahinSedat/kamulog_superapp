@@ -1,7 +1,12 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:kamulog_superapp/core/theme/app_theme.dart';
+import 'package:kamulog_superapp/core/widgets/animated_widgets.dart';
 
-/// Primary action button with loading state
+// ══════════════════════════════════════════════════════════════
+// ── KamulogButton — Primary action button with press animation
+// ══════════════════════════════════════════════════════════════
+
 class KamulogButton extends StatelessWidget {
   final String text;
   final VoidCallback? onPressed;
@@ -11,6 +16,7 @@ class KamulogButton extends StatelessWidget {
   final double? width;
   final Color? backgroundColor;
   final Color? textColor;
+  final LinearGradient? gradient;
 
   const KamulogButton({
     super.key,
@@ -22,36 +28,65 @@ class KamulogButton extends StatelessWidget {
     this.width,
     this.backgroundColor,
     this.textColor,
+    this.gradient,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    if (isOutlined) {
-      return SizedBox(
-        width: width ?? double.infinity,
-        height: 52,
-        child: OutlinedButton(
-          onPressed: isLoading ? null : onPressed,
-          child: _buildChild(theme, isOutlined: true),
+    if (gradient != null && !isOutlined) {
+      return ScaleOnTap(
+        onTap: isLoading ? null : onPressed,
+        child: Container(
+          width: width ?? double.infinity,
+          height: 52,
+          decoration: BoxDecoration(
+            gradient: gradient,
+            borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+            boxShadow: [
+              BoxShadow(
+                color: (gradient!.colors.first).withValues(alpha: 0.3),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Center(child: _buildChild(theme)),
         ),
       );
     }
 
-    return SizedBox(
-      width: width ?? double.infinity,
-      height: 52,
-      child: ElevatedButton(
-        onPressed: isLoading ? null : onPressed,
-        style:
-            backgroundColor != null
-                ? ElevatedButton.styleFrom(
-                  backgroundColor: backgroundColor,
-                  foregroundColor: textColor ?? Colors.white,
-                )
-                : null,
-        child: _buildChild(theme),
+    if (isOutlined) {
+      return ScaleOnTap(
+        onTap: isLoading ? null : onPressed,
+        child: SizedBox(
+          width: width ?? double.infinity,
+          height: 52,
+          child: OutlinedButton(
+            onPressed: isLoading ? null : onPressed,
+            child: _buildChild(theme, isOutlined: true),
+          ),
+        ),
+      );
+    }
+
+    return ScaleOnTap(
+      onTap: isLoading ? null : onPressed,
+      child: SizedBox(
+        width: width ?? double.infinity,
+        height: 52,
+        child: ElevatedButton(
+          onPressed: isLoading ? null : onPressed,
+          style:
+              backgroundColor != null
+                  ? ElevatedButton.styleFrom(
+                    backgroundColor: backgroundColor,
+                    foregroundColor: textColor ?? Colors.white,
+                  )
+                  : null,
+          child: _buildChild(theme),
+        ),
       ),
     );
   }
@@ -64,29 +99,43 @@ class KamulogButton extends StatelessWidget {
         child: CircularProgressIndicator(
           strokeWidth: 2.5,
           valueColor: AlwaysStoppedAnimation<Color>(
-            isOutlined ? theme.colorScheme.primary : Colors.white,
+            isOutlined
+                ? theme.colorScheme.primary
+                : (gradient != null ? Colors.white : Colors.white),
           ),
         ),
       );
     }
+
+    final textStyle = TextStyle(
+      color:
+          gradient != null
+              ? Colors.white
+              : (isOutlined ? theme.colorScheme.primary : null),
+      fontSize: 15,
+      fontWeight: FontWeight.w600,
+    );
 
     if (icon != null) {
       return Row(
         mainAxisAlignment: MainAxisAlignment.center,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 20),
+          Icon(icon, size: 20, color: gradient != null ? Colors.white : null),
           const SizedBox(width: AppTheme.spacingSm),
-          Text(text),
+          Text(text, style: gradient != null ? textStyle : null),
         ],
       );
     }
 
-    return Text(text);
+    return Text(text, style: gradient != null ? textStyle : null);
   }
 }
 
-/// Styled text field with prefix icon and error support
+// ══════════════════════════════════════════════════════════════
+// ── KamulogTextField — Styled input field
+// ══════════════════════════════════════════════════════════════
+
 class KamulogTextField extends StatelessWidget {
   final TextEditingController? controller;
   final String? labelText;
@@ -143,7 +192,10 @@ class KamulogTextField extends StatelessWidget {
   }
 }
 
-/// Elevated card with consistent styling
+// ══════════════════════════════════════════════════════════════
+// ── KamulogCard — Soft shadow card with tap animation
+// ══════════════════════════════════════════════════════════════
+
 class KamulogCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry? padding;
@@ -162,22 +214,227 @@ class KamulogCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      color: color,
-      elevation: elevation,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-        child: Padding(
-          padding: padding ?? const EdgeInsets.all(AppTheme.spacingMd),
-          child: child,
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardWidget = Container(
+      decoration: AppTheme.softCardDecoration(isDark: isDark),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+          child: Padding(
+            padding: padding ?? const EdgeInsets.all(AppTheme.spacingMd),
+            child: child,
+          ),
+        ),
+      ),
+    );
+
+    if (onTap != null) {
+      return ScaleOnTap(onTap: onTap, child: cardWidget);
+    }
+    return cardWidget;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// ── KamulogGlassCard — Glassmorphism card
+// ══════════════════════════════════════════════════════════════
+
+class KamulogGlassCard extends StatelessWidget {
+  final Widget child;
+  final EdgeInsetsGeometry? padding;
+  final VoidCallback? onTap;
+  final double borderRadius;
+
+  const KamulogGlassCard({
+    super.key,
+    required this.child,
+    this.padding,
+    this.onTap,
+    this.borderRadius = AppTheme.radiusLg,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final card = ClipRRect(
+      borderRadius: BorderRadius.circular(borderRadius),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: Container(
+          decoration: AppTheme.glassDecoration(
+            isDark: isDark,
+            borderRadius: borderRadius,
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: onTap,
+              borderRadius: BorderRadius.circular(borderRadius),
+              child: Padding(
+                padding: padding ?? const EdgeInsets.all(AppTheme.spacingMd),
+                child: child,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    if (onTap != null) {
+      return ScaleOnTap(onTap: onTap, child: card);
+    }
+    return card;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// ── KamulogAiCard — AI suggestion card with gradient border
+// ══════════════════════════════════════════════════════════════
+
+class KamulogAiCard extends StatelessWidget {
+  final String title;
+  final String? subtitle;
+  final IconData icon;
+  final VoidCallback? onTap;
+  final LinearGradient gradient;
+
+  const KamulogAiCard({
+    super.key,
+    required this.title,
+    this.subtitle,
+    required this.icon,
+    this.onTap,
+    this.gradient = AppTheme.aiGradient,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+
+    return ScaleOnTap(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+          gradient: gradient,
+          boxShadow: [
+            BoxShadow(
+              color: gradient.colors.first.withValues(alpha: 0.2),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Container(
+          margin: const EdgeInsets.all(1.5),
+          padding: const EdgeInsets.all(AppTheme.spacingMd),
+          decoration: BoxDecoration(
+            color: isDark ? AppTheme.cardDark : Colors.white,
+            borderRadius: BorderRadius.circular(AppTheme.radiusLg - 1),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  gradient: gradient,
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                ),
+                child: Icon(icon, color: Colors.white, size: 22),
+              ),
+              const SizedBox(width: AppTheme.spacingMd),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: theme.textTheme.titleSmall),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle!,
+                        style: theme.textTheme.bodySmall,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 16,
+                color: theme.textTheme.bodySmall?.color,
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-/// Empty state with icon and message
+// ══════════════════════════════════════════════════════════════
+// ── KamulogSectionHeader — Section title with "See All" button
+// ══════════════════════════════════════════════════════════════
+
+class KamulogSectionHeader extends StatelessWidget {
+  final String title;
+  final String? actionText;
+  final VoidCallback? onAction;
+  final IconData? icon;
+
+  const KamulogSectionHeader({
+    super.key,
+    required this.title,
+    this.actionText,
+    this.onAction,
+    this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppTheme.spacingMd,
+        vertical: AppTheme.spacingSm,
+      ),
+      child: Row(
+        children: [
+          if (icon != null) ...[
+            Icon(icon, size: 20, color: theme.colorScheme.primary),
+            const SizedBox(width: AppTheme.spacingSm),
+          ],
+          Text(title, style: theme.textTheme.titleMedium),
+          const Spacer(),
+          if (actionText != null && onAction != null)
+            GestureDetector(
+              onTap: onAction,
+              child: Text(
+                actionText!,
+                style: TextStyle(
+                  color: theme.colorScheme.primary,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// ── KamulogEmptyState — Empty state with icon and message
+// ══════════════════════════════════════════════════════════════
+
 class KamulogEmptyState extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -207,7 +464,12 @@ class KamulogEmptyState extends StatelessWidget {
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                gradient: LinearGradient(
+                  colors: [
+                    theme.colorScheme.primary.withValues(alpha: 0.1),
+                    theme.colorScheme.secondary.withValues(alpha: 0.08),
+                  ],
+                ),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -232,7 +494,12 @@ class KamulogEmptyState extends StatelessWidget {
             ],
             if (actionText != null && onAction != null) ...[
               const SizedBox(height: AppTheme.spacingLg),
-              KamulogButton(text: actionText!, onPressed: onAction, width: 200),
+              KamulogButton(
+                text: actionText!,
+                onPressed: onAction,
+                width: 200,
+                gradient: AppTheme.primaryGradient,
+              ),
             ],
           ],
         ),
@@ -241,7 +508,10 @@ class KamulogEmptyState extends StatelessWidget {
   }
 }
 
-/// Shimmer loading placeholder
+// ══════════════════════════════════════════════════════════════
+// ── KamulogShimmer — Legacy shimmer placeholder (kept for compatibility)
+// ══════════════════════════════════════════════════════════════
+
 class KamulogShimmer extends StatelessWidget {
   final double width;
   final double height;
@@ -256,27 +526,10 @@ class KamulogShimmer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
+    return SkeletonLoader(
       width: width,
       height: height,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(borderRadius),
-        gradient: LinearGradient(
-          colors:
-              isDark
-                  ? [
-                    const Color(0xFF2C2C2C),
-                    const Color(0xFF3C3C3C),
-                    const Color(0xFF2C2C2C),
-                  ]
-                  : [
-                    Colors.grey.shade200,
-                    Colors.grey.shade100,
-                    Colors.grey.shade200,
-                  ],
-        ),
-      ),
+      borderRadius: borderRadius,
     );
   }
 
@@ -287,8 +540,8 @@ class KamulogShimmer extends StatelessWidget {
       physics: const NeverScrollableScrollPhysics(),
       shrinkWrap: true,
       itemCount: itemCount,
-      separatorBuilder: (_, _) => const SizedBox(height: AppTheme.spacingSm),
-      itemBuilder: (_, _) => const _ShimmerListItem(),
+      separatorBuilder: (_, __) => const SizedBox(height: AppTheme.spacingSm),
+      itemBuilder: (_, __) => const _ShimmerListItem(),
     );
   }
 }
@@ -304,11 +557,11 @@ class _ShimmerListItem extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            KamulogShimmer(height: 16, width: 200),
+            SkeletonLoader(height: 16, width: 200),
             SizedBox(height: AppTheme.spacingSm),
-            KamulogShimmer(height: 12),
+            SkeletonLoader(height: 12),
             SizedBox(height: AppTheme.spacingXs),
-            KamulogShimmer(height: 12, width: 150),
+            SkeletonLoader(height: 12, width: 150),
           ],
         ),
       ),
@@ -316,7 +569,10 @@ class _ShimmerListItem extends StatelessWidget {
   }
 }
 
-/// Status badge chip
+// ══════════════════════════════════════════════════════════════
+// ── KamulogBadge — Status badge chip
+// ══════════════════════════════════════════════════════════════
+
 class KamulogBadge extends StatelessWidget {
   final String text;
   final Color color;
@@ -337,9 +593,9 @@ class KamulogBadge extends StatelessWidget {
         vertical: AppTheme.spacingXs,
       ),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(AppTheme.radiusFull),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
