@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:kamulog_superapp/core/constants/enums.dart';
 
 class User extends Equatable {
   final String id;
@@ -11,6 +12,9 @@ class User extends Equatable {
   final DateTime? createdAt;
   final int credits;
   final String? subscriptionTier;
+  final EmploymentType? employmentType;
+  final int? ministryCode;
+  final String? title;
 
   const User({
     required this.id,
@@ -23,6 +27,9 @@ class User extends Equatable {
     this.createdAt,
     this.credits = 0,
     this.subscriptionTier,
+    this.employmentType,
+    this.ministryCode,
+    this.title,
   });
 
   User copyWith({
@@ -36,6 +43,9 @@ class User extends Equatable {
     DateTime? createdAt,
     int? credits,
     String? subscriptionTier,
+    EmploymentType? employmentType,
+    int? ministryCode,
+    String? title,
   }) {
     return User(
       id: id ?? this.id,
@@ -48,6 +58,9 @@ class User extends Equatable {
       createdAt: createdAt ?? this.createdAt,
       credits: credits ?? this.credits,
       subscriptionTier: subscriptionTier ?? this.subscriptionTier,
+      employmentType: employmentType ?? this.employmentType,
+      ministryCode: ministryCode ?? this.ministryCode,
+      title: title ?? this.title,
     );
   }
 
@@ -63,5 +76,8 @@ class User extends Equatable {
     createdAt,
     credits,
     subscriptionTier,
+    employmentType,
+    ministryCode,
+    title,
   ];
 }

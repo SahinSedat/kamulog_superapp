@@ -1,4 +1,4 @@
-import 'package:dartz/dartz.dart';
+import 'package:fpdart/fpdart.dart';
 import 'package:kamulog_superapp/core/error/failures.dart';
 
 /// Base use case with parameters

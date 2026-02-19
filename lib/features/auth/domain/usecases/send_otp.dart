@@ -1,4 +1,4 @@
-import 'package:dartz/dartz.dart';
+import 'package:fpdart/fpdart.dart';
 import 'package:kamulog_superapp/core/error/failures.dart';
 import 'package:kamulog_superapp/core/usecase/usecase.dart';
 import 'package:kamulog_superapp/features/auth/domain/repositories/auth_repository.dart';
