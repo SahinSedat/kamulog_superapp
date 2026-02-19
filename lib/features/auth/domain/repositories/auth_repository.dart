@@ -3,36 +3,27 @@ import 'package:kamulog_superapp/core/error/failures.dart';
 import 'package:kamulog_superapp/features/auth/domain/entities/user.dart';
 
 abstract class AuthRepository {
-  /// Send OTP to phone number
-  Future<Either<Failure, bool>> sendOtp({required String phone});
+  /// Send OTP to phone number (Firebase VerifyPhoneNumber)
+  Future<Either<Failure, void>> signInWithPhone({
+    required String phone,
+    required Function(String, int?) onCodeSent,
+    required Function(String) onVerificationFailed,
+  });
 
-  /// Verify OTP and get tokens
+  /// Verify OTP and sign in (Firebase credential)
   Future<Either<Failure, User>> verifyOtp({
-    required String phone,
-    required String code,
+    required String verificationId,
+    required String smsCode,
   });
 
-  /// Register a new user (sends OTP)
-  Future<Either<Failure, bool>> register({
-    required String phone,
-    required String name,
-    String? email,
-  });
+  /// Update user profile (name, employmentType, etc.)
+  Future<Either<Failure, User>> updateUserProfile(User user);
 
-  /// Verify registration OTP
-  Future<Either<Failure, User>> verifyRegistration({
-    required String phone,
-    required String code,
-  });
-
-  /// Refresh access token
-  Future<Either<Failure, String>> refreshToken();
-
-  /// Get current user from local storage
+  /// Get current user from local storage or remote if connected
   Future<Either<Failure, User>> getCurrentUser();
 
-  /// Logout and clear session
-  Future<Either<Failure, void>> logout();
+  /// Sign out
+  Future<Either<Failure, void>> signOut();
 
   /// Check if user is authenticated
   Future<bool> isAuthenticated();

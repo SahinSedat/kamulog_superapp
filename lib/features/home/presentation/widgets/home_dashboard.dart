@@ -65,10 +65,10 @@ class HomeDashboard extends ConsumerWidget {
                         onTap: () {},
                       ),
                       _QuickActionIcon(
-                        icon: Icons.work_outline,
-                        label: 'İş İlanları',
+                        icon: Icons.calculate_outlined,
+                        label: 'Maaş',
                         color: AppTheme.infoColor,
-                        onTap: () {},
+                        onTap: () => context.push('/salary-calculator'),
                       ),
                       _QuickActionIcon(
                         icon: Icons.support_agent,

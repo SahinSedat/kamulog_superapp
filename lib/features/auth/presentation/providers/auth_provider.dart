@@ -1,19 +1,27 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kamulog_superapp/core/providers/core_providers.dart';
+import 'package:kamulog_superapp/core/usecase/usecase.dart';
 import 'package:kamulog_superapp/features/auth/data/datasources/auth_local_datasource.dart';
 import 'package:kamulog_superapp/features/auth/data/datasources/auth_remote_datasource.dart';
-import 'package:kamulog_superapp/features/auth/data/models/user_model.dart';
 import 'package:kamulog_superapp/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:kamulog_superapp/features/auth/domain/entities/user.dart';
 import 'package:kamulog_superapp/features/auth/domain/repositories/auth_repository.dart';
+import 'package:kamulog_superapp/features/auth/domain/usecases/get_current_user.dart';
+import 'package:kamulog_superapp/features/auth/domain/usecases/send_otp.dart';
+import 'package:kamulog_superapp/features/auth/domain/usecases/sign_out.dart';
+import 'package:kamulog_superapp/features/auth/domain/usecases/update_user.dart';
+import 'package:kamulog_superapp/features/auth/domain/usecases/verify_otp.dart';
 
 // ── Data Sources ──
 final authRemoteDataSourceProvider = Provider<AuthRemoteDataSource>((ref) {
-  return AuthRemoteDataSourceImpl(apiClient: ref.watch(apiClientProvider));
+  return AuthRemoteDataSourceImpl();
 });
 
 final authLocalDataSourceProvider = Provider<AuthLocalDataSource>((ref) {
-  return AuthLocalDataSourceImpl(storage: ref.watch(secureStorageProvider));
+  return AuthLocalDataSourceImpl(
+    storage: ref.watch(secureStorageProvider),
+    database: ref.watch(appDatabaseProvider),
+  );
 });
 
 // ── Repository ──
@@ -21,10 +29,26 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepositoryImpl(
     remoteDataSource: ref.watch(authRemoteDataSourceProvider),
     localDataSource: ref.watch(authLocalDataSourceProvider),
-    storage: ref.watch(secureStorageProvider),
-    connectivity: ref.watch(connectivityProvider),
+    connectivityService: ref.watch(connectivityProvider),
   );
 });
+
+// ── Use Cases ──
+final sendOtpProvider = Provider(
+  (ref) => SendOtpUseCase(ref.watch(authRepositoryProvider)),
+);
+final verifyOtpProvider = Provider(
+  (ref) => VerifyOtpUseCase(ref.watch(authRepositoryProvider)),
+);
+final getCurrentUserProvider = Provider(
+  (ref) => GetCurrentUserUseCase(ref.watch(authRepositoryProvider)),
+);
+final signOutProvider = Provider(
+  (ref) => SignOutUseCase(ref.watch(authRepositoryProvider)),
+);
+final updateUserProvider = Provider(
+  (ref) => UpdateUserUseCase(ref.watch(authRepositoryProvider)),
+);
 
 // ── Auth State ──
 enum AuthStatus {
@@ -41,12 +65,14 @@ class AuthState {
   final User? user;
   final String? error;
   final String? phone;
+  final String? verificationId;
 
   const AuthState({
     this.status = AuthStatus.initial,
     this.user,
     this.error,
     this.phone,
+    this.verificationId,
   });
 
   AuthState copyWith({
@@ -54,142 +80,93 @@ class AuthState {
     User? user,
     String? error,
     String? phone,
+    String? verificationId,
   }) {
     return AuthState(
       status: status ?? this.status,
       user: user ?? this.user,
       error: error,
       phone: phone ?? this.phone,
+      verificationId: verificationId ?? this.verificationId,
     );
   }
 }
 
 // ── Auth Notifier ──
 class AuthNotifier extends StateNotifier<AuthState> {
-  final AuthRepository _repository;
-  final AuthLocalDataSource _localDataSource;
+  final SendOtpUseCase _sendOtp;
+  final VerifyOtpUseCase _verifyOtp;
+  final GetCurrentUserUseCase _getCurrentUser;
+  final SignOutUseCase _signOut;
+  final UpdateUserUseCase _updateUser;
 
-  // TODO: Set to false before production release
-  static const bool _kDevMode = true;
-
-  AuthNotifier(this._repository, this._localDataSource)
-    : super(const AuthState()) {
+  AuthNotifier(
+    this._sendOtp,
+    this._verifyOtp,
+    this._getCurrentUser,
+    this._signOut,
+    this._updateUser,
+  ) : super(const AuthState()) {
     _checkAuth();
   }
 
   Future<void> _checkAuth() async {
     state = state.copyWith(status: AuthStatus.loading);
 
-    if (_kDevMode) {
-      // In dev mode, check if we have a cached user from a previous session
-      final cachedUser = await _localDataSource.getCachedUser();
-      if (cachedUser != null) {
-        state = state.copyWith(
-          status: AuthStatus.authenticated,
-          user: cachedUser,
-        );
-        return;
-      }
-      state = state.copyWith(status: AuthStatus.unauthenticated);
-      return;
-    }
-
-    final isAuth = await _repository.isAuthenticated();
-    if (isAuth) {
-      final result = await _repository.getCurrentUser();
-      result.fold(
-        (failure) => state = state.copyWith(status: AuthStatus.unauthenticated),
-        (user) =>
-            state = state.copyWith(
-              status: AuthStatus.authenticated,
-              user: user,
-            ),
-      );
-    } else {
-      state = state.copyWith(status: AuthStatus.unauthenticated);
-    }
+    final result = await _getCurrentUser(NoParams());
+    result.fold(
+      (failure) => state = state.copyWith(status: AuthStatus.unauthenticated),
+      (user) =>
+          state = state.copyWith(status: AuthStatus.authenticated, user: user),
+    );
   }
 
   Future<void> sendOtp(String phone) async {
-    state = state.copyWith(status: AuthStatus.loading, phone: phone);
-
-    if (_kDevMode) {
-      await Future.delayed(const Duration(milliseconds: 500));
-      state = state.copyWith(status: AuthStatus.otpSent);
-      return;
-    }
-
-    final result = await _repository.sendOtp(phone: phone);
-    result.fold(
-      (failure) =>
-          state = state.copyWith(
-            status: AuthStatus.error,
-            error: failure.message,
-          ),
-      (_) => state = state.copyWith(status: AuthStatus.otpSent),
-    );
-  }
-
-  Future<void> verifyOtp(String code) async {
-    if (state.phone == null) return;
-    state = state.copyWith(status: AuthStatus.loading);
-
-    if (_kDevMode) {
-      await Future.delayed(const Duration(milliseconds: 500));
-      final mockUser = UserModel(
-        id: 'dev-user-001',
-        name: 'Test Kullanıcı',
-        email: 'test@kamulog.com',
-        phone: state.phone ?? '+905551234567',
-        role: 'user',
-        isVerified: true,
-      );
-      // Persist mock user so session survives app restart
-      await _localDataSource.cacheUser(mockUser);
-      state = state.copyWith(status: AuthStatus.authenticated, user: mockUser);
-      return;
-    }
-
-    final result = await _repository.verifyOtp(phone: state.phone!, code: code);
-    result.fold(
-      (failure) =>
-          state = state.copyWith(
-            status: AuthStatus.error,
-            error: failure.message,
-          ),
-      (user) =>
-          state = state.copyWith(status: AuthStatus.authenticated, user: user),
-    );
-  }
-
-  Future<void> register({
-    required String phone,
-    required String name,
-    String? email,
-  }) async {
-    state = state.copyWith(status: AuthStatus.loading, phone: phone);
-    final result = await _repository.register(
+    state = state.copyWith(
+      status: AuthStatus.loading,
       phone: phone,
-      name: name,
-      email: email,
+      error: null,
     );
+
+    final result = await _sendOtp(
+      SendOtpParams(
+        phone: phone,
+        onCodeSent: (verificationId, resendToken) {
+          state = state.copyWith(
+            status: AuthStatus.otpSent,
+            verificationId: verificationId,
+          );
+        },
+        onVerificationFailed: (error) {
+          state = state.copyWith(status: AuthStatus.error, error: error);
+        },
+      ),
+    );
+
     result.fold(
       (failure) =>
           state = state.copyWith(
             status: AuthStatus.error,
             error: failure.message,
           ),
-      (_) => state = state.copyWith(status: AuthStatus.otpSent),
+      (_) {},
     );
   }
 
-  Future<void> verifyRegistration(String code) async {
-    if (state.phone == null) return;
-    state = state.copyWith(status: AuthStatus.loading);
-    final result = await _repository.verifyRegistration(
-      phone: state.phone!,
-      code: code,
+  Future<void> verifyOtp(String smsCode) async {
+    if (state.verificationId == null) {
+      state = state.copyWith(
+        status: AuthStatus.error,
+        error: "Verification ID missing",
+      );
+      return;
+    }
+    state = state.copyWith(status: AuthStatus.loading, error: null);
+
+    final result = await _verifyOtp(
+      VerifyOtpParams(verificationId: state.verificationId!, smsCode: smsCode),
     );
+
     result.fold(
       (failure) =>
           state = state.copyWith(
@@ -198,13 +175,31 @@ class AuthNotifier extends StateNotifier<AuthState> {
           ),
       (user) =>
           state = state.copyWith(status: AuthStatus.authenticated, user: user),
+    );
+  }
+
+  Future<void> updateUser(User user) async {
+    state = state.copyWith(status: AuthStatus.loading);
+
+    final result = await _updateUser(user);
+
+    result.fold(
+      (failure) =>
+          state = state.copyWith(
+            status: AuthStatus.error,
+            error: failure.message,
+          ),
+      (updatedUser) =>
+          state = state.copyWith(
+            status: AuthStatus.authenticated,
+            user: updatedUser,
+          ),
     );
   }
 
   Future<void> logout() async {
     state = state.copyWith(status: AuthStatus.loading);
-    await _localDataSource.clearCache();
-    await _repository.logout();
+    await _signOut(NoParams());
     state = const AuthState(status: AuthStatus.unauthenticated);
   }
 
@@ -216,8 +211,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
 // ── Providers ──
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
   return AuthNotifier(
-    ref.watch(authRepositoryProvider),
-    ref.watch(authLocalDataSourceProvider),
+    ref.watch(sendOtpProvider),
+    ref.watch(verifyOtpProvider),
+    ref.watch(getCurrentUserProvider),
+    ref.watch(signOutProvider),
+    ref.watch(updateUserProvider),
   );
 });
 

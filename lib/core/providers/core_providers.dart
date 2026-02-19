@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kamulog_superapp/core/network/api_client.dart';
 import 'package:kamulog_superapp/core/network/connectivity_service.dart';
 import 'package:kamulog_superapp/core/storage/secure_storage_service.dart';
+import 'package:kamulog_superapp/core/database/app_database.dart';
 
 // ── Core Service Providers ──
 
@@ -23,4 +24,8 @@ final connectivityProvider = Provider<ConnectivityService>((ref) {
 final isOnlineProvider = StreamProvider<bool>((ref) {
   final connectivity = ref.watch(connectivityProvider);
   return connectivity.onConnectivityChanged;
+});
+
+final appDatabaseProvider = Provider<AppDatabase>((ref) {
+  return AppDatabase();
 });

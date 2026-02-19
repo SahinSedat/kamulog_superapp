@@ -11,12 +11,16 @@ class VerifyOtpUseCase extends UseCase<User, VerifyOtpParams> {
 
   @override
   Future<Either<Failure, User>> call(VerifyOtpParams params) async {
-    return await repository.verifyOtp(phone: params.phone, code: params.code);
+    return await repository.verifyOtp(
+      verificationId: params.verificationId,
+      smsCode: params.smsCode,
+    );
   }
 }
 
 class VerifyOtpParams {
-  final String phone;
-  final String code;
-  const VerifyOtpParams({required this.phone, required this.code});
+  final String verificationId;
+  final String smsCode;
+
+  const VerifyOtpParams({required this.verificationId, required this.smsCode});
 }

@@ -1,3 +1,4 @@
+import 'package:kamulog_superapp/core/constants/enums.dart';
 import 'package:kamulog_superapp/features/auth/domain/entities/user.dart';
 
 class UserModel extends User {
@@ -12,6 +13,9 @@ class UserModel extends User {
     super.createdAt,
     super.credits,
     super.subscriptionTier,
+    super.employmentType,
+    super.ministryCode,
+    super.title,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -23,11 +27,15 @@ class UserModel extends User {
       avatarUrl: json['image'] as String? ?? json['avatarUrl'] as String?,
       role: json['role'] as String? ?? 'USER',
       isVerified: json['emailVerified'] != null,
-      createdAt: json['createdAt'] != null
-          ? DateTime.tryParse(json['createdAt'] as String)
-          : null,
+      createdAt:
+          json['createdAt'] != null
+              ? DateTime.tryParse(json['createdAt'] as String)
+              : null,
       credits: json['credits'] as int? ?? 0,
       subscriptionTier: json['subscriptionTier'] as String?,
+      employmentType: _parseEmploymentType(json['employmentType']),
+      ministryCode: json['ministryCode'] as int?,
+      title: json['title'] as String?,
     );
   }
 
@@ -43,6 +51,9 @@ class UserModel extends User {
       'createdAt': createdAt?.toIso8601String(),
       'credits': credits,
       'subscriptionTier': subscriptionTier,
+      'employmentType': employmentType?.name,
+      'ministryCode': ministryCode,
+      'title': title,
     };
   }
 
@@ -58,6 +69,54 @@ class UserModel extends User {
       createdAt: user.createdAt,
       credits: user.credits,
       subscriptionTier: user.subscriptionTier,
+      employmentType: user.employmentType,
+      ministryCode: user.ministryCode,
+      title: user.title,
     );
+  }
+
+  @override
+  User copyWith({
+    String? id,
+    String? phone,
+    String? name,
+    String? email,
+    String? avatarUrl,
+    String? role,
+    bool? isVerified,
+    DateTime? createdAt,
+    int? credits,
+    String? subscriptionTier,
+    EmploymentType? employmentType,
+    int? ministryCode,
+    String? title,
+  }) {
+    return UserModel(
+      id: id ?? this.id,
+      phone: phone ?? this.phone,
+      name: name ?? this.name,
+      email: email ?? this.email,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
+      role: role ?? this.role,
+      isVerified: isVerified ?? this.isVerified,
+      createdAt: createdAt ?? this.createdAt,
+      credits: credits ?? this.credits,
+      subscriptionTier: subscriptionTier ?? this.subscriptionTier,
+      employmentType: employmentType ?? this.employmentType,
+      ministryCode: ministryCode ?? this.ministryCode,
+      title: title ?? this.title,
+    );
+  }
+
+  static EmploymentType? _parseEmploymentType(dynamic value) {
+    if (value == null) return null;
+    if (value is EmploymentType) return value;
+    if (value is String) {
+      return EmploymentType.values.where((e) => e.name == value).firstOrNull;
+    }
+    if (value is int && value < EmploymentType.values.length) {
+      return EmploymentType.values[value];
+    }
+    return null;
   }
 }

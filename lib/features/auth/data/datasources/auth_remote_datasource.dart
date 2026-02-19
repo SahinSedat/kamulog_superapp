@@ -1,144 +1,107 @@
-import 'package:kamulog_superapp/core/constants/api_endpoints.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:kamulog_superapp/core/error/exceptions.dart';
-import 'package:kamulog_superapp/core/network/api_client.dart';
 import 'package:kamulog_superapp/features/auth/data/models/user_model.dart';
+// Note: ApiClient might still be used for backend syncing if needed, but primary auth is Firebase now.
+// For now we will focus on Firebase Auth.
 
 abstract class AuthRemoteDataSource {
-  Future<bool> sendOtp({required String phone});
-  Future<Map<String, dynamic>> verifyOtp({
+  Future<void> signInWithPhone({
     required String phone,
-    required String code,
+    required Function(String, int?) onCodeSent,
+    required Function(String) onVerificationFailed,
   });
-  Future<bool> register({
-    required String phone,
-    required String name,
-    String? email,
+
+  Future<UserModel> verifyOtp({
+    required String verificationId,
+    required String smsCode,
   });
-  Future<Map<String, dynamic>> verifyRegistration({
-    required String phone,
-    required String code,
-  });
-  Future<String> refreshToken({required String refreshToken});
-  Future<UserModel> getUserProfile();
+
+  Future<void> signOut();
+
+  Future<UserModel?> getCurrentUser();
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
-  final ApiClient apiClient;
+  final FirebaseAuth _firebaseAuth;
 
-  AuthRemoteDataSourceImpl({required this.apiClient});
+  AuthRemoteDataSourceImpl({FirebaseAuth? firebaseAuth})
+    : _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance;
 
   @override
-  Future<bool> sendOtp({required String phone}) async {
+  Future<void> signInWithPhone({
+    required String phone,
+    required Function(String, int?) onCodeSent,
+    required Function(String) onVerificationFailed,
+  }) async {
     try {
-      final response = await apiClient.post(
-        ApiEndpoints.sendOtp,
-        data: {'phone': phone},
+      await _firebaseAuth.verifyPhoneNumber(
+        phoneNumber: phone,
+        verificationCompleted: (PhoneAuthCredential credential) async {
+          // Auto-retrieval or instant verification (Android only usually)
+          // For consistency, we might just sign in here or let the user enter code.
+          // We will sign in automatically if this triggers.
+          await _firebaseAuth.signInWithCredential(credential);
+        },
+        verificationFailed: (FirebaseAuthException e) {
+          onVerificationFailed(e.message ?? 'Doğrulama hatası');
+        },
+        codeSent: (String verificationId, int? resendToken) {
+          onCodeSent(verificationId, resendToken);
+        },
+        codeAutoRetrievalTimeout: (String verificationId) {
+          // Auto-resolution timed out
+        },
       );
-      final data = response.data as Map<String, dynamic>;
-      if (data['requiresVerification'] == true || response.statusCode == 200) {
-        return true;
+    } catch (e) {
+      throw ServerException(message: e.toString());
+    }
+  }
+
+  @override
+  Future<UserModel> verifyOtp({
+    required String verificationId,
+    required String smsCode,
+  }) async {
+    try {
+      final credential = PhoneAuthProvider.credential(
+        verificationId: verificationId,
+        smsCode: smsCode,
+      );
+      final userCredential = await _firebaseAuth.signInWithCredential(
+        credential,
+      );
+      final user = userCredential.user;
+
+      if (user == null) {
+        throw const ServerException(message: 'Kullanıcı doğrulanamadı.');
       }
-      throw const ServerException(message: 'OTP gönderilemedi.');
-    } on ServerException {
-      rethrow;
-    } catch (e) {
-      throw ServerException(message: e.toString());
-    }
-  }
 
-  @override
-  Future<Map<String, dynamic>> verifyOtp({
-    required String phone,
-    required String code,
-  }) async {
-    try {
-      final response = await apiClient.post(
-        ApiEndpoints.verifyOtp,
-        data: {'phone': phone, 'code': code},
+      // Map Firebase User to UserModel
+      // Note: Firebase User doesn't have custom fields like employmentType yet.
+      // We return a basic user model here.
+      return UserModel(
+        id: user.uid,
+        phone: user.phoneNumber ?? '',
+        // Other fields will be null initially or fetched from backend later
       );
-      final data = response.data as Map<String, dynamic>;
-      return {
-        'user': data['user'] as Map<String, dynamic>?,
-        'accessToken':
-            data['accessToken'] as String? ?? data['token'] as String?,
-        'refreshToken': data['refreshToken'] as String?,
-      };
-    } on ServerException {
-      rethrow;
+    } on FirebaseAuthException catch (e) {
+      throw ServerException(message: e.message ?? 'Doğrulama hatası');
     } catch (e) {
       throw ServerException(message: e.toString());
     }
   }
 
   @override
-  Future<bool> register({
-    required String phone,
-    required String name,
-    String? email,
-  }) async {
-    try {
-      final response = await apiClient.post(
-        ApiEndpoints.register,
-        data: {'phone': phone, 'name': name, if (email != null) 'email': email},
-      );
-      return response.statusCode == 200 || response.statusCode == 201;
-    } on ServerException {
-      rethrow;
-    } catch (e) {
-      throw ServerException(message: e.toString());
-    }
+  Future<void> signOut() async {
+    await _firebaseAuth.signOut();
   }
 
   @override
-  Future<Map<String, dynamic>> verifyRegistration({
-    required String phone,
-    required String code,
-  }) async {
-    try {
-      final response = await apiClient.post(
-        ApiEndpoints.verifyRegistration,
-        data: {'phone': phone, 'code': code},
-      );
-      final data = response.data as Map<String, dynamic>;
-      return {
-        'user': data['user'] as Map<String, dynamic>?,
-        'accessToken':
-            data['accessToken'] as String? ?? data['token'] as String?,
-        'refreshToken': data['refreshToken'] as String?,
-      };
-    } on ServerException {
-      rethrow;
-    } catch (e) {
-      throw ServerException(message: e.toString());
+  Future<UserModel?> getCurrentUser() async {
+    final user = _firebaseAuth.currentUser;
+    if (user != null) {
+      return UserModel(id: user.uid, phone: user.phoneNumber ?? '');
     }
-  }
-
-  @override
-  Future<String> refreshToken({required String refreshToken}) async {
-    try {
-      final response = await apiClient.post(
-        ApiEndpoints.refreshToken,
-        data: {'refreshToken': refreshToken},
-      );
-      final data = response.data as Map<String, dynamic>;
-      return data['accessToken'] as String? ?? '';
-    } on ServerException {
-      rethrow;
-    } catch (e) {
-      throw ServerException(message: e.toString());
-    }
-  }
-
-  @override
-  Future<UserModel> getUserProfile() async {
-    try {
-      final response = await apiClient.get(ApiEndpoints.userProfile);
-      final data = response.data as Map<String, dynamic>;
-      return UserModel.fromJson(data['user'] as Map<String, dynamic>? ?? data);
-    } on ServerException {
-      rethrow;
-    } catch (e) {
-      throw ServerException(message: e.toString());
-    }
+    return null;
   }
 }

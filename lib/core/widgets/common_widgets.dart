@@ -266,7 +266,7 @@ class KamulogGlassCard extends StatelessWidget {
         child: Container(
           decoration: AppTheme.glassDecoration(
             isDark: isDark,
-            borderRadius: borderRadius,
+            borderRadius: BorderRadius.circular(borderRadius),
           ),
           child: Material(
             color: Colors.transparent,
