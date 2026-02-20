@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:kamulog_superapp/core/constants/enums.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:kamulog_superapp/core/theme/app_theme.dart';
 
+/// 3-step survey (removed duplicate employment type step).
+/// Steps: Institution → City → Interests
 class OnboardingSurveyScreen extends ConsumerStatefulWidget {
   const OnboardingSurveyScreen({super.key});
 
@@ -17,13 +19,11 @@ class _OnboardingSurveyScreenState
   final _pageController = PageController();
   int _currentStep = 0;
 
-  // Answers
-  EmploymentType? _employmentType;
   String? _selectedInstitution;
   String? _selectedCity;
   final Set<String> _interests = {};
 
-  static const _totalSteps = 4;
+  static const _totalSteps = 3;
 
   static const _institutions = [
     'Milli Eğitim Bakanlığı',
@@ -88,20 +88,19 @@ class _OnboardingSurveyScreenState
     }
   }
 
-  void _complete() {
-    // TODO: Save preferences to DB/SecureStorage
-    context.go('/login');
+  Future<void> _complete() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('hasSeenOnboarding', true);
+    if (mounted) context.go('/login');
   }
 
   bool get _canProceed {
     switch (_currentStep) {
       case 0:
-        return _employmentType != null;
-      case 1:
         return _selectedInstitution != null;
-      case 2:
+      case 1:
         return _selectedCity != null;
-      case 3:
+      case 2:
         return _interests.isNotEmpty;
       default:
         return false;
@@ -157,23 +156,18 @@ class _OnboardingSurveyScreenState
             ),
           ),
           const SizedBox(height: 24),
-
-          // Pages
           Expanded(
             child: PageView(
               controller: _pageController,
               physics: const NeverScrollableScrollPhysics(),
               onPageChanged: (i) => setState(() => _currentStep = i),
               children: [
-                _buildEmploymentTypePage(theme),
                 _buildInstitutionPage(theme),
                 _buildCityPage(theme),
                 _buildInterestsPage(theme),
               ],
             ),
           ),
-
-          // Next Button
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(24),
@@ -209,59 +203,7 @@ class _OnboardingSurveyScreenState
     );
   }
 
-  // ── Step 1: Employment Type
-  Widget _buildEmploymentTypePage(ThemeData theme) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Çalışma Durumunuz',
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Tema ve içerik buna göre özelleştirilecek.',
-            style: theme.textTheme.bodyMedium,
-          ),
-          const SizedBox(height: 24),
-          _SurveyOptionCard(
-            title: 'Devlet Memuru',
-            subtitle: '4A / 4B / 4C kadro',
-            icon: Icons.account_balance_rounded,
-            color: const Color(0xFF1565C0),
-            isSelected: _employmentType == EmploymentType.memur,
-            onTap: () => setState(() => _employmentType = EmploymentType.memur),
-          ),
-          const SizedBox(height: 12),
-          _SurveyOptionCard(
-            title: 'Kamu İşçisi',
-            subtitle: '4D kadro — sözleşmeli / taşeron',
-            icon: Icons.engineering_rounded,
-            color: const Color(0xFFE65100),
-            isSelected: _employmentType == EmploymentType.isci,
-            onTap: () => setState(() => _employmentType = EmploymentType.isci),
-          ),
-          const SizedBox(height: 12),
-          _SurveyOptionCard(
-            title: 'Sözleşmeli Personel',
-            subtitle: '4B sözleşmeli',
-            icon: Icons.assignment_ind_rounded,
-            color: const Color(0xFF7B1FA2),
-            isSelected: _employmentType == EmploymentType.sozlesmeli,
-            onTap:
-                () =>
-                    setState(() => _employmentType = EmploymentType.sozlesmeli),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ── Step 2: Institution
+  // ── Step 1: Institution
   Widget _buildInstitutionPage(ThemeData theme) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -356,7 +298,7 @@ class _OnboardingSurveyScreenState
     );
   }
 
-  // ── Step 3: City
+  // ── Step 2: City
   Widget _buildCityPage(ThemeData theme) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -423,7 +365,7 @@ class _OnboardingSurveyScreenState
     );
   }
 
-  // ── Step 4: Interests
+  // ── Step 3: Interests
   Widget _buildInterestsPage(ThemeData theme) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -516,89 +458,6 @@ class _OnboardingSurveyScreenState
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _SurveyOptionCard extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final IconData icon;
-  final Color color;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _SurveyOptionCard({
-    required this.title,
-    required this.subtitle,
-    required this.icon,
-    required this.color,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: isSelected ? color.withValues(alpha: 0.08) : Colors.white,
-      borderRadius: BorderRadius.circular(16),
-      elevation: isSelected ? 2 : 0,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: isSelected ? color : const Color(0xFFE0E0E0),
-              width: isSelected ? 2.5 : 1,
-            ),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: isSelected ? 0.15 : 0.08),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(icon, color: color, size: 28),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: isSelected ? color : null,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                    ),
-                  ],
-                ),
-              ),
-              if (isSelected)
-                Icon(Icons.check_circle, color: color, size: 28)
-              else
-                Icon(
-                  Icons.radio_button_unchecked,
-                  color: Colors.grey[300],
-                  size: 28,
-                ),
-            ],
-          ),
-        ),
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:kamulog_superapp/core/theme/app_theme.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
@@ -15,44 +16,46 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   late AnimationController _controller;
   late Animation<double> _fadeIn;
   late Animation<double> _scale;
-  late Animation<double> _slideUp;
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2000),
+      duration: const Duration(milliseconds: 1200),
     );
 
     _fadeIn = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: const Interval(0, 0.4, curve: Curves.easeOut),
+        curve: const Interval(0, 0.6, curve: Curves.easeOut),
       ),
     );
-    _scale = Tween<double>(begin: 0.5, end: 1).animate(
+    _scale = Tween<double>(begin: 0.8, end: 1).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: const Interval(0, 0.5, curve: Curves.elasticOut),
-      ),
-    );
-    _slideUp = Tween<double>(begin: 30, end: 0).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: const Interval(0.3, 0.7, curve: Curves.easeOut),
+        curve: const Interval(0, 0.6, curve: Curves.easeOut),
       ),
     );
 
     _controller.forward();
+    _navigateAfterSplash();
+  }
 
-    // Navigate after splash
-    Future.delayed(const Duration(milliseconds: 2800), () {
-      if (mounted) {
-        // TODO: Check isFirstLaunch from DB/Settings
-        context.go('/onboarding');
-      }
-    });
+  Future<void> _navigateAfterSplash() async {
+    await Future.delayed(const Duration(milliseconds: 1800));
+    if (!mounted) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    final hasSeenOnboarding = prefs.getBool('hasSeenOnboarding') ?? false;
+
+    if (!mounted) return;
+
+    if (hasSeenOnboarding) {
+      context.go('/login');
+    } else {
+      context.go('/onboarding');
+    }
   }
 
   @override
@@ -70,15 +73,14 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
           child: AnimatedBuilder(
             animation: _controller,
             builder: (context, child) {
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Logo
-                  Transform.scale(
-                    scale: _scale.value,
-                    child: Opacity(
-                      opacity: _fadeIn.value,
-                      child: Container(
+              return Opacity(
+                opacity: _fadeIn.value,
+                child: Transform.scale(
+                  scale: _scale.value,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
                         width: 100,
                         height: 100,
                         decoration: BoxDecoration(
@@ -86,9 +88,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                           borderRadius: BorderRadius.circular(24),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.3),
-                              blurRadius: 30,
-                              offset: const Offset(0, 10),
+                              color: Colors.black.withValues(alpha: 0.2),
+                              blurRadius: 20,
+                              offset: const Offset(0, 8),
                             ),
                           ],
                         ),
@@ -98,15 +100,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                           color: AppTheme.primaryColor,
                         ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  // Title
-                  Transform.translate(
-                    offset: Offset(0, _slideUp.value),
-                    child: Opacity(
-                      opacity: _fadeIn.value,
-                      child: const Text(
+                      const SizedBox(height: 24),
+                      const Text(
                         'KAMULOG',
                         style: TextStyle(
                           color: Colors.white,
@@ -115,15 +110,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                           letterSpacing: 4,
                         ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  // Subtitle
-                  Transform.translate(
-                    offset: Offset(0, _slideUp.value),
-                    child: Opacity(
-                      opacity: _fadeIn.value * 0.8,
-                      child: Text(
+                      const SizedBox(height: 8),
+                      Text(
                         'Kamu Çalışanları Platformu',
                         style: TextStyle(
                           color: Colors.white.withValues(alpha: 0.85),
@@ -132,9 +120,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                           letterSpacing: 1,
                         ),
                       ),
-                    ),
+                    ],
                   ),
-                ],
+                ),
               );
             },
           ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:kamulog_superapp/core/theme/app_theme.dart';
 import 'package:kamulog_superapp/core/widgets/animated_bottom_nav.dart';
 import 'package:kamulog_superapp/features/auth/presentation/providers/auth_provider.dart';
@@ -131,16 +132,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         ],
                       ),
                       const Spacer(),
-                      // Notification
                       _HeaderIcon(
                         icon: Icons.notifications_outlined,
                         badgeCount: 3,
-                        onTap: () {},
+                        onTap: () {
+                          // TODO: Navigate to notifications
+                        },
                       ),
                       const SizedBox(width: 8),
                       // Profile
                       GestureDetector(
-                        onTap: () {},
+                        onTap: () => context.push('/profile'),
                         child: Container(
                           width: 36,
                           height: 36,
@@ -340,12 +342,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 color: theme.textTheme.bodyLarge?.color?.withValues(alpha: 0.6),
               ),
             ),
-            onPressed: () {},
+            onPressed: () {
+              // TODO: Navigate to notifications
+            },
           ),
           Padding(
             padding: const EdgeInsets.only(right: 8),
             child: GestureDetector(
-              onTap: () {},
+              onTap: () => context.push('/profile'),
               child: Container(
                 width: 34,
                 height: 34,
@@ -368,10 +372,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           ),
         ],
       ),
-      body: FadeTransition(
-        opacity: _fadeAnimation,
-        child: IndexedStack(index: _currentIndex, children: _screens),
-      ),
+      body: _screens[_currentIndex],
     );
   }
 }
