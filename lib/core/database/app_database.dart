@@ -9,10 +9,10 @@ import 'package:path_provider/path_provider.dart';
 part 'app_database.g.dart';
 
 // ══════════════════════════════════════════════════════════════
-// ── Tables — Spec 03 + 04'e uygun
+// ── Tables
 // ══════════════════════════════════════════════════════════════
 
-// ── Users (Spec 03)
+// ── Users
 class Users extends Table {
   TextColumn get id => text()();
   TextColumn get phone => text().unique()();
@@ -26,26 +26,26 @@ class Users extends Table {
   Set<Column> get primaryKey => {id};
 }
 
-// ── Becayiş İlanları (Spec 03 + 04)
+// ── Becayiş İlanları
 class BecayisAds extends Table {
   TextColumn get id => text()();
   TextColumn get ownerId => text().references(Users, #id)();
   TextColumn get sourceCity => text()();
   TextColumn get targetCity => text()();
-  TextColumn get profession => text()(); // Eşleşme için kritik
+  TextColumn get profession => text()();
+  TextColumn get institution => text().nullable()();
   TextColumn get description => text().nullable()();
   IntColumn get status =>
       intEnum<BecayisStatus>().withDefault(const Constant(0))();
   BoolColumn get isPremium => boolean().withDefault(const Constant(false))();
-  IntColumn get employmentType =>
-      intEnum<EmploymentType>().nullable()(); // Memur/İşçi ayrımı
+  IntColumn get employmentType => intEnum<EmploymentType>().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 
   @override
   Set<Column> get primaryKey => {id};
 }
 
-// ── Danışmanlar (Spec 04)
+// ── Danışmanlar
 class Consultants extends Table {
   TextColumn get id => text()();
   TextColumn get userId => text().references(Users, #id)();
@@ -61,7 +61,7 @@ class Consultants extends Table {
   Set<Column> get primaryKey => {id};
 }
 
-// ── Ürünler / Mini E-Ticaret (Spec 04)
+// ── Ürünler
 class Products extends Table {
   TextColumn get id => text()();
   TextColumn get name => text()();
@@ -69,6 +69,71 @@ class Products extends Table {
   TextColumn get imageUrl => text().nullable()();
   IntColumn get stock => integer().withDefault(const Constant(0))();
   TextColumn get description => text().nullable()();
+  TextColumn get category => text().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+// ── İş İlanları (Kariyer)
+class JobListings extends Table {
+  TextColumn get id => text()();
+  TextColumn get title => text()();
+  TextColumn get company => text()();
+  TextColumn get city => text()();
+  TextColumn get description => text().nullable()();
+  TextColumn get requirements => text().nullable()();
+  IntColumn get employmentType => intEnum<EmploymentType>().nullable()();
+  TextColumn get category => text().nullable()();
+  RealColumn get salaryMin => real().nullable()();
+  RealColumn get salaryMax => real().nullable()();
+  BoolColumn get isActive => boolean().withDefault(const Constant(true))();
+  DateTimeColumn get deadline => dateTime().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+// ── STK Kuruluşları
+class StkOrganizations extends Table {
+  TextColumn get id => text()();
+  TextColumn get name => text()();
+  IntColumn get type => intEnum<StkType>()();
+  TextColumn get description => text().nullable()();
+  TextColumn get logoUrl => text().nullable()();
+  TextColumn get city => text().nullable()();
+  IntColumn get memberCount => integer().withDefault(const Constant(0))();
+  BoolColumn get isVerified => boolean().withDefault(const Constant(false))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+// ── STK Duyuruları
+class StkAnnouncements extends Table {
+  TextColumn get id => text()();
+  TextColumn get organizationId => text().references(StkOrganizations, #id)();
+  TextColumn get title => text()();
+  TextColumn get content => text()();
+  BoolColumn get isPublic => boolean().withDefault(const Constant(true))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+// ── Maaş Hesaplama Geçmişi
+class SalaryCalculations extends Table {
+  TextColumn get id => text()();
+  TextColumn get userId => text().nullable()();
+  IntColumn get employmentType => intEnum<EmploymentType>()();
+  IntColumn get degree => integer()();
+  IntColumn get step => integer()();
+  IntColumn get serviceYears => integer()();
+  RealColumn get calculatedSalary => real()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 
   @override
@@ -81,6 +146,11 @@ class Settings extends Table {
   IntColumn get themeMode =>
       intEnum<AppThemeMode>().withDefault(const Constant(0))();
   BoolColumn get isFirstLaunch => boolean().withDefault(const Constant(true))();
+  BoolColumn get onboardingCompleted =>
+      boolean().withDefault(const Constant(false))();
+  IntColumn get employmentType => intEnum<EmploymentType>().nullable()();
+  TextColumn get selectedCity => text().nullable()();
+  TextColumn get selectedInstitution => text().nullable()();
   DateTimeColumn get lastSync => dateTime().nullable()();
 }
 
@@ -88,28 +158,44 @@ class Settings extends Table {
 // ── Database
 // ══════════════════════════════════════════════════════════════
 
-@DriftDatabase(tables: [Users, Settings, BecayisAds, Consultants, Products])
+@DriftDatabase(
+  tables: [
+    Users,
+    Settings,
+    BecayisAds,
+    Consultants,
+    Products,
+    JobListings,
+    StkOrganizations,
+    StkAnnouncements,
+    SalaryCalculations,
+  ],
+)
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-    onCreate: (Migrator m) async {
-      await m.createAll();
-    },
+    onCreate: (Migrator m) async => await m.createAll(),
     onUpgrade: (Migrator m, int from, int to) async {
       if (from < 2) {
         await m.createTable(becayisAds);
         await m.createTable(consultants);
         await m.createTable(products);
       }
+      if (from < 3) {
+        await m.createTable(jobListings);
+        await m.createTable(stkOrganizations);
+        await m.createTable(stkAnnouncements);
+        await m.createTable(salaryCalculations);
+      }
     },
   );
 
-  // ── User Operations
+  // ── User
   Future<int> insertUser(UsersCompanion entry) =>
       into(users).insert(entry, mode: InsertMode.insertOrReplace);
   Future<bool> updateUser(UsersCompanion entry) => update(users).replace(entry);
@@ -118,7 +204,7 @@ class AppDatabase extends _$AppDatabase {
   Future<User?> getUserByPhone(String phone) =>
       (select(users)..where((t) => t.phone.equals(phone))).getSingleOrNull();
 
-  // ── Becayiş Operations
+  // ── Becayiş
   Future<int> insertBecayisAd(BecayisAdsCompanion entry) =>
       into(becayisAds).insert(entry);
   Future<List<BecayisAd>> getAllBecayisAds() => select(becayisAds).get();
@@ -128,7 +214,7 @@ class AppDatabase extends _$AppDatabase {
       (select(becayisAds)
         ..where((t) => t.employmentType.equalsValue(type))).get();
 
-  // ── Consultant Operations
+  // ── Consultants
   Future<int> insertConsultant(ConsultantsCompanion entry) =>
       into(consultants).insert(entry);
   Future<List<Consultant>> getAllConsultants() => select(consultants).get();
@@ -137,12 +223,40 @@ class AppDatabase extends _$AppDatabase {
   Future<List<Consultant>> getOnlineConsultants() =>
       (select(consultants)..where((t) => t.isOnline.equals(true))).get();
 
-  // ── Product Operations
+  // ── Products
   Future<int> insertProduct(ProductsCompanion entry) =>
       into(products).insert(entry);
   Future<List<Product>> getAllProducts() => select(products).get();
 
-  // ── Settings Operations
+  // ── Job Listings
+  Future<int> insertJobListing(JobListingsCompanion entry) =>
+      into(jobListings).insert(entry);
+  Future<List<JobListing>> getAllJobListings() => select(jobListings).get();
+  Future<List<JobListing>> getActiveJobListings() =>
+      (select(jobListings)..where((t) => t.isActive.equals(true))).get();
+  Future<List<JobListing>> getJobListingsByCity(String city) =>
+      (select(jobListings)..where((t) => t.city.equals(city))).get();
+
+  // ── STK
+  Future<int> insertStkOrganization(StkOrganizationsCompanion entry) =>
+      into(stkOrganizations).insert(entry);
+  Future<List<StkOrganization>> getAllStkOrganizations() =>
+      select(stkOrganizations).get();
+  Future<int> insertStkAnnouncement(StkAnnouncementsCompanion entry) =>
+      into(stkAnnouncements).insert(entry);
+  Future<List<StkAnnouncement>> getAnnouncementsByOrg(String orgId) =>
+      (select(stkAnnouncements)
+        ..where((t) => t.organizationId.equals(orgId))).get();
+  Future<List<StkAnnouncement>> getAllAnnouncements() =>
+      select(stkAnnouncements).get();
+
+  // ── Salary
+  Future<int> insertSalaryCalc(SalaryCalculationsCompanion entry) =>
+      into(salaryCalculations).insert(entry);
+  Future<List<SalaryCalculation>> getSalaryHistory(String userId) =>
+      (select(salaryCalculations)..where((t) => t.userId.equals(userId))).get();
+
+  // ── Settings
   Future<Setting?> getSettings() => select(settings).getSingleOrNull();
   Future<int> updateSettings(SettingsCompanion entry) async {
     final result = await getSettings();

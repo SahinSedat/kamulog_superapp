@@ -1,23 +1,18 @@
-// ── Kullanıcı Türü (Spec 01 + 03)
+// ── Kullanıcı Türü
 enum EmploymentType {
-  memur, // 4A/4B/4C -> Mavi Tema (#5D8AA8)
-  isci, // 4D -> Toprak/Turuncu Tema (#C19A6B)
-  sozlesmeli, // 4B -> Mavi veya özel
+  memur, // 4A/4B/4C → Mavi Tema (#1565C0)
+  isci, // 4D → Turuncu Tema (#E65100)
+  sozlesmeli, // 4B → Sözleşmeli
 }
 
 // ── Uygulama Tema Modu
 enum AppThemeMode { system, light, dark }
 
-// ── Becayiş İlan Durumu (Spec 04)
-enum BecayisStatus {
-  active, // Aktif ilan
-  matched, // Eşleşme bulundu
-  closed, // Kapatıldı
-}
+// ── Becayiş İlan Durumu
+enum BecayisStatus { active, matched, closed }
 
-// ── Danışman Kategorisi (Spec 04)
-enum ConsultantCategory {
-  hukuk, // Avukat
-  bordro, // Mutemet / Bordro uzmanı
-  psikoloji, // Psikolog
-}
+// ── Danışman Kategorisi
+enum ConsultantCategory { hukuk, bordro, psikoloji }
+
+// ── STK Türü
+enum StkType { sendika, dernek, vakif, meslekOdasi }

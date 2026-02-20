@@ -8,6 +8,9 @@ import 'package:kamulog_superapp/features/home/presentation/screens/home_screen.
 import 'package:kamulog_superapp/features/danismanlik/presentation/screens/danismanlik_screen.dart';
 import 'package:kamulog_superapp/features/profil/presentation/screens/profil_screen.dart';
 import 'package:kamulog_superapp/features/salary/presentation/screens/salary_calculator_screen.dart';
+import 'package:kamulog_superapp/features/onboarding/presentation/screens/splash_screen.dart';
+import 'package:kamulog_superapp/features/onboarding/presentation/screens/onboarding_screen.dart';
+import 'package:kamulog_superapp/features/onboarding/presentation/screens/onboarding_survey_screen.dart';
 
 /// Bridges Riverpod state changes to GoRouter's refreshListenable
 class AuthChangeNotifier extends ChangeNotifier {
@@ -31,30 +34,48 @@ final routerProvider = Provider<GoRouter>((ref) {
   ref.onDispose(notifier.dispose);
 
   return GoRouter(
-    initialLocation: '/',
+    initialLocation: '/splash',
     debugLogDiagnostics: true,
     refreshListenable: notifier,
     redirect: (context, state) {
       final authState = ref.read(authProvider);
       final isAuth = authState.status == AuthStatus.authenticated;
-      final isAuthRoute =
-          state.matchedLocation == '/login' || state.matchedLocation == '/otp';
+      final loc = state.matchedLocation;
+
+      // Allow splash, onboarding, survey without auth
+      final openRoutes = ['/splash', '/onboarding', '/onboarding-survey'];
+      if (openRoutes.contains(loc)) return null;
+
+      final isAuthRoute = loc == '/login' || loc == '/otp';
       final isLoading =
           authState.status == AuthStatus.initial ||
           authState.status == AuthStatus.loading;
 
-      // Still checking auth state
       if (isLoading) return null;
-
-      // Not authenticated — redirect to login (except auth routes)
       if (!isAuth && !isAuthRoute) return '/login';
-
-      // Already authenticated — redirect away from auth pages
       if (isAuth && isAuthRoute) return '/';
 
       return null;
     },
     routes: [
+      // ── Splash & Onboarding
+      GoRoute(
+        path: '/splash',
+        name: 'splash',
+        builder: (context, state) => const SplashScreen(),
+      ),
+      GoRoute(
+        path: '/onboarding',
+        name: 'onboarding',
+        builder: (context, state) => const OnboardingScreen(),
+      ),
+      GoRoute(
+        path: '/onboarding-survey',
+        name: 'onboarding-survey',
+        builder: (context, state) => const OnboardingSurveyScreen(),
+      ),
+
+      // ── Main
       GoRoute(
         path: '/',
         name: 'home',

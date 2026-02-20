@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:kamulog_superapp/core/constants/enums.dart';
 
 // ══════════════════════════════════════════════════════════════
-// ── ThemeExtension — Kamulog'a özel ekstra tema verileri
+// ── ThemeExtension
 // ══════════════════════════════════════════════════════════════
 
 class KamulogThemeData extends ThemeExtension<KamulogThemeData> {
@@ -60,39 +60,53 @@ class KamulogThemeData extends ThemeExtension<KamulogThemeData> {
 }
 
 // ══════════════════════════════════════════════════════════════
-// ── AppTheme — Spec 02'ye Uygun Renk Paleti
+// ── AppTheme — BOLD & VIVID Renk Paleti
 // ══════════════════════════════════════════════════════════════
 
 class AppTheme {
   AppTheme._();
 
-  // ── Memur Modu (Official Blue) — Spec 02
-  static const Color memurPrimary = Color(0xFF5D8AA8); // Air Force Blue
-  static const Color memurSecondary = Color(0xFFB0C4DE); // Light Steel Blue
-  static const Color memurAccent = Color(0xFFFFFFFF); // White Cards
+  // ── Memur Modu — Deep Blue
+  static const Color memurPrimary = Color(0xFF1565C0);
+  static const Color memurSecondary = Color(0xFF42A5F5);
 
-  // ── İşçi Modu (Warm Earth) — Spec 02
-  static const Color isciPrimary = Color(0xFFC19A6B); // Desert Sand
-  static const Color isciSecondary = Color(0xFFE6CCB2); // Almond
-  static const Color isciAccent = Color(0xFF1F2933); // Dark Text
+  // ── İşçi Modu — Red (Kırmızı)
+  static const Color isciPrimary = Color(0xFFC62828);
+  static const Color isciSecondary = Color(0xFFEF5350);
 
-  // ── Genel Renkler — Spec 02
-  static const Color background = Color(0xFFF4F6F8); // Göz yormayan gri-beyaz
-  static const Color surfaceDark = Color(0xFF1A1D23);
+  // ── Genel Renkler
+  static const Color background = Color(0xFFF5F5F5);
+  static const Color surfaceDark = Color(0xFF121212);
   static const Color cardLight = Color(0xFFFFFFFF);
-  static const Color cardDark = Color(0xFF22262E);
-  static const Color successColor = Color(0xFF27AE60); // Spec 02
-  static const Color errorColor = Color(0xFFEB5757); // Spec 02
-  static const Color warningColor = Color(0xFFF7D070);
-  static const Color infoColor = Color(0xFF5D8AA8);
+  static const Color cardDark = Color(0xFF1E1E1E);
+  static const Color successColor = Color(0xFF2E7D32);
+  static const Color errorColor = Color(0xFFD32F2F);
+  static const Color warningColor = Color(0xFFF9A825);
+  static const Color infoColor = Color(0xFF1565C0);
+
+  // ── Accent — Vivid
+  static const Color accentColor = Color(0xFF00C853);
+  static const Color accentLight = Color(0xFF69F0AE);
+  static const Color accentDark = Color(0xFF00962B);
+  static const Color purpleAccent = Color(0xFF7B1FA2);
+
+  // ── Backward-compat aliases
+  static const Color primaryColor = memurPrimary;
+  static const Color primaryLight = memurSecondary;
+  static const Color primaryDark = Color(0xFF0D47A1);
+  static const Color warmColor = isciPrimary;
+  static const Color warmLight = isciSecondary;
+  static const Color surfaceLight = background;
+  static const Color redAccent = Color(0xFFC62828);
+  static const Color blueAccent = Color(0xFF1565C0);
 
   // ── Text Colors
-  static const Color textPrimaryLight = Color(0xFF2D3142);
-  static const Color textSecondaryLight = Color(0xFF9A9BB0);
-  static const Color textTertiaryLight = Color(0xFFC4C5D4);
-  static const Color textPrimaryDark = Color(0xFFF2F2F7);
-  static const Color textSecondaryDark = Color(0xFF8E909F);
-  static const Color textTertiaryDark = Color(0xFF5A5C6A);
+  static const Color textPrimaryLight = Color(0xFF212121);
+  static const Color textSecondaryLight = Color(0xFF757575);
+  static const Color textTertiaryLight = Color(0xFFBDBDBD);
+  static const Color textPrimaryDark = Color(0xFFFAFAFA);
+  static const Color textSecondaryDark = Color(0xFF9E9E9E);
+  static const Color textTertiaryDark = Color(0xFF616161);
 
   // ── Spacing & Radius
   static const double spacingXs = 4;
@@ -103,48 +117,47 @@ class AppTheme {
   static const double spacingXxl = 48;
 
   static const double radiusSm = 8;
-  static const double radiusMd = 14;
-  static const double radiusLg = 20;
-  static const double radiusXl = 28;
+  static const double radiusMd = 12;
+  static const double radiusLg = 16;
+  static const double radiusXl = 24;
   static const double radiusFull = 100;
 
-  // ── Gradients
+  // ── Kırmızı-Mavi Gradient Tema
   static const LinearGradient primaryGradient = LinearGradient(
-    colors: [Color(0xFF5D8AA8), Color(0xFFB0C4DE)],
+    colors: [Color(0xFFC62828), Color(0xFF1565C0)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
   static const LinearGradient warmGradient = LinearGradient(
-    colors: [Color(0xFFC19A6B), Color(0xFFE6CCB2)],
+    colors: [Color(0xFFD32F2F), Color(0xFF1976D2)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
   static const LinearGradient aiGradient = LinearGradient(
-    colors: [Color(0xFF5D8AA8), Color(0xFF27AE60)],
+    colors: [Color(0xFFB71C1C), Color(0xFF0D47A1)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
   static const LinearGradient pastelGradient = LinearGradient(
-    colors: [Color(0xFFB0C4DE), Color(0xFFA8E6CF)],
+    colors: [Color(0xFFEF5350), Color(0xFF42A5F5)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
-  static const Color purpleAccent = Color(0xFF9D84B7);
+  static const LinearGradient splashGradient = LinearGradient(
+    colors: [Color(0xFFB71C1C), Color(0xFF880E4F), Color(0xFF0D47A1)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
 
-  // ── Backward-compatible aliases (eski widget'lar için)
-  static const Color primaryColor = memurPrimary;
-  static const Color primaryLight = memurSecondary;
-  static const Color primaryDark = Color(0xFF4A7494);
-  static const Color accentColor = Color(0xFF6BCBB4);
-  static const Color accentLight = Color(0xFFA8E6CF);
-  static const Color accentDark = Color(0xFF4DAF94);
-  static const Color warmColor = isciPrimary;
-  static const Color warmLight = isciSecondary;
-  static const Color surfaceLight = background;
+  static const LinearGradient headerGradient = LinearGradient(
+    colors: [Color(0xFFC62828), Color(0xFF1565C0)],
+    begin: Alignment.centerLeft,
+    end: Alignment.centerRight,
+  );
 
   // ── Decorations
 
@@ -155,14 +168,14 @@ class AppTheme {
       border: Border.all(
         color:
             isDark
-                ? Colors.white.withValues(alpha: 0.05)
-                : const Color(0xFFE8EBF0),
+                ? Colors.white.withValues(alpha: 0.08)
+                : const Color(0xFFE0E0E0),
       ),
       boxShadow: [
         BoxShadow(
-          color: memurPrimary.withValues(alpha: isDark ? 0.05 : 0.08),
-          blurRadius: 20,
-          offset: const Offset(0, 10),
+          color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.06),
+          blurRadius: 12,
+          offset: const Offset(0, 4),
         ),
       ],
     );
@@ -174,11 +187,11 @@ class AppTheme {
   }) {
     return BoxDecoration(
       color: (isDark ? Colors.black : Colors.white).withValues(
-        alpha: isDark ? 0.6 : 0.8,
+        alpha: isDark ? 0.6 : 0.85,
       ),
       borderRadius: borderRadius ?? BorderRadius.circular(radiusLg),
       border: Border.all(
-        color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.05),
+        color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.08),
       ),
     );
   }
@@ -187,7 +200,7 @@ class AppTheme {
 
   static Color getPrimaryColor(EmploymentType? type) {
     if (type == EmploymentType.isci) return isciPrimary;
-    return memurPrimary; // Default: memur, sozlesmeli, null
+    return memurPrimary;
   }
 
   static Color getSecondaryColor(EmploymentType? type) {
@@ -195,7 +208,7 @@ class AppTheme {
     return memurSecondary;
   }
 
-  // ── Dynamic Theme Builder — Spec 02'ye uygun
+  // ── Dynamic Theme Builder
 
   static ThemeData getTheme({
     required Brightness brightness,
@@ -216,9 +229,8 @@ class AppTheme {
     final surface = isDark ? surfaceDark : background;
     final card = isDark ? cardDark : cardLight;
     final border =
-        isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE8EBF0);
+        isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFE0E0E0);
 
-    // ThemeExtension data
     final isWorker = type == EmploymentType.isci;
     final kamulogExt = KamulogThemeData(
       primaryGradient: isWorker ? warmGradient : primaryGradient,
@@ -238,24 +250,23 @@ class AppTheme {
         brightness: brightness,
         primary: primary,
         secondary: secondary,
-        tertiary: isWorker ? isciAccent : memurAccent,
         surface: surface,
         error: errorColor,
       ),
       scaffoldBackgroundColor: surface,
       cardTheme: CardThemeData(
         color: card,
-        elevation: 0,
+        elevation: 2,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(radiusLg),
-          side: BorderSide(color: border),
         ),
       ),
       appBarTheme: AppBarTheme(
-        backgroundColor: surface,
+        backgroundColor: isDark ? surfaceDark : Colors.white,
         foregroundColor: textPrimary,
         elevation: 0,
         centerTitle: false,
+        surfaceTintColor: Colors.transparent,
         titleTextStyle: GoogleFonts.outfit(
           fontSize: 20,
           fontWeight: FontWeight.w800,
@@ -278,7 +289,7 @@ class AppTheme {
             fontSize: 15,
             fontWeight: FontWeight.w600,
           ),
-          elevation: 0,
+          elevation: 2,
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -294,7 +305,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radiusMd),
-          borderSide: BorderSide(color: primary, width: 1.5),
+          borderSide: BorderSide(color: primary, width: 2),
         ),
         hintStyle: GoogleFonts.inter(color: textTertiary, fontSize: 14),
         labelStyle: GoogleFonts.inter(color: textSecondary, fontSize: 14),
@@ -309,7 +320,7 @@ class AppTheme {
           color: textPrimary,
         ),
         titleLarge: headlineText.titleLarge?.copyWith(
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w700,
           color: textPrimary,
         ),
         titleMedium: headlineText.titleMedium?.copyWith(
@@ -322,14 +333,20 @@ class AppTheme {
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: primary,
         foregroundColor: Colors.white,
+        elevation: 4,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(radiusLg),
         ),
       ),
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+        backgroundColor: isDark ? surfaceDark : Colors.white,
+        selectedItemColor: primary,
+        unselectedItemColor: textTertiary,
+        elevation: 8,
+      ),
     );
   }
 
-  // Backward compatibility
   static ThemeData get lightTheme => getTheme(brightness: Brightness.light);
   static ThemeData get darkTheme => getTheme(brightness: Brightness.dark);
 }

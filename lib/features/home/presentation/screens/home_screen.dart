@@ -19,8 +19,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen>
     with TickerProviderStateMixin {
-  // Tabs: 0=STK, 1=Becayiş, 2=HomeDashboard, 3=Kariyer, 4=AI Asistan
-  int _currentIndex = 2; // Start on Home
+  int _currentIndex = 2;
   late final AnimationController _fadeController;
   late final Animation<double> _fadeAnimation;
 
@@ -65,14 +64,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      appBar:
-          _currentIndex == 4
-              ? _buildAiAppBar(theme, isDark)
-              : _buildMainAppBar(user, theme, isDark),
-      body: FadeTransition(
-        opacity: _fadeAnimation,
-        child: IndexedStack(index: _currentIndex, children: _screens),
-      ),
+      body:
+          _currentIndex == 2
+              ? _buildHomeWithHeader(user, theme, isDark)
+              : _currentIndex == 4
+              ? _buildAiScreen(theme, isDark)
+              : _buildRegularScreen(user, theme, isDark),
       bottomNavigationBar: AnimatedBottomNavBar(
         currentIndex: _currentIndex,
         onTap: _onTabChanged,
@@ -80,242 +77,343 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     );
   }
 
-  PreferredSizeWidget _buildAiAppBar(ThemeData theme, bool isDark) {
-    final aiState = ref.watch(aiChatProvider);
-    final hasMessages = aiState.messages.isNotEmpty;
-
-    return AppBar(
-      elevation: 0,
-      scrolledUnderElevation: 0,
-      backgroundColor: isDark ? AppTheme.surfaceDark : Colors.white,
-      leading: IconButton(
-        icon: Icon(
-          Icons.arrow_back_ios_new_rounded,
-          size: 20,
-          color: theme.textTheme.bodyLarge?.color,
-        ),
-        onPressed: () {
-          if (hasMessages) {
-            // Chat mode → go back to AI welcome screen
-            ref.read(aiChatProvider.notifier).newConversation();
-          } else {
-            // Welcome mode → go back to Home tab
-            _onTabChanged(2);
-          }
-        },
-      ),
-      title: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 28,
-            height: 28,
-            decoration: BoxDecoration(
-              gradient: AppTheme.aiGradient,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Icon(
-              Icons.auto_awesome,
-              size: 15,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(width: 8),
-          ShaderMask(
-            shaderCallback:
-                (bounds) => AppTheme.aiGradient.createShader(bounds),
-            child: Text(
-              hasMessages ? 'Kamulog AI' : 'AI Asistan',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                letterSpacing: -0.5,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ],
-      ),
-      centerTitle: true,
-      actions: [
-        if (hasMessages)
-          IconButton(
-            icon: Icon(
-              Icons.add_comment_outlined,
-              color: theme.textTheme.bodyLarge?.color?.withValues(alpha: 0.6),
-              size: 22,
-            ),
-            tooltip: 'Yeni Sohbet',
-            onPressed:
-                () => ref.read(aiChatProvider.notifier).newConversation(),
-          ),
-        const SizedBox(width: 4),
-      ],
-    );
-  }
-
-  PreferredSizeWidget _buildMainAppBar(
-    dynamic user,
-    ThemeData theme,
-    bool isDark,
-  ) {
-    return AppBar(
-      elevation: 0,
-      scrolledUnderElevation: 0,
-      backgroundColor: isDark ? AppTheme.surfaceDark : Colors.white,
-      title: Row(
-        children: [
-          // AI gradient logo
-          Container(
-            width: 34,
-            height: 34,
-            decoration: BoxDecoration(
-              gradient: AppTheme.aiGradient,
-              borderRadius: BorderRadius.circular(10),
-              boxShadow: [
-                BoxShadow(
-                  color: AppTheme.primaryColor.withValues(alpha: 0.25),
-                  blurRadius: 10,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: const Icon(
-              Icons.auto_awesome,
-              size: 18,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(width: 10),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Kamulog',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.5,
-                  color: theme.textTheme.bodyLarge?.color,
-                ),
-              ),
-              Text(
-                'AI Destekli Platform',
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w500,
-                  color: isDark ? AppTheme.accentLight : AppTheme.accentColor,
-                  letterSpacing: 0.5,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-      actions: [
-        // Notification bell
-        IconButton(
-          icon: Badge(
-            smallSize: 8,
-            backgroundColor: AppTheme.errorColor,
-            child: Icon(
-              Icons.notifications_outlined,
-              color: theme.textTheme.bodyLarge?.color?.withValues(alpha: 0.6),
-            ),
-          ),
-          onPressed: () {},
-        ),
-        // User avatar menu
-        Padding(
-          padding: const EdgeInsets.only(right: 8),
-          child: PopupMenuButton<String>(
-            icon: Container(
-              width: 34,
-              height: 34,
-              decoration: BoxDecoration(
-                gradient: AppTheme.aiGradient,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppTheme.primaryColor.withValues(alpha: 0.2),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Center(
-                child: Text(
-                  (user?.name ?? 'K').substring(0, 1).toUpperCase(),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14,
-                  ),
-                ),
-              ),
-            ),
-            onSelected: (value) {
-              if (value == 'logout') {
-                ref.read(authProvider.notifier).logout();
-              }
-            },
-            itemBuilder:
-                (context) => [
-                  PopupMenuItem(
-                    enabled: false,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          user?.name ?? 'Kullanıcı',
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
+  // ── Section 1: HOME tab — gradient header + dashboard
+  Widget _buildHomeWithHeader(dynamic user, ThemeData theme, bool isDark) {
+    return Column(
+      children: [
+        // ── GRADIENT HEADER with search
+        Container(
+          decoration: const BoxDecoration(gradient: AppTheme.headerGradient),
+          child: SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 14),
+              child: Column(
+                children: [
+                  // Top row: Logo + Notifications + Profile
+                  Row(
+                    children: [
+                      // Logo
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(
+                          Icons.hub_rounded,
+                          size: 20,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Kamulog',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                          Text(
+                            'Hoş geldin, ${(user?.name ?? 'Kullanıcı').split(' ').first}',
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.8),
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Spacer(),
+                      // Notification
+                      _HeaderIcon(
+                        icon: Icons.notifications_outlined,
+                        badgeCount: 3,
+                        onTap: () {},
+                      ),
+                      const SizedBox(width: 8),
+                      // Profile
+                      GestureDetector(
+                        onTap: () {},
+                        child: Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.3),
+                              width: 1.5,
+                            ),
+                          ),
+                          child: Center(
+                            child: Text(
+                              (user?.name ?? 'K').substring(0, 1).toUpperCase(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 14,
+                              ),
+                            ),
                           ),
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          user?.phone ?? '',
-                          style: theme.textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  // ── AI-powered search bar
+                  Container(
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.1),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        const SizedBox(width: 14),
+                        Icon(
+                          Icons.search_rounded,
+                          color: Colors.grey[400],
+                          size: 22,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Becayiş, kariyer, danışmanlık ara...',
+                            style: TextStyle(
+                              color: Colors.grey[400],
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                        Container(
+                          margin: const EdgeInsets.only(right: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            gradient: AppTheme.aiGradient,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.auto_awesome,
+                                size: 14,
+                                color: Colors.white,
+                              ),
+                              SizedBox(width: 4),
+                              Text(
+                                'AI',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
                   ),
-                  const PopupMenuDivider(),
-                  const PopupMenuItem(
-                    value: 'profile',
-                    child: ListTile(
-                      leading: Icon(Icons.person_outline),
-                      title: Text('Profil'),
-                      dense: true,
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'settings',
-                    child: ListTile(
-                      leading: Icon(Icons.settings_outlined),
-                      title: Text('Ayarlar'),
-                      dense: true,
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                  ),
-                  const PopupMenuDivider(),
-                  const PopupMenuItem(
-                    value: 'logout',
-                    child: ListTile(
-                      leading: Icon(Icons.logout, color: AppTheme.errorColor),
-                      title: Text(
-                        'Çıkış Yap',
-                        style: TextStyle(color: AppTheme.errorColor),
-                      ),
-                      dense: true,
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                  ),
                 ],
+              ),
+            ),
+          ),
+        ),
+        // ── Dashboard body
+        Expanded(
+          child: FadeTransition(
+            opacity: _fadeAnimation,
+            child: _screens[_currentIndex],
           ),
         ),
       ],
+    );
+  }
+
+  // ── AI Tab
+  Widget _buildAiScreen(ThemeData theme, bool isDark) {
+    final aiState = ref.watch(aiChatProvider);
+    final hasMessages = aiState.messages.isNotEmpty;
+
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: isDark ? AppTheme.surfaceDark : Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+          onPressed: () {
+            if (hasMessages) {
+              ref.read(aiChatProvider.notifier).newConversation();
+            } else {
+              _onTabChanged(2);
+            }
+          },
+        ),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                gradient: AppTheme.aiGradient,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.auto_awesome,
+                size: 15,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(width: 8),
+            ShaderMask(
+              shaderCallback:
+                  (bounds) => AppTheme.aiGradient.createShader(bounds),
+              child: Text(
+                hasMessages ? 'Kamulog AI' : 'AI Asistan',
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        ),
+        centerTitle: true,
+        actions: [
+          if (hasMessages)
+            IconButton(
+              icon: const Icon(Icons.add_comment_outlined, size: 22),
+              onPressed:
+                  () => ref.read(aiChatProvider.notifier).newConversation(),
+            ),
+          const SizedBox(width: 4),
+        ],
+      ),
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: _screens[_currentIndex],
+      ),
+    );
+  }
+
+  // ── Regular screens (STK, Becayiş, Kariyer)
+  Widget _buildRegularScreen(dynamic user, ThemeData theme, bool isDark) {
+    final titles = ['STK', 'Becayiş', '', 'Kariyer', ''];
+
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: isDark ? AppTheme.surfaceDark : Colors.white,
+        title: Text(
+          titles[_currentIndex],
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w800,
+            color: theme.textTheme.bodyLarge?.color,
+          ),
+        ),
+        actions: [
+          IconButton(
+            icon: Badge(
+              smallSize: 8,
+              backgroundColor: AppTheme.errorColor,
+              child: Icon(
+                Icons.notifications_outlined,
+                color: theme.textTheme.bodyLarge?.color?.withValues(alpha: 0.6),
+              ),
+            ),
+            onPressed: () {},
+          ),
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: GestureDetector(
+              onTap: () {},
+              child: Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  gradient: AppTheme.primaryGradient,
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Text(
+                    (user?.name ?? 'K').substring(0, 1).toUpperCase(),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: IndexedStack(index: _currentIndex, children: _screens),
+      ),
+    );
+  }
+}
+
+// ── Header icon with badge
+class _HeaderIcon extends StatelessWidget {
+  final IconData icon;
+  final int badgeCount;
+  final VoidCallback onTap;
+
+  const _HeaderIcon({
+    required this.icon,
+    required this.badgeCount,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.15),
+          shape: BoxShape.circle,
+        ),
+        child:
+            badgeCount > 0
+                ? Badge(
+                  label: Text(
+                    '$badgeCount',
+                    style: const TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  backgroundColor: AppTheme.errorColor,
+                  child: Icon(icon, color: Colors.white, size: 20),
+                )
+                : Icon(icon, color: Colors.white, size: 20),
+      ),
     );
   }
 }
