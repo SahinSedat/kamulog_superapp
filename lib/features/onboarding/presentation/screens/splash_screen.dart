@@ -94,10 +94,14 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                             ),
                           ],
                         ),
-                        child: const Icon(
-                          Icons.hub_rounded,
-                          size: 50,
-                          color: AppTheme.primaryColor,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: Image.asset(
+                            'assets/images/kamulog_logo.png',
+                            width: 60,
+                            height: 60,
+                            fit: BoxFit.contain,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 24),
