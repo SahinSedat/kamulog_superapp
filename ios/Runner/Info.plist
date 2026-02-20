@@ -66,5 +66,11 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Profil fotoğrafınızı yüklemek ve danışmanlara belge göndermek için galeriye erişim izni gereklidir.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Görüntülü danışmanlık görüşmeleri ve belge tarama için kamera izni gereklidir.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Görüntülü ve sesli görüşmeler için mikrofon izni gereklidir.</string>
 </dict>
 </plist>

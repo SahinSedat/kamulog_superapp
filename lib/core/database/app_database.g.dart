@@ -810,16 +810,1697 @@ class SettingsCompanion extends UpdateCompanion<Setting> {
   }
 }
 
+class $BecayisAdsTable extends BecayisAds
+    with TableInfo<$BecayisAdsTable, BecayisAd> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $BecayisAdsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES users (id)',
+    ),
+  );
+  static const VerificationMeta _sourceCityMeta = const VerificationMeta(
+    'sourceCity',
+  );
+  @override
+  late final GeneratedColumn<String> sourceCity = GeneratedColumn<String>(
+    'source_city',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _targetCityMeta = const VerificationMeta(
+    'targetCity',
+  );
+  @override
+  late final GeneratedColumn<String> targetCity = GeneratedColumn<String>(
+    'target_city',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _professionMeta = const VerificationMeta(
+    'profession',
+  );
+  @override
+  late final GeneratedColumn<String> profession = GeneratedColumn<String>(
+    'profession',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _descriptionMeta = const VerificationMeta(
+    'description',
+  );
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+    'description',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<BecayisStatus, int> status =
+      GeneratedColumn<int>(
+        'status',
+        aliasedName,
+        false,
+        type: DriftSqlType.int,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(0),
+      ).withConverter<BecayisStatus>($BecayisAdsTable.$converterstatus);
+  static const VerificationMeta _isPremiumMeta = const VerificationMeta(
+    'isPremium',
+  );
+  @override
+  late final GeneratedColumn<bool> isPremium = GeneratedColumn<bool>(
+    'is_premium',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_premium" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<EmploymentType?, int>
+  employmentType = GeneratedColumn<int>(
+    'employment_type',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  ).withConverter<EmploymentType?>($BecayisAdsTable.$converteremploymentTypen);
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    ownerId,
+    sourceCity,
+    targetCity,
+    profession,
+    description,
+    status,
+    isPremium,
+    employmentType,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'becayis_ads';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<BecayisAd> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('source_city')) {
+      context.handle(
+        _sourceCityMeta,
+        sourceCity.isAcceptableOrUnknown(data['source_city']!, _sourceCityMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceCityMeta);
+    }
+    if (data.containsKey('target_city')) {
+      context.handle(
+        _targetCityMeta,
+        targetCity.isAcceptableOrUnknown(data['target_city']!, _targetCityMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_targetCityMeta);
+    }
+    if (data.containsKey('profession')) {
+      context.handle(
+        _professionMeta,
+        profession.isAcceptableOrUnknown(data['profession']!, _professionMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_professionMeta);
+    }
+    if (data.containsKey('description')) {
+      context.handle(
+        _descriptionMeta,
+        description.isAcceptableOrUnknown(
+          data['description']!,
+          _descriptionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_premium')) {
+      context.handle(
+        _isPremiumMeta,
+        isPremium.isAcceptableOrUnknown(data['is_premium']!, _isPremiumMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  BecayisAd map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return BecayisAd(
+      id:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}id'],
+          )!,
+      ownerId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}owner_id'],
+          )!,
+      sourceCity:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}source_city'],
+          )!,
+      targetCity:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}target_city'],
+          )!,
+      profession:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}profession'],
+          )!,
+      description: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}description'],
+      ),
+      status: $BecayisAdsTable.$converterstatus.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.int,
+          data['${effectivePrefix}status'],
+        )!,
+      ),
+      isPremium:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.bool,
+            data['${effectivePrefix}is_premium'],
+          )!,
+      employmentType: $BecayisAdsTable.$converteremploymentTypen.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.int,
+          data['${effectivePrefix}employment_type'],
+        ),
+      ),
+      createdAt:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.dateTime,
+            data['${effectivePrefix}created_at'],
+          )!,
+    );
+  }
+
+  @override
+  $BecayisAdsTable createAlias(String alias) {
+    return $BecayisAdsTable(attachedDatabase, alias);
+  }
+
+  static JsonTypeConverter2<BecayisStatus, int, int> $converterstatus =
+      const EnumIndexConverter<BecayisStatus>(BecayisStatus.values);
+  static JsonTypeConverter2<EmploymentType, int, int> $converteremploymentType =
+      const EnumIndexConverter<EmploymentType>(EmploymentType.values);
+  static JsonTypeConverter2<EmploymentType?, int?, int?>
+  $converteremploymentTypen = JsonTypeConverter2.asNullable(
+    $converteremploymentType,
+  );
+}
+
+class BecayisAd extends DataClass implements Insertable<BecayisAd> {
+  final String id;
+  final String ownerId;
+  final String sourceCity;
+  final String targetCity;
+  final String profession;
+  final String? description;
+  final BecayisStatus status;
+  final bool isPremium;
+  final EmploymentType? employmentType;
+  final DateTime createdAt;
+  const BecayisAd({
+    required this.id,
+    required this.ownerId,
+    required this.sourceCity,
+    required this.targetCity,
+    required this.profession,
+    this.description,
+    required this.status,
+    required this.isPremium,
+    this.employmentType,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['owner_id'] = Variable<String>(ownerId);
+    map['source_city'] = Variable<String>(sourceCity);
+    map['target_city'] = Variable<String>(targetCity);
+    map['profession'] = Variable<String>(profession);
+    if (!nullToAbsent || description != null) {
+      map['description'] = Variable<String>(description);
+    }
+    {
+      map['status'] = Variable<int>(
+        $BecayisAdsTable.$converterstatus.toSql(status),
+      );
+    }
+    map['is_premium'] = Variable<bool>(isPremium);
+    if (!nullToAbsent || employmentType != null) {
+      map['employment_type'] = Variable<int>(
+        $BecayisAdsTable.$converteremploymentTypen.toSql(employmentType),
+      );
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  BecayisAdsCompanion toCompanion(bool nullToAbsent) {
+    return BecayisAdsCompanion(
+      id: Value(id),
+      ownerId: Value(ownerId),
+      sourceCity: Value(sourceCity),
+      targetCity: Value(targetCity),
+      profession: Value(profession),
+      description:
+          description == null && nullToAbsent
+              ? const Value.absent()
+              : Value(description),
+      status: Value(status),
+      isPremium: Value(isPremium),
+      employmentType:
+          employmentType == null && nullToAbsent
+              ? const Value.absent()
+              : Value(employmentType),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory BecayisAd.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return BecayisAd(
+      id: serializer.fromJson<String>(json['id']),
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      sourceCity: serializer.fromJson<String>(json['sourceCity']),
+      targetCity: serializer.fromJson<String>(json['targetCity']),
+      profession: serializer.fromJson<String>(json['profession']),
+      description: serializer.fromJson<String?>(json['description']),
+      status: $BecayisAdsTable.$converterstatus.fromJson(
+        serializer.fromJson<int>(json['status']),
+      ),
+      isPremium: serializer.fromJson<bool>(json['isPremium']),
+      employmentType: $BecayisAdsTable.$converteremploymentTypen.fromJson(
+        serializer.fromJson<int?>(json['employmentType']),
+      ),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'ownerId': serializer.toJson<String>(ownerId),
+      'sourceCity': serializer.toJson<String>(sourceCity),
+      'targetCity': serializer.toJson<String>(targetCity),
+      'profession': serializer.toJson<String>(profession),
+      'description': serializer.toJson<String?>(description),
+      'status': serializer.toJson<int>(
+        $BecayisAdsTable.$converterstatus.toJson(status),
+      ),
+      'isPremium': serializer.toJson<bool>(isPremium),
+      'employmentType': serializer.toJson<int?>(
+        $BecayisAdsTable.$converteremploymentTypen.toJson(employmentType),
+      ),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  BecayisAd copyWith({
+    String? id,
+    String? ownerId,
+    String? sourceCity,
+    String? targetCity,
+    String? profession,
+    Value<String?> description = const Value.absent(),
+    BecayisStatus? status,
+    bool? isPremium,
+    Value<EmploymentType?> employmentType = const Value.absent(),
+    DateTime? createdAt,
+  }) => BecayisAd(
+    id: id ?? this.id,
+    ownerId: ownerId ?? this.ownerId,
+    sourceCity: sourceCity ?? this.sourceCity,
+    targetCity: targetCity ?? this.targetCity,
+    profession: profession ?? this.profession,
+    description: description.present ? description.value : this.description,
+    status: status ?? this.status,
+    isPremium: isPremium ?? this.isPremium,
+    employmentType:
+        employmentType.present ? employmentType.value : this.employmentType,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  BecayisAd copyWithCompanion(BecayisAdsCompanion data) {
+    return BecayisAd(
+      id: data.id.present ? data.id.value : this.id,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      sourceCity:
+          data.sourceCity.present ? data.sourceCity.value : this.sourceCity,
+      targetCity:
+          data.targetCity.present ? data.targetCity.value : this.targetCity,
+      profession:
+          data.profession.present ? data.profession.value : this.profession,
+      description:
+          data.description.present ? data.description.value : this.description,
+      status: data.status.present ? data.status.value : this.status,
+      isPremium: data.isPremium.present ? data.isPremium.value : this.isPremium,
+      employmentType:
+          data.employmentType.present
+              ? data.employmentType.value
+              : this.employmentType,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BecayisAd(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('sourceCity: $sourceCity, ')
+          ..write('targetCity: $targetCity, ')
+          ..write('profession: $profession, ')
+          ..write('description: $description, ')
+          ..write('status: $status, ')
+          ..write('isPremium: $isPremium, ')
+          ..write('employmentType: $employmentType, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    ownerId,
+    sourceCity,
+    targetCity,
+    profession,
+    description,
+    status,
+    isPremium,
+    employmentType,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is BecayisAd &&
+          other.id == this.id &&
+          other.ownerId == this.ownerId &&
+          other.sourceCity == this.sourceCity &&
+          other.targetCity == this.targetCity &&
+          other.profession == this.profession &&
+          other.description == this.description &&
+          other.status == this.status &&
+          other.isPremium == this.isPremium &&
+          other.employmentType == this.employmentType &&
+          other.createdAt == this.createdAt);
+}
+
+class BecayisAdsCompanion extends UpdateCompanion<BecayisAd> {
+  final Value<String> id;
+  final Value<String> ownerId;
+  final Value<String> sourceCity;
+  final Value<String> targetCity;
+  final Value<String> profession;
+  final Value<String?> description;
+  final Value<BecayisStatus> status;
+  final Value<bool> isPremium;
+  final Value<EmploymentType?> employmentType;
+  final Value<DateTime> createdAt;
+  final Value<int> rowid;
+  const BecayisAdsCompanion({
+    this.id = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.sourceCity = const Value.absent(),
+    this.targetCity = const Value.absent(),
+    this.profession = const Value.absent(),
+    this.description = const Value.absent(),
+    this.status = const Value.absent(),
+    this.isPremium = const Value.absent(),
+    this.employmentType = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  BecayisAdsCompanion.insert({
+    required String id,
+    required String ownerId,
+    required String sourceCity,
+    required String targetCity,
+    required String profession,
+    this.description = const Value.absent(),
+    this.status = const Value.absent(),
+    this.isPremium = const Value.absent(),
+    this.employmentType = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       ownerId = Value(ownerId),
+       sourceCity = Value(sourceCity),
+       targetCity = Value(targetCity),
+       profession = Value(profession);
+  static Insertable<BecayisAd> custom({
+    Expression<String>? id,
+    Expression<String>? ownerId,
+    Expression<String>? sourceCity,
+    Expression<String>? targetCity,
+    Expression<String>? profession,
+    Expression<String>? description,
+    Expression<int>? status,
+    Expression<bool>? isPremium,
+    Expression<int>? employmentType,
+    Expression<DateTime>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (sourceCity != null) 'source_city': sourceCity,
+      if (targetCity != null) 'target_city': targetCity,
+      if (profession != null) 'profession': profession,
+      if (description != null) 'description': description,
+      if (status != null) 'status': status,
+      if (isPremium != null) 'is_premium': isPremium,
+      if (employmentType != null) 'employment_type': employmentType,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  BecayisAdsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? ownerId,
+    Value<String>? sourceCity,
+    Value<String>? targetCity,
+    Value<String>? profession,
+    Value<String?>? description,
+    Value<BecayisStatus>? status,
+    Value<bool>? isPremium,
+    Value<EmploymentType?>? employmentType,
+    Value<DateTime>? createdAt,
+    Value<int>? rowid,
+  }) {
+    return BecayisAdsCompanion(
+      id: id ?? this.id,
+      ownerId: ownerId ?? this.ownerId,
+      sourceCity: sourceCity ?? this.sourceCity,
+      targetCity: targetCity ?? this.targetCity,
+      profession: profession ?? this.profession,
+      description: description ?? this.description,
+      status: status ?? this.status,
+      isPremium: isPremium ?? this.isPremium,
+      employmentType: employmentType ?? this.employmentType,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (sourceCity.present) {
+      map['source_city'] = Variable<String>(sourceCity.value);
+    }
+    if (targetCity.present) {
+      map['target_city'] = Variable<String>(targetCity.value);
+    }
+    if (profession.present) {
+      map['profession'] = Variable<String>(profession.value);
+    }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<int>(
+        $BecayisAdsTable.$converterstatus.toSql(status.value),
+      );
+    }
+    if (isPremium.present) {
+      map['is_premium'] = Variable<bool>(isPremium.value);
+    }
+    if (employmentType.present) {
+      map['employment_type'] = Variable<int>(
+        $BecayisAdsTable.$converteremploymentTypen.toSql(employmentType.value),
+      );
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BecayisAdsCompanion(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('sourceCity: $sourceCity, ')
+          ..write('targetCity: $targetCity, ')
+          ..write('profession: $profession, ')
+          ..write('description: $description, ')
+          ..write('status: $status, ')
+          ..write('isPremium: $isPremium, ')
+          ..write('employmentType: $employmentType, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ConsultantsTable extends Consultants
+    with TableInfo<$ConsultantsTable, Consultant> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ConsultantsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+    'user_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES users (id)',
+    ),
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<ConsultantCategory, int>
+  category = GeneratedColumn<int>(
+    'category',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  ).withConverter<ConsultantCategory>($ConsultantsTable.$convertercategory);
+  static const VerificationMeta _hourlyRateMeta = const VerificationMeta(
+    'hourlyRate',
+  );
+  @override
+  late final GeneratedColumn<double> hourlyRate = GeneratedColumn<double>(
+    'hourly_rate',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
+  static const VerificationMeta _ratingMeta = const VerificationMeta('rating');
+  @override
+  late final GeneratedColumn<double> rating = GeneratedColumn<double>(
+    'rating',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
+  static const VerificationMeta _isOnlineMeta = const VerificationMeta(
+    'isOnline',
+  );
+  @override
+  late final GeneratedColumn<bool> isOnline = GeneratedColumn<bool>(
+    'is_online',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_online" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _fullNameMeta = const VerificationMeta(
+    'fullName',
+  );
+  @override
+  late final GeneratedColumn<String> fullName = GeneratedColumn<String>(
+    'full_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _avatarUrlMeta = const VerificationMeta(
+    'avatarUrl',
+  );
+  @override
+  late final GeneratedColumn<String> avatarUrl = GeneratedColumn<String>(
+    'avatar_url',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _bioMeta = const VerificationMeta('bio');
+  @override
+  late final GeneratedColumn<String> bio = GeneratedColumn<String>(
+    'bio',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    userId,
+    category,
+    hourlyRate,
+    rating,
+    isOnline,
+    fullName,
+    avatarUrl,
+    bio,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'consultants';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Consultant> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('hourly_rate')) {
+      context.handle(
+        _hourlyRateMeta,
+        hourlyRate.isAcceptableOrUnknown(data['hourly_rate']!, _hourlyRateMeta),
+      );
+    }
+    if (data.containsKey('rating')) {
+      context.handle(
+        _ratingMeta,
+        rating.isAcceptableOrUnknown(data['rating']!, _ratingMeta),
+      );
+    }
+    if (data.containsKey('is_online')) {
+      context.handle(
+        _isOnlineMeta,
+        isOnline.isAcceptableOrUnknown(data['is_online']!, _isOnlineMeta),
+      );
+    }
+    if (data.containsKey('full_name')) {
+      context.handle(
+        _fullNameMeta,
+        fullName.isAcceptableOrUnknown(data['full_name']!, _fullNameMeta),
+      );
+    }
+    if (data.containsKey('avatar_url')) {
+      context.handle(
+        _avatarUrlMeta,
+        avatarUrl.isAcceptableOrUnknown(data['avatar_url']!, _avatarUrlMeta),
+      );
+    }
+    if (data.containsKey('bio')) {
+      context.handle(
+        _bioMeta,
+        bio.isAcceptableOrUnknown(data['bio']!, _bioMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Consultant map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Consultant(
+      id:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}id'],
+          )!,
+      userId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}user_id'],
+          )!,
+      category: $ConsultantsTable.$convertercategory.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.int,
+          data['${effectivePrefix}category'],
+        )!,
+      ),
+      hourlyRate:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.double,
+            data['${effectivePrefix}hourly_rate'],
+          )!,
+      rating:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.double,
+            data['${effectivePrefix}rating'],
+          )!,
+      isOnline:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.bool,
+            data['${effectivePrefix}is_online'],
+          )!,
+      fullName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}full_name'],
+      ),
+      avatarUrl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}avatar_url'],
+      ),
+      bio: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}bio'],
+      ),
+    );
+  }
+
+  @override
+  $ConsultantsTable createAlias(String alias) {
+    return $ConsultantsTable(attachedDatabase, alias);
+  }
+
+  static JsonTypeConverter2<ConsultantCategory, int, int> $convertercategory =
+      const EnumIndexConverter<ConsultantCategory>(ConsultantCategory.values);
+}
+
+class Consultant extends DataClass implements Insertable<Consultant> {
+  final String id;
+  final String userId;
+  final ConsultantCategory category;
+  final double hourlyRate;
+  final double rating;
+  final bool isOnline;
+  final String? fullName;
+  final String? avatarUrl;
+  final String? bio;
+  const Consultant({
+    required this.id,
+    required this.userId,
+    required this.category,
+    required this.hourlyRate,
+    required this.rating,
+    required this.isOnline,
+    this.fullName,
+    this.avatarUrl,
+    this.bio,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['user_id'] = Variable<String>(userId);
+    {
+      map['category'] = Variable<int>(
+        $ConsultantsTable.$convertercategory.toSql(category),
+      );
+    }
+    map['hourly_rate'] = Variable<double>(hourlyRate);
+    map['rating'] = Variable<double>(rating);
+    map['is_online'] = Variable<bool>(isOnline);
+    if (!nullToAbsent || fullName != null) {
+      map['full_name'] = Variable<String>(fullName);
+    }
+    if (!nullToAbsent || avatarUrl != null) {
+      map['avatar_url'] = Variable<String>(avatarUrl);
+    }
+    if (!nullToAbsent || bio != null) {
+      map['bio'] = Variable<String>(bio);
+    }
+    return map;
+  }
+
+  ConsultantsCompanion toCompanion(bool nullToAbsent) {
+    return ConsultantsCompanion(
+      id: Value(id),
+      userId: Value(userId),
+      category: Value(category),
+      hourlyRate: Value(hourlyRate),
+      rating: Value(rating),
+      isOnline: Value(isOnline),
+      fullName:
+          fullName == null && nullToAbsent
+              ? const Value.absent()
+              : Value(fullName),
+      avatarUrl:
+          avatarUrl == null && nullToAbsent
+              ? const Value.absent()
+              : Value(avatarUrl),
+      bio: bio == null && nullToAbsent ? const Value.absent() : Value(bio),
+    );
+  }
+
+  factory Consultant.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Consultant(
+      id: serializer.fromJson<String>(json['id']),
+      userId: serializer.fromJson<String>(json['userId']),
+      category: $ConsultantsTable.$convertercategory.fromJson(
+        serializer.fromJson<int>(json['category']),
+      ),
+      hourlyRate: serializer.fromJson<double>(json['hourlyRate']),
+      rating: serializer.fromJson<double>(json['rating']),
+      isOnline: serializer.fromJson<bool>(json['isOnline']),
+      fullName: serializer.fromJson<String?>(json['fullName']),
+      avatarUrl: serializer.fromJson<String?>(json['avatarUrl']),
+      bio: serializer.fromJson<String?>(json['bio']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'userId': serializer.toJson<String>(userId),
+      'category': serializer.toJson<int>(
+        $ConsultantsTable.$convertercategory.toJson(category),
+      ),
+      'hourlyRate': serializer.toJson<double>(hourlyRate),
+      'rating': serializer.toJson<double>(rating),
+      'isOnline': serializer.toJson<bool>(isOnline),
+      'fullName': serializer.toJson<String?>(fullName),
+      'avatarUrl': serializer.toJson<String?>(avatarUrl),
+      'bio': serializer.toJson<String?>(bio),
+    };
+  }
+
+  Consultant copyWith({
+    String? id,
+    String? userId,
+    ConsultantCategory? category,
+    double? hourlyRate,
+    double? rating,
+    bool? isOnline,
+    Value<String?> fullName = const Value.absent(),
+    Value<String?> avatarUrl = const Value.absent(),
+    Value<String?> bio = const Value.absent(),
+  }) => Consultant(
+    id: id ?? this.id,
+    userId: userId ?? this.userId,
+    category: category ?? this.category,
+    hourlyRate: hourlyRate ?? this.hourlyRate,
+    rating: rating ?? this.rating,
+    isOnline: isOnline ?? this.isOnline,
+    fullName: fullName.present ? fullName.value : this.fullName,
+    avatarUrl: avatarUrl.present ? avatarUrl.value : this.avatarUrl,
+    bio: bio.present ? bio.value : this.bio,
+  );
+  Consultant copyWithCompanion(ConsultantsCompanion data) {
+    return Consultant(
+      id: data.id.present ? data.id.value : this.id,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      category: data.category.present ? data.category.value : this.category,
+      hourlyRate:
+          data.hourlyRate.present ? data.hourlyRate.value : this.hourlyRate,
+      rating: data.rating.present ? data.rating.value : this.rating,
+      isOnline: data.isOnline.present ? data.isOnline.value : this.isOnline,
+      fullName: data.fullName.present ? data.fullName.value : this.fullName,
+      avatarUrl: data.avatarUrl.present ? data.avatarUrl.value : this.avatarUrl,
+      bio: data.bio.present ? data.bio.value : this.bio,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Consultant(')
+          ..write('id: $id, ')
+          ..write('userId: $userId, ')
+          ..write('category: $category, ')
+          ..write('hourlyRate: $hourlyRate, ')
+          ..write('rating: $rating, ')
+          ..write('isOnline: $isOnline, ')
+          ..write('fullName: $fullName, ')
+          ..write('avatarUrl: $avatarUrl, ')
+          ..write('bio: $bio')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    userId,
+    category,
+    hourlyRate,
+    rating,
+    isOnline,
+    fullName,
+    avatarUrl,
+    bio,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Consultant &&
+          other.id == this.id &&
+          other.userId == this.userId &&
+          other.category == this.category &&
+          other.hourlyRate == this.hourlyRate &&
+          other.rating == this.rating &&
+          other.isOnline == this.isOnline &&
+          other.fullName == this.fullName &&
+          other.avatarUrl == this.avatarUrl &&
+          other.bio == this.bio);
+}
+
+class ConsultantsCompanion extends UpdateCompanion<Consultant> {
+  final Value<String> id;
+  final Value<String> userId;
+  final Value<ConsultantCategory> category;
+  final Value<double> hourlyRate;
+  final Value<double> rating;
+  final Value<bool> isOnline;
+  final Value<String?> fullName;
+  final Value<String?> avatarUrl;
+  final Value<String?> bio;
+  final Value<int> rowid;
+  const ConsultantsCompanion({
+    this.id = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.category = const Value.absent(),
+    this.hourlyRate = const Value.absent(),
+    this.rating = const Value.absent(),
+    this.isOnline = const Value.absent(),
+    this.fullName = const Value.absent(),
+    this.avatarUrl = const Value.absent(),
+    this.bio = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ConsultantsCompanion.insert({
+    required String id,
+    required String userId,
+    required ConsultantCategory category,
+    this.hourlyRate = const Value.absent(),
+    this.rating = const Value.absent(),
+    this.isOnline = const Value.absent(),
+    this.fullName = const Value.absent(),
+    this.avatarUrl = const Value.absent(),
+    this.bio = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       userId = Value(userId),
+       category = Value(category);
+  static Insertable<Consultant> custom({
+    Expression<String>? id,
+    Expression<String>? userId,
+    Expression<int>? category,
+    Expression<double>? hourlyRate,
+    Expression<double>? rating,
+    Expression<bool>? isOnline,
+    Expression<String>? fullName,
+    Expression<String>? avatarUrl,
+    Expression<String>? bio,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (userId != null) 'user_id': userId,
+      if (category != null) 'category': category,
+      if (hourlyRate != null) 'hourly_rate': hourlyRate,
+      if (rating != null) 'rating': rating,
+      if (isOnline != null) 'is_online': isOnline,
+      if (fullName != null) 'full_name': fullName,
+      if (avatarUrl != null) 'avatar_url': avatarUrl,
+      if (bio != null) 'bio': bio,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ConsultantsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? userId,
+    Value<ConsultantCategory>? category,
+    Value<double>? hourlyRate,
+    Value<double>? rating,
+    Value<bool>? isOnline,
+    Value<String?>? fullName,
+    Value<String?>? avatarUrl,
+    Value<String?>? bio,
+    Value<int>? rowid,
+  }) {
+    return ConsultantsCompanion(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      category: category ?? this.category,
+      hourlyRate: hourlyRate ?? this.hourlyRate,
+      rating: rating ?? this.rating,
+      isOnline: isOnline ?? this.isOnline,
+      fullName: fullName ?? this.fullName,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
+      bio: bio ?? this.bio,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (category.present) {
+      map['category'] = Variable<int>(
+        $ConsultantsTable.$convertercategory.toSql(category.value),
+      );
+    }
+    if (hourlyRate.present) {
+      map['hourly_rate'] = Variable<double>(hourlyRate.value);
+    }
+    if (rating.present) {
+      map['rating'] = Variable<double>(rating.value);
+    }
+    if (isOnline.present) {
+      map['is_online'] = Variable<bool>(isOnline.value);
+    }
+    if (fullName.present) {
+      map['full_name'] = Variable<String>(fullName.value);
+    }
+    if (avatarUrl.present) {
+      map['avatar_url'] = Variable<String>(avatarUrl.value);
+    }
+    if (bio.present) {
+      map['bio'] = Variable<String>(bio.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ConsultantsCompanion(')
+          ..write('id: $id, ')
+          ..write('userId: $userId, ')
+          ..write('category: $category, ')
+          ..write('hourlyRate: $hourlyRate, ')
+          ..write('rating: $rating, ')
+          ..write('isOnline: $isOnline, ')
+          ..write('fullName: $fullName, ')
+          ..write('avatarUrl: $avatarUrl, ')
+          ..write('bio: $bio, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ProductsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _priceMeta = const VerificationMeta('price');
+  @override
+  late final GeneratedColumn<double> price = GeneratedColumn<double>(
+    'price',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _imageUrlMeta = const VerificationMeta(
+    'imageUrl',
+  );
+  @override
+  late final GeneratedColumn<String> imageUrl = GeneratedColumn<String>(
+    'image_url',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _stockMeta = const VerificationMeta('stock');
+  @override
+  late final GeneratedColumn<int> stock = GeneratedColumn<int>(
+    'stock',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _descriptionMeta = const VerificationMeta(
+    'description',
+  );
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+    'description',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    price,
+    imageUrl,
+    stock,
+    description,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'products';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Product> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('price')) {
+      context.handle(
+        _priceMeta,
+        price.isAcceptableOrUnknown(data['price']!, _priceMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_priceMeta);
+    }
+    if (data.containsKey('image_url')) {
+      context.handle(
+        _imageUrlMeta,
+        imageUrl.isAcceptableOrUnknown(data['image_url']!, _imageUrlMeta),
+      );
+    }
+    if (data.containsKey('stock')) {
+      context.handle(
+        _stockMeta,
+        stock.isAcceptableOrUnknown(data['stock']!, _stockMeta),
+      );
+    }
+    if (data.containsKey('description')) {
+      context.handle(
+        _descriptionMeta,
+        description.isAcceptableOrUnknown(
+          data['description']!,
+          _descriptionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Product map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Product(
+      id:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}id'],
+          )!,
+      name:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}name'],
+          )!,
+      price:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.double,
+            data['${effectivePrefix}price'],
+          )!,
+      imageUrl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}image_url'],
+      ),
+      stock:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.int,
+            data['${effectivePrefix}stock'],
+          )!,
+      description: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}description'],
+      ),
+      createdAt:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.dateTime,
+            data['${effectivePrefix}created_at'],
+          )!,
+    );
+  }
+
+  @override
+  $ProductsTable createAlias(String alias) {
+    return $ProductsTable(attachedDatabase, alias);
+  }
+}
+
+class Product extends DataClass implements Insertable<Product> {
+  final String id;
+  final String name;
+  final double price;
+  final String? imageUrl;
+  final int stock;
+  final String? description;
+  final DateTime createdAt;
+  const Product({
+    required this.id,
+    required this.name,
+    required this.price,
+    this.imageUrl,
+    required this.stock,
+    this.description,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    map['price'] = Variable<double>(price);
+    if (!nullToAbsent || imageUrl != null) {
+      map['image_url'] = Variable<String>(imageUrl);
+    }
+    map['stock'] = Variable<int>(stock);
+    if (!nullToAbsent || description != null) {
+      map['description'] = Variable<String>(description);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  ProductsCompanion toCompanion(bool nullToAbsent) {
+    return ProductsCompanion(
+      id: Value(id),
+      name: Value(name),
+      price: Value(price),
+      imageUrl:
+          imageUrl == null && nullToAbsent
+              ? const Value.absent()
+              : Value(imageUrl),
+      stock: Value(stock),
+      description:
+          description == null && nullToAbsent
+              ? const Value.absent()
+              : Value(description),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory Product.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Product(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      price: serializer.fromJson<double>(json['price']),
+      imageUrl: serializer.fromJson<String?>(json['imageUrl']),
+      stock: serializer.fromJson<int>(json['stock']),
+      description: serializer.fromJson<String?>(json['description']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'price': serializer.toJson<double>(price),
+      'imageUrl': serializer.toJson<String?>(imageUrl),
+      'stock': serializer.toJson<int>(stock),
+      'description': serializer.toJson<String?>(description),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  Product copyWith({
+    String? id,
+    String? name,
+    double? price,
+    Value<String?> imageUrl = const Value.absent(),
+    int? stock,
+    Value<String?> description = const Value.absent(),
+    DateTime? createdAt,
+  }) => Product(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    price: price ?? this.price,
+    imageUrl: imageUrl.present ? imageUrl.value : this.imageUrl,
+    stock: stock ?? this.stock,
+    description: description.present ? description.value : this.description,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  Product copyWithCompanion(ProductsCompanion data) {
+    return Product(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      price: data.price.present ? data.price.value : this.price,
+      imageUrl: data.imageUrl.present ? data.imageUrl.value : this.imageUrl,
+      stock: data.stock.present ? data.stock.value : this.stock,
+      description:
+          data.description.present ? data.description.value : this.description,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Product(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('price: $price, ')
+          ..write('imageUrl: $imageUrl, ')
+          ..write('stock: $stock, ')
+          ..write('description: $description, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, name, price, imageUrl, stock, description, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Product &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.price == this.price &&
+          other.imageUrl == this.imageUrl &&
+          other.stock == this.stock &&
+          other.description == this.description &&
+          other.createdAt == this.createdAt);
+}
+
+class ProductsCompanion extends UpdateCompanion<Product> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<double> price;
+  final Value<String?> imageUrl;
+  final Value<int> stock;
+  final Value<String?> description;
+  final Value<DateTime> createdAt;
+  final Value<int> rowid;
+  const ProductsCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.price = const Value.absent(),
+    this.imageUrl = const Value.absent(),
+    this.stock = const Value.absent(),
+    this.description = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ProductsCompanion.insert({
+    required String id,
+    required String name,
+    required double price,
+    this.imageUrl = const Value.absent(),
+    this.stock = const Value.absent(),
+    this.description = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       name = Value(name),
+       price = Value(price);
+  static Insertable<Product> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<double>? price,
+    Expression<String>? imageUrl,
+    Expression<int>? stock,
+    Expression<String>? description,
+    Expression<DateTime>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (price != null) 'price': price,
+      if (imageUrl != null) 'image_url': imageUrl,
+      if (stock != null) 'stock': stock,
+      if (description != null) 'description': description,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ProductsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? name,
+    Value<double>? price,
+    Value<String?>? imageUrl,
+    Value<int>? stock,
+    Value<String?>? description,
+    Value<DateTime>? createdAt,
+    Value<int>? rowid,
+  }) {
+    return ProductsCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      price: price ?? this.price,
+      imageUrl: imageUrl ?? this.imageUrl,
+      stock: stock ?? this.stock,
+      description: description ?? this.description,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (price.present) {
+      map['price'] = Variable<double>(price.value);
+    }
+    if (imageUrl.present) {
+      map['image_url'] = Variable<String>(imageUrl.value);
+    }
+    if (stock.present) {
+      map['stock'] = Variable<int>(stock.value);
+    }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ProductsCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('price: $price, ')
+          ..write('imageUrl: $imageUrl, ')
+          ..write('stock: $stock, ')
+          ..write('description: $description, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $UsersTable users = $UsersTable(this);
   late final $SettingsTable settings = $SettingsTable(this);
+  late final $BecayisAdsTable becayisAds = $BecayisAdsTable(this);
+  late final $ConsultantsTable consultants = $ConsultantsTable(this);
+  late final $ProductsTable products = $ProductsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
-  List<DatabaseSchemaEntity> get allSchemaEntities => [users, settings];
+  List<DatabaseSchemaEntity> get allSchemaEntities => [
+    users,
+    settings,
+    becayisAds,
+    consultants,
+    products,
+  ];
 }
 
 typedef $$UsersTableCreateCompanionBuilder =
@@ -844,6 +2525,47 @@ typedef $$UsersTableUpdateCompanionBuilder =
       Value<DateTime> createdAt,
       Value<int> rowid,
     });
+
+final class $$UsersTableReferences
+    extends BaseReferences<_$AppDatabase, $UsersTable, User> {
+  $$UsersTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$BecayisAdsTable, List<BecayisAd>>
+  _becayisAdsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.becayisAds,
+    aliasName: $_aliasNameGenerator(db.users.id, db.becayisAds.ownerId),
+  );
+
+  $$BecayisAdsTableProcessedTableManager get becayisAdsRefs {
+    final manager = $$BecayisAdsTableTableManager(
+      $_db,
+      $_db.becayisAds,
+    ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_becayisAdsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$ConsultantsTable, List<Consultant>>
+  _consultantsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.consultants,
+    aliasName: $_aliasNameGenerator(db.users.id, db.consultants.userId),
+  );
+
+  $$ConsultantsTableProcessedTableManager get consultantsRefs {
+    final manager = $$ConsultantsTableTableManager(
+      $_db,
+      $_db.consultants,
+    ).filter((f) => f.userId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_consultantsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
 
 class $$UsersTableFilterComposer extends Composer<_$AppDatabase, $UsersTable> {
   $$UsersTableFilterComposer({
@@ -888,6 +2610,56 @@ class $$UsersTableFilterComposer extends Composer<_$AppDatabase, $UsersTable> {
     column: $table.createdAt,
     builder: (column) => ColumnFilters(column),
   );
+
+  Expression<bool> becayisAdsRefs(
+    Expression<bool> Function($$BecayisAdsTableFilterComposer f) f,
+  ) {
+    final $$BecayisAdsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.becayisAds,
+      getReferencedColumn: (t) => t.ownerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BecayisAdsTableFilterComposer(
+            $db: $db,
+            $table: $db.becayisAds,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> consultantsRefs(
+    Expression<bool> Function($$ConsultantsTableFilterComposer f) f,
+  ) {
+    final $$ConsultantsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.consultants,
+      getReferencedColumn: (t) => t.userId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConsultantsTableFilterComposer(
+            $db: $db,
+            $table: $db.consultants,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$UsersTableOrderingComposer
@@ -969,6 +2741,56 @@ class $$UsersTableAnnotationComposer
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  Expression<T> becayisAdsRefs<T extends Object>(
+    Expression<T> Function($$BecayisAdsTableAnnotationComposer a) f,
+  ) {
+    final $$BecayisAdsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.becayisAds,
+      getReferencedColumn: (t) => t.ownerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BecayisAdsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.becayisAds,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> consultantsRefs<T extends Object>(
+    Expression<T> Function($$ConsultantsTableAnnotationComposer a) f,
+  ) {
+    final $$ConsultantsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.consultants,
+      getReferencedColumn: (t) => t.userId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConsultantsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.consultants,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$UsersTableTableManager
@@ -982,9 +2804,9 @@ class $$UsersTableTableManager
           $$UsersTableAnnotationComposer,
           $$UsersTableCreateCompanionBuilder,
           $$UsersTableUpdateCompanionBuilder,
-          (User, BaseReferences<_$AppDatabase, $UsersTable, User>),
+          (User, $$UsersTableReferences),
           User,
-          PrefetchHooks Function()
+          PrefetchHooks Function({bool becayisAdsRefs, bool consultantsRefs})
         > {
   $$UsersTableTableManager(_$AppDatabase db, $UsersTable table)
     : super(
@@ -1043,11 +2865,62 @@ class $$UsersTableTableManager
                       .map(
                         (e) => (
                           e.readTable(table),
-                          BaseReferences(db, table, e),
+                          $$UsersTableReferences(db, table, e),
                         ),
                       )
                       .toList(),
-          prefetchHooksCallback: null,
+          prefetchHooksCallback: ({
+            becayisAdsRefs = false,
+            consultantsRefs = false,
+          }) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [
+                if (becayisAdsRefs) db.becayisAds,
+                if (consultantsRefs) db.consultants,
+              ],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (becayisAdsRefs)
+                    await $_getPrefetchedData<User, $UsersTable, BecayisAd>(
+                      currentTable: table,
+                      referencedTable: $$UsersTableReferences
+                          ._becayisAdsRefsTable(db),
+                      managerFromTypedResult:
+                          (p0) =>
+                              $$UsersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).becayisAdsRefs,
+                      referencedItemsForCurrentItem:
+                          (item, referencedItems) => referencedItems.where(
+                            (e) => e.ownerId == item.id,
+                          ),
+                      typedResults: items,
+                    ),
+                  if (consultantsRefs)
+                    await $_getPrefetchedData<User, $UsersTable, Consultant>(
+                      currentTable: table,
+                      referencedTable: $$UsersTableReferences
+                          ._consultantsRefsTable(db),
+                      managerFromTypedResult:
+                          (p0) =>
+                              $$UsersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).consultantsRefs,
+                      referencedItemsForCurrentItem:
+                          (item, referencedItems) =>
+                              referencedItems.where((e) => e.userId == item.id),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
         ),
       );
 }
@@ -1062,9 +2935,9 @@ typedef $$UsersTableProcessedTableManager =
       $$UsersTableAnnotationComposer,
       $$UsersTableCreateCompanionBuilder,
       $$UsersTableUpdateCompanionBuilder,
-      (User, BaseReferences<_$AppDatabase, $UsersTable, User>),
+      (User, $$UsersTableReferences),
       User,
-      PrefetchHooks Function()
+      PrefetchHooks Function({bool becayisAdsRefs, bool consultantsRefs})
     >;
 typedef $$SettingsTableCreateCompanionBuilder =
     SettingsCompanion Function({
@@ -1245,6 +3118,1075 @@ typedef $$SettingsTableProcessedTableManager =
       Setting,
       PrefetchHooks Function()
     >;
+typedef $$BecayisAdsTableCreateCompanionBuilder =
+    BecayisAdsCompanion Function({
+      required String id,
+      required String ownerId,
+      required String sourceCity,
+      required String targetCity,
+      required String profession,
+      Value<String?> description,
+      Value<BecayisStatus> status,
+      Value<bool> isPremium,
+      Value<EmploymentType?> employmentType,
+      Value<DateTime> createdAt,
+      Value<int> rowid,
+    });
+typedef $$BecayisAdsTableUpdateCompanionBuilder =
+    BecayisAdsCompanion Function({
+      Value<String> id,
+      Value<String> ownerId,
+      Value<String> sourceCity,
+      Value<String> targetCity,
+      Value<String> profession,
+      Value<String?> description,
+      Value<BecayisStatus> status,
+      Value<bool> isPremium,
+      Value<EmploymentType?> employmentType,
+      Value<DateTime> createdAt,
+      Value<int> rowid,
+    });
+
+final class $$BecayisAdsTableReferences
+    extends BaseReferences<_$AppDatabase, $BecayisAdsTable, BecayisAd> {
+  $$BecayisAdsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $UsersTable _ownerIdTable(_$AppDatabase db) => db.users.createAlias(
+    $_aliasNameGenerator(db.becayisAds.ownerId, db.users.id),
+  );
+
+  $$UsersTableProcessedTableManager get ownerId {
+    final $_column = $_itemColumn<String>('owner_id')!;
+
+    final manager = $$UsersTableTableManager(
+      $_db,
+      $_db.users,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_ownerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$BecayisAdsTableFilterComposer
+    extends Composer<_$AppDatabase, $BecayisAdsTable> {
+  $$BecayisAdsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceCity => $composableBuilder(
+    column: $table.sourceCity,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get targetCity => $composableBuilder(
+    column: $table.targetCity,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get profession => $composableBuilder(
+    column: $table.profession,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<BecayisStatus, BecayisStatus, int>
+  get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnFilters<bool> get isPremium => $composableBuilder(
+    column: $table.isPremium,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<EmploymentType?, EmploymentType, int>
+  get employmentType => $composableBuilder(
+    column: $table.employmentType,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$UsersTableFilterComposer get ownerId {
+    final $$UsersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.users,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UsersTableFilterComposer(
+            $db: $db,
+            $table: $db.users,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$BecayisAdsTableOrderingComposer
+    extends Composer<_$AppDatabase, $BecayisAdsTable> {
+  $$BecayisAdsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sourceCity => $composableBuilder(
+    column: $table.sourceCity,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get targetCity => $composableBuilder(
+    column: $table.targetCity,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get profession => $composableBuilder(
+    column: $table.profession,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isPremium => $composableBuilder(
+    column: $table.isPremium,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get employmentType => $composableBuilder(
+    column: $table.employmentType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$UsersTableOrderingComposer get ownerId {
+    final $$UsersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.users,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UsersTableOrderingComposer(
+            $db: $db,
+            $table: $db.users,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$BecayisAdsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $BecayisAdsTable> {
+  $$BecayisAdsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get sourceCity => $composableBuilder(
+    column: $table.sourceCity,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get targetCity => $composableBuilder(
+    column: $table.targetCity,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get profession => $composableBuilder(
+    column: $table.profession,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => column,
+  );
+
+  GeneratedColumnWithTypeConverter<BecayisStatus, int> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<bool> get isPremium =>
+      $composableBuilder(column: $table.isPremium, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<EmploymentType?, int> get employmentType =>
+      $composableBuilder(
+        column: $table.employmentType,
+        builder: (column) => column,
+      );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  $$UsersTableAnnotationComposer get ownerId {
+    final $$UsersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.users,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UsersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.users,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$BecayisAdsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $BecayisAdsTable,
+          BecayisAd,
+          $$BecayisAdsTableFilterComposer,
+          $$BecayisAdsTableOrderingComposer,
+          $$BecayisAdsTableAnnotationComposer,
+          $$BecayisAdsTableCreateCompanionBuilder,
+          $$BecayisAdsTableUpdateCompanionBuilder,
+          (BecayisAd, $$BecayisAdsTableReferences),
+          BecayisAd,
+          PrefetchHooks Function({bool ownerId})
+        > {
+  $$BecayisAdsTableTableManager(_$AppDatabase db, $BecayisAdsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer:
+              () => $$BecayisAdsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer:
+              () => $$BecayisAdsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer:
+              () => $$BecayisAdsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> ownerId = const Value.absent(),
+                Value<String> sourceCity = const Value.absent(),
+                Value<String> targetCity = const Value.absent(),
+                Value<String> profession = const Value.absent(),
+                Value<String?> description = const Value.absent(),
+                Value<BecayisStatus> status = const Value.absent(),
+                Value<bool> isPremium = const Value.absent(),
+                Value<EmploymentType?> employmentType = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => BecayisAdsCompanion(
+                id: id,
+                ownerId: ownerId,
+                sourceCity: sourceCity,
+                targetCity: targetCity,
+                profession: profession,
+                description: description,
+                status: status,
+                isPremium: isPremium,
+                employmentType: employmentType,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String ownerId,
+                required String sourceCity,
+                required String targetCity,
+                required String profession,
+                Value<String?> description = const Value.absent(),
+                Value<BecayisStatus> status = const Value.absent(),
+                Value<bool> isPremium = const Value.absent(),
+                Value<EmploymentType?> employmentType = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => BecayisAdsCompanion.insert(
+                id: id,
+                ownerId: ownerId,
+                sourceCity: sourceCity,
+                targetCity: targetCity,
+                profession: profession,
+                description: description,
+                status: status,
+                isPremium: isPremium,
+                employmentType: employmentType,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper:
+              (p0) =>
+                  p0
+                      .map(
+                        (e) => (
+                          e.readTable(table),
+                          $$BecayisAdsTableReferences(db, table, e),
+                        ),
+                      )
+                      .toList(),
+          prefetchHooksCallback: ({ownerId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins: <
+                T extends TableManagerState<
+                  dynamic,
+                  dynamic,
+                  dynamic,
+                  dynamic,
+                  dynamic,
+                  dynamic,
+                  dynamic,
+                  dynamic,
+                  dynamic,
+                  dynamic,
+                  dynamic
+                >
+              >(state) {
+                if (ownerId) {
+                  state =
+                      state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.ownerId,
+                            referencedTable: $$BecayisAdsTableReferences
+                                ._ownerIdTable(db),
+                            referencedColumn:
+                                $$BecayisAdsTableReferences
+                                    ._ownerIdTable(db)
+                                    .id,
+                          )
+                          as T;
+                }
+
+                return state;
+              },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$BecayisAdsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $BecayisAdsTable,
+      BecayisAd,
+      $$BecayisAdsTableFilterComposer,
+      $$BecayisAdsTableOrderingComposer,
+      $$BecayisAdsTableAnnotationComposer,
+      $$BecayisAdsTableCreateCompanionBuilder,
+      $$BecayisAdsTableUpdateCompanionBuilder,
+      (BecayisAd, $$BecayisAdsTableReferences),
+      BecayisAd,
+      PrefetchHooks Function({bool ownerId})
+    >;
+typedef $$ConsultantsTableCreateCompanionBuilder =
+    ConsultantsCompanion Function({
+      required String id,
+      required String userId,
+      required ConsultantCategory category,
+      Value<double> hourlyRate,
+      Value<double> rating,
+      Value<bool> isOnline,
+      Value<String?> fullName,
+      Value<String?> avatarUrl,
+      Value<String?> bio,
+      Value<int> rowid,
+    });
+typedef $$ConsultantsTableUpdateCompanionBuilder =
+    ConsultantsCompanion Function({
+      Value<String> id,
+      Value<String> userId,
+      Value<ConsultantCategory> category,
+      Value<double> hourlyRate,
+      Value<double> rating,
+      Value<bool> isOnline,
+      Value<String?> fullName,
+      Value<String?> avatarUrl,
+      Value<String?> bio,
+      Value<int> rowid,
+    });
+
+final class $$ConsultantsTableReferences
+    extends BaseReferences<_$AppDatabase, $ConsultantsTable, Consultant> {
+  $$ConsultantsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $UsersTable _userIdTable(_$AppDatabase db) => db.users.createAlias(
+    $_aliasNameGenerator(db.consultants.userId, db.users.id),
+  );
+
+  $$UsersTableProcessedTableManager get userId {
+    final $_column = $_itemColumn<String>('user_id')!;
+
+    final manager = $$UsersTableTableManager(
+      $_db,
+      $_db.users,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_userIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$ConsultantsTableFilterComposer
+    extends Composer<_$AppDatabase, $ConsultantsTable> {
+  $$ConsultantsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<ConsultantCategory, ConsultantCategory, int>
+  get category => $composableBuilder(
+    column: $table.category,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnFilters<double> get hourlyRate => $composableBuilder(
+    column: $table.hourlyRate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get rating => $composableBuilder(
+    column: $table.rating,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isOnline => $composableBuilder(
+    column: $table.isOnline,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get fullName => $composableBuilder(
+    column: $table.fullName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get avatarUrl => $composableBuilder(
+    column: $table.avatarUrl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get bio => $composableBuilder(
+    column: $table.bio,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$UsersTableFilterComposer get userId {
+    final $$UsersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.userId,
+      referencedTable: $db.users,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UsersTableFilterComposer(
+            $db: $db,
+            $table: $db.users,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ConsultantsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ConsultantsTable> {
+  $$ConsultantsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get category => $composableBuilder(
+    column: $table.category,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get hourlyRate => $composableBuilder(
+    column: $table.hourlyRate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get rating => $composableBuilder(
+    column: $table.rating,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isOnline => $composableBuilder(
+    column: $table.isOnline,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get fullName => $composableBuilder(
+    column: $table.fullName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get avatarUrl => $composableBuilder(
+    column: $table.avatarUrl,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get bio => $composableBuilder(
+    column: $table.bio,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$UsersTableOrderingComposer get userId {
+    final $$UsersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.userId,
+      referencedTable: $db.users,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UsersTableOrderingComposer(
+            $db: $db,
+            $table: $db.users,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ConsultantsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ConsultantsTable> {
+  $$ConsultantsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<ConsultantCategory, int> get category =>
+      $composableBuilder(column: $table.category, builder: (column) => column);
+
+  GeneratedColumn<double> get hourlyRate => $composableBuilder(
+    column: $table.hourlyRate,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get rating =>
+      $composableBuilder(column: $table.rating, builder: (column) => column);
+
+  GeneratedColumn<bool> get isOnline =>
+      $composableBuilder(column: $table.isOnline, builder: (column) => column);
+
+  GeneratedColumn<String> get fullName =>
+      $composableBuilder(column: $table.fullName, builder: (column) => column);
+
+  GeneratedColumn<String> get avatarUrl =>
+      $composableBuilder(column: $table.avatarUrl, builder: (column) => column);
+
+  GeneratedColumn<String> get bio =>
+      $composableBuilder(column: $table.bio, builder: (column) => column);
+
+  $$UsersTableAnnotationComposer get userId {
+    final $$UsersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.userId,
+      referencedTable: $db.users,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UsersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.users,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ConsultantsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ConsultantsTable,
+          Consultant,
+          $$ConsultantsTableFilterComposer,
+          $$ConsultantsTableOrderingComposer,
+          $$ConsultantsTableAnnotationComposer,
+          $$ConsultantsTableCreateCompanionBuilder,
+          $$ConsultantsTableUpdateCompanionBuilder,
+          (Consultant, $$ConsultantsTableReferences),
+          Consultant,
+          PrefetchHooks Function({bool userId})
+        > {
+  $$ConsultantsTableTableManager(_$AppDatabase db, $ConsultantsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer:
+              () => $$ConsultantsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer:
+              () => $$ConsultantsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer:
+              () =>
+                  $$ConsultantsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> userId = const Value.absent(),
+                Value<ConsultantCategory> category = const Value.absent(),
+                Value<double> hourlyRate = const Value.absent(),
+                Value<double> rating = const Value.absent(),
+                Value<bool> isOnline = const Value.absent(),
+                Value<String?> fullName = const Value.absent(),
+                Value<String?> avatarUrl = const Value.absent(),
+                Value<String?> bio = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ConsultantsCompanion(
+                id: id,
+                userId: userId,
+                category: category,
+                hourlyRate: hourlyRate,
+                rating: rating,
+                isOnline: isOnline,
+                fullName: fullName,
+                avatarUrl: avatarUrl,
+                bio: bio,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String userId,
+                required ConsultantCategory category,
+                Value<double> hourlyRate = const Value.absent(),
+                Value<double> rating = const Value.absent(),
+                Value<bool> isOnline = const Value.absent(),
+                Value<String?> fullName = const Value.absent(),
+                Value<String?> avatarUrl = const Value.absent(),
+                Value<String?> bio = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ConsultantsCompanion.insert(
+                id: id,
+                userId: userId,
+                category: category,
+                hourlyRate: hourlyRate,
+                rating: rating,
+                isOnline: isOnline,
+                fullName: fullName,
+                avatarUrl: avatarUrl,
+                bio: bio,
+                rowid: rowid,
+              ),
+          withReferenceMapper:
+              (p0) =>
+                  p0
+                      .map(
+                        (e) => (
+                          e.readTable(table),
+                          $$ConsultantsTableReferences(db, table, e),
+                        ),
+                      )
+                      .toList(),
+          prefetchHooksCallback: ({userId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins: <
+                T extends TableManagerState<
+                  dynamic,
+                  dynamic,
+                  dynamic,
+                  dynamic,
+                  dynamic,
+                  dynamic,
+                  dynamic,
+                  dynamic,
+                  dynamic,
+                  dynamic,
+                  dynamic
+                >
+              >(state) {
+                if (userId) {
+                  state =
+                      state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.userId,
+                            referencedTable: $$ConsultantsTableReferences
+                                ._userIdTable(db),
+                            referencedColumn:
+                                $$ConsultantsTableReferences
+                                    ._userIdTable(db)
+                                    .id,
+                          )
+                          as T;
+                }
+
+                return state;
+              },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$ConsultantsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ConsultantsTable,
+      Consultant,
+      $$ConsultantsTableFilterComposer,
+      $$ConsultantsTableOrderingComposer,
+      $$ConsultantsTableAnnotationComposer,
+      $$ConsultantsTableCreateCompanionBuilder,
+      $$ConsultantsTableUpdateCompanionBuilder,
+      (Consultant, $$ConsultantsTableReferences),
+      Consultant,
+      PrefetchHooks Function({bool userId})
+    >;
+typedef $$ProductsTableCreateCompanionBuilder =
+    ProductsCompanion Function({
+      required String id,
+      required String name,
+      required double price,
+      Value<String?> imageUrl,
+      Value<int> stock,
+      Value<String?> description,
+      Value<DateTime> createdAt,
+      Value<int> rowid,
+    });
+typedef $$ProductsTableUpdateCompanionBuilder =
+    ProductsCompanion Function({
+      Value<String> id,
+      Value<String> name,
+      Value<double> price,
+      Value<String?> imageUrl,
+      Value<int> stock,
+      Value<String?> description,
+      Value<DateTime> createdAt,
+      Value<int> rowid,
+    });
+
+class $$ProductsTableFilterComposer
+    extends Composer<_$AppDatabase, $ProductsTable> {
+  $$ProductsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get price => $composableBuilder(
+    column: $table.price,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get imageUrl => $composableBuilder(
+    column: $table.imageUrl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get stock => $composableBuilder(
+    column: $table.stock,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ProductsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ProductsTable> {
+  $$ProductsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get price => $composableBuilder(
+    column: $table.price,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get imageUrl => $composableBuilder(
+    column: $table.imageUrl,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get stock => $composableBuilder(
+    column: $table.stock,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ProductsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ProductsTable> {
+  $$ProductsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<double> get price =>
+      $composableBuilder(column: $table.price, builder: (column) => column);
+
+  GeneratedColumn<String> get imageUrl =>
+      $composableBuilder(column: $table.imageUrl, builder: (column) => column);
+
+  GeneratedColumn<int> get stock =>
+      $composableBuilder(column: $table.stock, builder: (column) => column);
+
+  GeneratedColumn<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$ProductsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ProductsTable,
+          Product,
+          $$ProductsTableFilterComposer,
+          $$ProductsTableOrderingComposer,
+          $$ProductsTableAnnotationComposer,
+          $$ProductsTableCreateCompanionBuilder,
+          $$ProductsTableUpdateCompanionBuilder,
+          (Product, BaseReferences<_$AppDatabase, $ProductsTable, Product>),
+          Product,
+          PrefetchHooks Function()
+        > {
+  $$ProductsTableTableManager(_$AppDatabase db, $ProductsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer:
+              () => $$ProductsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer:
+              () => $$ProductsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer:
+              () => $$ProductsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<double> price = const Value.absent(),
+                Value<String?> imageUrl = const Value.absent(),
+                Value<int> stock = const Value.absent(),
+                Value<String?> description = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ProductsCompanion(
+                id: id,
+                name: name,
+                price: price,
+                imageUrl: imageUrl,
+                stock: stock,
+                description: description,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String name,
+                required double price,
+                Value<String?> imageUrl = const Value.absent(),
+                Value<int> stock = const Value.absent(),
+                Value<String?> description = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ProductsCompanion.insert(
+                id: id,
+                name: name,
+                price: price,
+                imageUrl: imageUrl,
+                stock: stock,
+                description: description,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper:
+              (p0) =>
+                  p0
+                      .map(
+                        (e) => (
+                          e.readTable(table),
+                          BaseReferences(db, table, e),
+                        ),
+                      )
+                      .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ProductsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ProductsTable,
+      Product,
+      $$ProductsTableFilterComposer,
+      $$ProductsTableOrderingComposer,
+      $$ProductsTableAnnotationComposer,
+      $$ProductsTableCreateCompanionBuilder,
+      $$ProductsTableUpdateCompanionBuilder,
+      (Product, BaseReferences<_$AppDatabase, $ProductsTable, Product>),
+      Product,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -1253,4 +4195,10 @@ class $AppDatabaseManager {
       $$UsersTableTableManager(_db, _db.users);
   $$SettingsTableTableManager get settings =>
       $$SettingsTableTableManager(_db, _db.settings);
+  $$BecayisAdsTableTableManager get becayisAds =>
+      $$BecayisAdsTableTableManager(_db, _db.becayisAds);
+  $$ConsultantsTableTableManager get consultants =>
+      $$ConsultantsTableTableManager(_db, _db.consultants);
+  $$ProductsTableTableManager get products =>
+      $$ProductsTableTableManager(_db, _db.products);
 }
