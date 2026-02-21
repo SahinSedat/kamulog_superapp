@@ -13,6 +13,8 @@ import 'package:kamulog_superapp/features/onboarding/presentation/screens/splash
 import 'package:kamulog_superapp/features/onboarding/presentation/screens/onboarding_screen.dart';
 import 'package:kamulog_superapp/features/onboarding/presentation/screens/onboarding_survey_screen.dart';
 import 'package:kamulog_superapp/features/notifications/presentation/screens/notifications_screen.dart';
+import 'package:kamulog_superapp/features/search/presentation/screens/search_screen.dart';
+import 'package:kamulog_superapp/features/permissions/presentation/screens/permissions_screen.dart';
 
 /// Bridges Riverpod state changes to GoRouter's refreshListenable
 class AuthChangeNotifier extends ChangeNotifier {
@@ -45,7 +47,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       final loc = state.matchedLocation;
 
       // Allow splash, onboarding, survey without auth
-      final openRoutes = ['/splash', '/onboarding', '/onboarding-survey'];
+      final openRoutes = [
+        '/splash',
+        '/onboarding',
+        '/onboarding-survey',
+        '/permissions',
+      ];
       if (openRoutes.contains(loc)) return null;
 
       final isAuthRoute = loc == '/login' || loc == '/otp';
@@ -117,6 +124,16 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/profile/edit',
         name: 'profile-edit',
         builder: (context, state) => const ProfilEditScreen(),
+      ),
+      GoRoute(
+        path: '/search',
+        name: 'search',
+        builder: (context, state) => const SearchScreen(),
+      ),
+      GoRoute(
+        path: '/permissions',
+        name: 'permissions',
+        builder: (context, state) => const PermissionsScreen(),
       ),
     ],
   );

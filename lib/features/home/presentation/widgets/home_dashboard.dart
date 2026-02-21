@@ -136,8 +136,64 @@ class _QuickAccessGrid extends StatelessWidget {
                 _actions.map((action) {
                   return ScaleOnTap(
                     onTap: () {
-                      if (action.label == 'Danışmanlık') {
-                        context.push('/consultation');
+                      switch (action.label) {
+                        case 'STK':
+                          // TODO: STK modülü eklenince aktifleşecek
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('STK modülü yakında aktif olacak'),
+                            ),
+                          );
+                          break;
+                        case 'Becayiş':
+                          // TODO: Becayiş modülü
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Becayiş modülü yakında aktif olacak',
+                              ),
+                            ),
+                          );
+                          break;
+                        case 'Kariyer':
+                          // TODO: Kariyer modülü
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Kariyer modülü yakında aktif olacak',
+                              ),
+                            ),
+                          );
+                          break;
+                        case 'Danışmanlık':
+                          context.push('/consultation');
+                          break;
+                        case 'Duyurular':
+                          context.push('/notifications');
+                          break;
+                        case 'Profilim':
+                          context.push('/profile');
+                          break;
+                        case 'Başvurular':
+                          // TODO: Başvurular modülü
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Başvurular modülü yakında aktif olacak',
+                              ),
+                            ),
+                          );
+                          break;
+                        case 'AI Asistan':
+                          // HomeScreen'daki tab'a geçiş
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Alt menüden AI Asistan sekmesine geçin',
+                              ),
+                            ),
+                          );
+                          break;
                       }
                     },
                     child: Column(
