@@ -5,6 +5,7 @@ import 'package:kamulog_superapp/core/theme/app_theme.dart';
 import 'package:kamulog_superapp/core/widgets/animated_widgets.dart';
 import 'package:kamulog_superapp/features/home/presentation/widgets/stories_and_banners.dart';
 import 'package:kamulog_superapp/features/stories/presentation/widgets/stories_section.dart';
+import 'package:kamulog_superapp/features/news/presentation/widgets/news_section.dart';
 
 class HomeDashboard extends ConsumerWidget {
   const HomeDashboard({super.key});
@@ -44,6 +45,13 @@ class HomeDashboard extends ConsumerWidget {
           ),
           const SizedBox(height: 20),
 
+          // ═══ SECTION 4.5: HABERLER
+          FadeSlideIn(
+            delay: const Duration(milliseconds: 250),
+            child: const NewsSection(),
+          ),
+          const SizedBox(height: 20),
+
           // ═══ SECTION 5: POPULAR CONTENT / AI RECOMMENDATIONS
           FadeSlideIn(
             delay: const Duration(milliseconds: 300),
@@ -79,7 +87,7 @@ class _QuickAccessGrid extends StatelessWidget {
     _QuickAction('Kariyer', Icons.work_rounded, Color(0xFF1565C0)),
     _QuickAction('Danışmanlık', Icons.support_agent_rounded, Color(0xFFE65100)),
     _QuickAction('Duyurular', Icons.campaign_rounded, Color(0xFFC62828)),
-    _QuickAction('Profilim', Icons.person_rounded, Color(0xFF00695C)),
+    _QuickAction('Haberler', Icons.newspaper_rounded, Color(0xFF00695C)),
     _QuickAction(
       'Başvurular',
       Icons.assignment_turned_in_rounded,
@@ -171,8 +179,8 @@ class _QuickAccessGrid extends StatelessWidget {
                         case 'Duyurular':
                           context.push('/notifications');
                           break;
-                        case 'Profilim':
-                          context.push('/profile');
+                        case 'Haberler':
+                          // Haberler bölümüne scroll
                           break;
                         case 'Başvurular':
                           // Başvurular modülü eklenince aktifleşecek

@@ -216,7 +216,16 @@ class _BannerCarouselState extends State<BannerCarousel> {
                   color: Colors.transparent,
                   child: InkWell(
                     borderRadius: BorderRadius.circular(AppTheme.radiusLg),
-                    onTap: () {},
+                    onTap: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            '${banner.title} — detay sayfası yakında aktif olacak',
+                          ),
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+                    },
                     child: Stack(
                       children: [
                         // Background pattern
