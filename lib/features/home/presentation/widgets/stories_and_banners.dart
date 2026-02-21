@@ -142,7 +142,7 @@ class _BannerCarouselState extends State<BannerCarousel> {
       bgPattern: _BannerPattern.chart,
     ),
     _BannerData(
-      title: 'Ücretsiz Danışmanlık',
+      title: 'Online Danışmanlık',
       subtitle: 'Hukuki, kariyer ve psikolojik destek hizmetleri',
       icon: Icons.support_agent_rounded,
       gradient: [Color(0xFFE65100), Color(0xFFBF360C)],

@@ -549,9 +549,9 @@ class _CvAnalysisCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(8),
             ),
             child: const Text(
-              'Ücretsiz',
+              'Premium',
               style: TextStyle(
-                color: Color(0xFF2E7D32),
+                color: Color(0xFF1565C0),
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
               ),

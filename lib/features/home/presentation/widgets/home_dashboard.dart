@@ -273,7 +273,7 @@ class _AnnouncementStrip extends StatelessWidget {
       Color(0xFF2E7D32),
       Color(0xFF1B5E20),
     ]),
-    _AnnData('⚖️ Ücretsiz hukuk danışmanlığı için randevu alın', [
+    _AnnData('⚖️ Hukuk danışmanlığı hizmeti için randevu alın', [
       Color(0xFFE65100),
       Color(0xFFBF360C),
     ]),
@@ -398,8 +398,8 @@ class _PopularContentSection extends StatelessWidget {
       stats: '45 eşleşme',
     ),
     _PopularItem(
-      title: 'Ücretsiz Hukuk Danışmanlık',
-      subtitle: 'Av. Mehmet Yılmaz · Online',
+      title: 'Hukuk Danışmanlığı',
+      subtitle: 'Av. Mehmet Yılmaz · ₺250/seans',
       badge: 'Yeni',
       badgeColor: Color(0xFF1565C0),
       icon: Icons.gavel_rounded,

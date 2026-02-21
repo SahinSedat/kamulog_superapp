@@ -34,8 +34,8 @@ class ProfilScreen extends ConsumerWidget {
             _SectionHeader(title: 'Üyelik & Abonelik'),
             _MembershipCard(isDark: isDark),
 
-            // ── Kişisel Bilgiler
-            _SectionHeader(title: 'Kişisel Bilgiler'),
+            // ── Bilgilerim (Kişisel + Çalışma birleştirildi)
+            _SectionHeader(title: 'Bilgilerim'),
             _InfoMenuGroup(
               items: [
                 _MenuItem(
@@ -64,14 +64,6 @@ class ProfilScreen extends ConsumerWidget {
                   onTap: () => context.push('/profile/edit'),
                   showWarning: true,
                 ),
-              ],
-              isDark: isDark,
-            ),
-
-            // ── Çalışma Bilgileri
-            _SectionHeader(title: 'Çalışma Bilgileri'),
-            _InfoMenuGroup(
-              items: [
                 _MenuItem(
                   icon: Icons.account_balance_outlined,
                   title: 'Çalışma Durumu',
@@ -440,7 +432,7 @@ class _MembershipCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Ücretsiz Plan',
+                  'Temel Plan',
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w800,
