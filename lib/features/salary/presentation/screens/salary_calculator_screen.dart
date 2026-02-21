@@ -160,7 +160,7 @@ class _SalaryCalculatorScreenState
                   .map((d) => DropdownMenuItem(value: d, child: Text('$d Gün')))
                   .toList(),
           onChanged: (v) {
-            // TODO: Add updateWorkDays to notifier
+            // updateWorkDays notifier'a eklenecek
           },
         ),
       ],

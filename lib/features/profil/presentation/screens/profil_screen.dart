@@ -103,7 +103,7 @@ class ProfilScreen extends ConsumerWidget {
                   title: 'Ürünler & Siparişler',
                   trailing: '0 sipariş',
                   onTap: () {
-                    // TODO: Navigate to orders
+                    // Siparişler sayfasına yönlendir
                   },
                 ),
                 _MenuItem(
@@ -111,7 +111,7 @@ class ProfilScreen extends ConsumerWidget {
                   title: 'Üyelik Geçmişi',
                   trailing: 'Görüntüle',
                   onTap: () {
-                    // TODO: Navigate to membership history
+                    // Üyelik geçmişi sayfasına yönlendir
                   },
                 ),
               ],

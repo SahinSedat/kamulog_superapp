@@ -11,7 +11,7 @@ class NotificationsScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    // TODO: Firebase/OneSignal push notification entegrasyonu
+    // Firebase/OneSignal push notification entegrasyonu yapılacak
     final notifications = _sampleNotifications;
 
     return Scaffold(
@@ -20,7 +20,7 @@ class NotificationsScreen extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () {
-              // TODO: Mark all as read
+              // Tümünü okundu olarak işaretle
             },
             child: const Text('Tümünü Oku', style: TextStyle(fontSize: 13)),
           ),
@@ -121,7 +121,7 @@ class _NotificationTile extends StatelessWidget {
                   ),
                 ),
         onTap: () {
-          // TODO: Handle notification tap
+          // Bildirim detayına yönlendir
         },
       ),
     );

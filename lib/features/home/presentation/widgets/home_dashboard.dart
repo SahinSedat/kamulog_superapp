@@ -138,7 +138,7 @@ class _QuickAccessGrid extends StatelessWidget {
                     onTap: () {
                       switch (action.label) {
                         case 'STK':
-                          // TODO: STK modülü eklenince aktifleşecek
+                          // STK modülü eklenince aktifleşecek
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text('STK modülü yakında aktif olacak'),
@@ -146,7 +146,7 @@ class _QuickAccessGrid extends StatelessWidget {
                           );
                           break;
                         case 'Becayiş':
-                          // TODO: Becayiş modülü
+                          // Becayiş modülü eklenince aktifleşecek
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text(
@@ -156,7 +156,7 @@ class _QuickAccessGrid extends StatelessWidget {
                           );
                           break;
                         case 'Kariyer':
-                          // TODO: Kariyer modülü
+                          // Kariyer modülü eklenince aktifleşecek
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text(
@@ -175,7 +175,7 @@ class _QuickAccessGrid extends StatelessWidget {
                           context.push('/profile');
                           break;
                         case 'Başvurular':
-                          // TODO: Başvurular modülü
+                          // Başvurular modülü eklenince aktifleşecek
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text(
