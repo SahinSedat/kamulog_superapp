@@ -102,25 +102,13 @@ class ProfilScreen extends ConsumerWidget {
                   icon: Icons.shopping_bag_outlined,
                   title: 'Ürünler & Siparişler',
                   trailing: '0 sipariş',
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Sipariş geçmişi yakında aktif olacak'),
-                      ),
-                    );
-                  },
+                  onTap: () => context.push('/orders'),
                 ),
                 _MenuItem(
                   icon: Icons.card_membership_outlined,
                   title: 'Üyelik Geçmişi',
                   trailing: 'Görüntüle',
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Üyelik geçmişi yakında aktif olacak'),
-                      ),
-                    );
-                  },
+                  onTap: () => context.push('/orders'),
                 ),
               ],
               isDark: isDark,
