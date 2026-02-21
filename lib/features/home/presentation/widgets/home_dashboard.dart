@@ -164,14 +164,7 @@ class _QuickAccessGrid extends StatelessWidget {
                           );
                           break;
                         case 'Kariyer':
-                          // Kariyer modülü eklenince aktifleşecek
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Kariyer modülü yakında aktif olacak',
-                              ),
-                            ),
-                          );
+                          context.push('/career');
                           break;
                         case 'Danışmanlık':
                           context.push('/consultation');

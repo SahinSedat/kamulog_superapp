@@ -66,6 +66,7 @@ class AuthState {
   final String? error;
   final String? phone;
   final String? verificationId;
+  final String? displayName;
 
   const AuthState({
     this.status = AuthStatus.initial,
@@ -73,6 +74,7 @@ class AuthState {
     this.error,
     this.phone,
     this.verificationId,
+    this.displayName,
   });
 
   AuthState copyWith({
@@ -81,6 +83,7 @@ class AuthState {
     String? error,
     String? phone,
     String? verificationId,
+    String? displayName,
   }) {
     return AuthState(
       status: status ?? this.status,
@@ -88,6 +91,7 @@ class AuthState {
       error: error,
       phone: phone ?? this.phone,
       verificationId: verificationId ?? this.verificationId,
+      displayName: displayName ?? this.displayName,
     );
   }
 }
@@ -121,10 +125,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
     );
   }
 
-  Future<void> sendOtp(String phone) async {
+  Future<void> sendOtp(String phone, {String? displayName}) async {
     state = state.copyWith(
       status: AuthStatus.loading,
       phone: phone,
+      displayName: displayName,
       error: null,
     );
 

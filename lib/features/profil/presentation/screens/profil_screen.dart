@@ -94,6 +94,46 @@ class ProfilScreen extends ConsumerWidget {
               isDark: isDark,
             ),
 
+            // ── Belgelerim
+            _SectionHeader(title: 'Belgelerim'),
+            _InfoMenuGroup(
+              items: [
+                _MenuItem(
+                  icon: Icons.folder_rounded,
+                  title: 'Tüm Belgelerim',
+                  trailing: 'CV, STK, Kimlik',
+                  onTap: () => context.push('/documents'),
+                ),
+                _MenuItem(
+                  icon: Icons.description_rounded,
+                  title: 'CV Belgelerim',
+                  trailing: 'Kariyer modülünde kullan',
+                  onTap: () => context.push('/documents'),
+                ),
+              ],
+              isDark: isDark,
+            ),
+
+            // ── Kariyer
+            _SectionHeader(title: 'Kariyer'),
+            _InfoMenuGroup(
+              items: [
+                _MenuItem(
+                  icon: Icons.auto_awesome_rounded,
+                  title: 'AI CV Oluşturucu',
+                  trailing: 'Yapay zeka ile',
+                  onTap: () => context.push('/career'),
+                ),
+                _MenuItem(
+                  icon: Icons.analytics_rounded,
+                  title: 'İş Analizi',
+                  trailing: 'CV eşleştirme',
+                  onTap: () => context.push('/career'),
+                ),
+              ],
+              isDark: isDark,
+            ),
+
             // ── Satın Alımlar
             _SectionHeader(title: 'Satın Alımlarım'),
             _InfoMenuGroup(

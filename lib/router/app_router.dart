@@ -16,6 +16,8 @@ import 'package:kamulog_superapp/features/notifications/presentation/screens/not
 import 'package:kamulog_superapp/features/search/presentation/screens/search_screen.dart';
 import 'package:kamulog_superapp/features/permissions/presentation/screens/permissions_screen.dart';
 import 'package:kamulog_superapp/features/orders/presentation/screens/orders_screen.dart';
+import 'package:kamulog_superapp/features/documents/presentation/screens/documents_screen.dart';
+import 'package:kamulog_superapp/features/kariyer/presentation/screens/career_screen.dart';
 
 /// Bridges Riverpod state changes to GoRouter's refreshListenable
 class AuthChangeNotifier extends ChangeNotifier {
@@ -140,6 +142,16 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/orders',
         name: 'orders',
         builder: (context, state) => const OrdersScreen(),
+      ),
+      GoRoute(
+        path: '/documents',
+        name: 'documents',
+        builder: (context, state) => const DocumentsScreen(),
+      ),
+      GoRoute(
+        path: '/career',
+        name: 'career',
+        builder: (context, state) => const CareerScreen(),
       ),
     ],
   );
