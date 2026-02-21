@@ -139,9 +139,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                       _HeaderIcon(
                         icon: Icons.notifications_outlined,
                         badgeCount: 3,
-                        onTap: () {
-                          // TODO: Navigate to notifications
-                        },
+                        onTap: () => context.push('/notifications'),
                       ),
                       const SizedBox(width: 8),
                       // Profile
@@ -346,9 +344,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 color: theme.textTheme.bodyLarge?.color?.withValues(alpha: 0.6),
               ),
             ),
-            onPressed: () {
-              // TODO: Navigate to notifications
-            },
+            onPressed: () => context.push('/notifications'),
           ),
           Padding(
             padding: const EdgeInsets.only(right: 8),

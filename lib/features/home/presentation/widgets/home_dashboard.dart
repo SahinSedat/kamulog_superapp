@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:kamulog_superapp/core/theme/app_theme.dart';
 import 'package:kamulog_superapp/core/widgets/animated_widgets.dart';
 import 'package:kamulog_superapp/features/home/presentation/widgets/stories_and_banners.dart';
+import 'package:kamulog_superapp/features/stories/presentation/widgets/stories_section.dart';
 
 class HomeDashboard extends ConsumerWidget {
   const HomeDashboard({super.key});
@@ -20,6 +21,10 @@ class HomeDashboard extends ConsumerWidget {
         padding: EdgeInsets.zero,
         children: [
           const SizedBox(height: 12),
+
+          // ═══ SECTION 1: STORIES
+          const StoriesSection(),
+          const SizedBox(height: 16),
 
           // ═══ SECTION 2: BANNER CAROUSEL (Promotion Slider)
           const FadeSlideIn(child: BannerCarousel()),
