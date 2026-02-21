@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kamulog_superapp/core/theme/app_theme.dart';
 import 'package:kamulog_superapp/features/auth/presentation/providers/auth_provider.dart';
+import 'package:kamulog_superapp/features/profil/presentation/providers/profil_provider.dart';
 
 /// Gelişmiş Profil Ekranı — kullanıcı bilgileri, üyelik, satın alımlar, çıkış
 class ProfilScreen extends ConsumerWidget {
@@ -13,6 +14,7 @@ class ProfilScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final user = ref.watch(currentUserProvider);
+    final profil = ref.watch(profilProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Profilim'), centerTitle: true),
@@ -53,33 +55,33 @@ class ProfilScreen extends ConsumerWidget {
                 _MenuItem(
                   icon: Icons.badge_outlined,
                   title: 'TC Kimlik No',
-                  trailing: 'Girilmedi',
+                  trailing: profil.tcKimlik ?? 'Girilmedi',
                   onTap: () => context.push('/profile/edit'),
-                  showWarning: true,
+                  showWarning: profil.tcKimlik == null,
                 ),
                 _MenuItem(
                   icon: Icons.location_on_outlined,
                   title: 'Adres Bilgileri',
-                  trailing: 'Girilmedi',
+                  trailing: profil.addressText,
                   onTap: () => context.push('/profile/edit'),
-                  showWarning: true,
+                  showWarning: profil.city == null,
                 ),
                 _MenuItem(
                   icon: Icons.account_balance_outlined,
                   title: 'Çalışma Durumu',
-                  trailing: _employmentTypeText(user?.employmentType),
+                  trailing: profil.employmentText,
                   onTap: () => context.push('/profile/edit'),
                 ),
                 _MenuItem(
                   icon: Icons.business_outlined,
                   title: 'Kurum',
-                  trailing: 'Belirtilmedi',
+                  trailing: profil.institution ?? 'Belirtilmedi',
                   onTap: () => context.push('/profile/edit'),
                 ),
                 _MenuItem(
                   icon: Icons.work_outline,
                   title: 'Unvan',
-                  trailing: user?.title ?? 'Belirtilmedi',
+                  trailing: profil.title ?? 'Belirtilmedi',
                   onTap: () => context.push('/profile/edit'),
                 ),
               ],
@@ -231,15 +233,6 @@ class ProfilScreen extends ConsumerWidget {
   bool _isProfileIncomplete(dynamic user) {
     if (user == null) return true;
     return user.name == null || user.name!.isEmpty;
-  }
-
-  String _employmentTypeText(dynamic type) {
-    if (type == null) return 'Belirtilmedi';
-    return type.toString().split('.').last == 'memur'
-        ? 'Devlet Memuru'
-        : type.toString().split('.').last == 'isci'
-        ? 'Kamu İşçisi'
-        : 'Sözleşmeli';
   }
 
   void _showLogoutDialog(BuildContext context, WidgetRef ref) {
