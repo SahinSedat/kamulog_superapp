@@ -168,7 +168,7 @@ class _ProfilEditScreenState extends ConsumerState<ProfilEditScreen> {
 
               // İl seçimi
               DropdownButtonFormField<String>(
-                value: _selectedCity,
+                initialValue: _selectedCity,
                 isExpanded: true,
                 decoration: const InputDecoration(
                   labelText: 'İl',
@@ -198,7 +198,7 @@ class _ProfilEditScreenState extends ConsumerState<ProfilEditScreen> {
 
               // İlçe seçimi
               DropdownButtonFormField<String>(
-                value: _selectedDistrict,
+                initialValue: _selectedDistrict,
                 isExpanded: true,
                 decoration: const InputDecoration(
                   labelText: 'İlçe',
