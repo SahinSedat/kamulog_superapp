@@ -103,7 +103,11 @@ class ProfilScreen extends ConsumerWidget {
                   title: 'Ürünler & Siparişler',
                   trailing: '0 sipariş',
                   onTap: () {
-                    // Siparişler sayfasına yönlendir
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Sipariş geçmişi yakında aktif olacak'),
+                      ),
+                    );
                   },
                 ),
                 _MenuItem(
@@ -111,7 +115,11 @@ class ProfilScreen extends ConsumerWidget {
                   title: 'Üyelik Geçmişi',
                   trailing: 'Görüntüle',
                   onTap: () {
-                    // Üyelik geçmişi sayfasına yönlendir
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Üyelik geçmişi yakında aktif olacak'),
+                      ),
+                    );
                   },
                 ),
               ],
@@ -125,23 +133,37 @@ class ProfilScreen extends ConsumerWidget {
                 _MenuItem(
                   icon: Icons.notifications_outlined,
                   title: 'Bildirim Ayarları',
-                  onTap: () {},
+                  onTap: () => context.push('/notifications'),
                 ),
                 _MenuItem(
                   icon: Icons.lock_outline,
                   title: 'Gizlilik & Güvenlik',
-                  onTap: () {},
+                  onTap: () => context.push('/permissions'),
                 ),
                 _MenuItem(
                   icon: Icons.help_outline,
                   title: 'Yardım & Destek',
-                  onTap: () {},
+                  onTap: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Yardım merkezi yakında aktif olacak'),
+                      ),
+                    );
+                  },
                 ),
                 _MenuItem(
                   icon: Icons.info_outline,
                   title: 'Hakkında',
                   trailing: 'v1.0.0',
-                  onTap: () {},
+                  onTap: () {
+                    showAboutDialog(
+                      context: context,
+                      applicationName: 'Kamulog',
+                      applicationVersion: 'v1.0.0',
+                      applicationLegalese:
+                          '© 2026 Kamulog. Tüm hakları saklıdır.',
+                    );
+                  },
                 ),
               ],
               isDark: isDark,
