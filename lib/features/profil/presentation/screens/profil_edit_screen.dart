@@ -7,6 +7,7 @@ import 'package:kamulog_superapp/core/utils/tc_kimlik_validator.dart';
 import 'package:kamulog_superapp/core/data/turkey_locations.dart';
 import 'package:kamulog_superapp/core/data/public_institutions.dart';
 import 'package:kamulog_superapp/features/auth/presentation/providers/auth_provider.dart';
+import 'package:kamulog_superapp/features/profil/presentation/providers/profil_provider.dart';
 
 /// Profil düzenleme ekranı — TC doğrulama, il/ilçe dropdown, kurum arama
 class ProfilEditScreen extends ConsumerStatefulWidget {
@@ -29,10 +30,16 @@ class _ProfilEditScreenState extends ConsumerState<ProfilEditScreen> {
   void initState() {
     super.initState();
     final user = ref.read(currentUserProvider);
+    final profil = ref.read(profilProvider);
     if (user != null) {
-      _selectedType = user.employmentType;
-      _titleController.text = user.title ?? '';
+      _selectedType = profil.employmentType ?? user.employmentType;
+      _titleController.text = profil.title ?? user.title ?? '';
     }
+    // Mevcut profil verilerini yükle
+    _tcController.text = profil.tcKimlik ?? '';
+    _selectedCity = profil.city;
+    _selectedDistrict = profil.district;
+    _selectedInstitution = profil.institution;
   }
 
   @override
@@ -56,6 +63,18 @@ class _ProfilEditScreenState extends ConsumerState<ProfilEditScreen> {
     await ref.read(authProvider.notifier).updateUser(updatedUser);
 
     if (mounted) {
+      // ProfilProvider'ı güncelle — profil ekranına anında yansır
+      ref
+          .read(profilProvider.notifier)
+          .updatePersonalInfo(
+            tcKimlik: _tcController.text.trim(),
+            city: _selectedCity,
+            district: _selectedDistrict,
+            employmentType: _selectedType,
+            institution: _selectedInstitution,
+            title: _titleController.text.trim(),
+          );
+
       final state = ref.read(authProvider);
       if (state.status == AuthStatus.error) {
         ScaffoldMessenger.of(
