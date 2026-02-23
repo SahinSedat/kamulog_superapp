@@ -241,16 +241,22 @@ class ProfilNotifier extends StateNotifier<ProfilState> {
   /// Login'den gelen bilgilerle profili başlat
   void loadFromAuth(dynamic user) {
     if (user != null) {
+      // Lokal olarak kayıtlı kredi varsa onu koru, yoksa backend'den al
+      final localCredits = LocalStorageService.loadCredits();
+      final effectiveCredits = localCredits > 0 ? localCredits : user.credits;
+
       state = state.copyWith(
         name: user.name,
         phone: user.phone,
-        // Eğer yerelde yoksa auth'dan gelenleri de alabiliriz
         employmentType: state.employmentType ?? user.employmentType,
         title: state.title ?? user.title,
-        credits: user.credits,
+        credits: effectiveCredits,
       );
-      // Kullanıcı veritabanından / backend'den gelen güncel kredi
-      LocalStorageService.saveCredits(user.credits);
+
+      // Sadece ilk seferde (lokal kayıt yoksa) backend değerini kaydet
+      if (localCredits <= 0) {
+        LocalStorageService.saveCredits(user.credits);
+      }
     }
   }
 

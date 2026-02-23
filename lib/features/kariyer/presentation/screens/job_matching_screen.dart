@@ -8,7 +8,7 @@ import 'package:kamulog_superapp/features/kariyer/presentation/providers/jobs_pr
 import 'package:kamulog_superapp/features/profil/presentation/providers/profil_provider.dart';
 
 class JobMatchingScreen extends ConsumerWidget {
-  const JobMatchingScreen({Key? key}) : super(key: key);
+  const JobMatchingScreen({super.key});
 
   Color _scoreColor(int score) {
     if (score >= 70) return const Color(0xFF2E7D32);
@@ -62,7 +62,7 @@ class JobMatchingScreen extends ConsumerWidget {
         })
         .join('\n');
 
-    // AI'ya mevcut ilanlarla karşılaştırma prompt'u
+    // AI'ya prompt: sadece puan ve kategori, yorum yok
     final matchingPrompt = '''
 SEN BİR KARİYER DANIŞMANISIN. Aşağıdaki CV ile SİSTEMDEKİ mevcut iş ilanlarını karşılaştır.
 
@@ -73,14 +73,12 @@ SİSTEMDEKİ MEVCUT İLANLAR:
 $jobsSummary
 
 GÖREVİN:
-Her ilan için aşağıdaki formatta kısa analiz yap:
+Her ilan için SADECE aşağıdaki formatta tek satır yaz. Yorum veya açıklama EKLEME:
 
-📊 İLAN#[kod]: "[başlık]"
-Uyumluluk: %[skor] | [UYGUN/ALTERNATİF]
-Yorum: [1 cümle kısa açıklama]
+İLAN#[kod] %[skor] [UYGUN veya ALTERNATİF]
 
-Sonunda 1 paragraf genel kariyer değerlendirmesi yaz.
-Kısa ve öz ol. Türkçe yanıtla.
+En uygun 5 ilana UYGUN, geri kalan 2'sine ALTERNATİF etiketini ver.
+Skor 0-100 arası olmalı. Başka hiçbir şey yazma.
 ''';
 
     ref.read(jobMatchingProvider.notifier).startJobMatching(matchingPrompt);
@@ -177,15 +175,15 @@ Kısa ve öz ol. Türkçe yanıtla.
           ),
           _AnalysisInfoRow(
             icon: Icons.bar_chart_rounded,
-            title: 'Uyumluluk Oranları',
+            title: '5 Uygun + 2 Alternatif',
             subtitle:
-                'Her ilanın gereksinimleri yeteneklerinizle eşleştirilecek',
+                'En uygun 5 ilan ve 2 alternatif ilan grafikleriyle gösterilecek',
             isDark: isDark,
           ),
           _AnalysisInfoRow(
             icon: Icons.touch_app_rounded,
             title: 'Detay ve Başvuru',
-            subtitle: 'Size en uygun olan ilanlara hızlıca göz atabileceksiniz',
+            subtitle: 'Her ilanı inceleyip detaylı analiz yapabileceksiniz',
             isDark: isDark,
           ),
           const SizedBox(height: 48),
@@ -195,9 +193,9 @@ Kısa ve öz ol. Türkçe yanıtla.
             child: ElevatedButton.icon(
               onPressed: () => _startMatching(context, ref, jobs),
               icon: const Icon(Icons.play_arrow_rounded, color: Colors.white),
-              label: Text(
+              label: const Text(
                 'Eşleştirmeyi Başlat (2 Jeton)',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
                   color: Colors.white,
@@ -265,8 +263,13 @@ Kısa ve öz ol. Türkçe yanıtla.
                     final score = ref
                         .read(jobMatchingProvider.notifier)
                         .parseScoreForJob(job.id);
-                    if (score == null && state.isLoading)
+                    final type = ref
+                        .read(jobMatchingProvider.notifier)
+                        .parseTypeForJob(job.id);
+
+                    if (score == null && state.isLoading) {
                       return const SizedBox.shrink();
+                    }
 
                     return Container(
                       margin: const EdgeInsets.only(bottom: 16),
@@ -301,18 +304,62 @@ Kısa ve öz ol. Türkçe yanıtla.
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
-                                      job.title,
-                                      style: TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w700,
-                                        color:
-                                            isDark
-                                                ? Colors.white
-                                                : Colors.black87,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
+                                    Row(
+                                      children: [
+                                        if (type != null) ...[
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                              vertical: 3,
+                                            ),
+                                            margin: const EdgeInsets.only(
+                                              right: 8,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color:
+                                                  type == 'UYGUN'
+                                                      ? const Color(
+                                                        0xFF2E7D32,
+                                                      ).withValues(alpha: 0.1)
+                                                      : const Color(
+                                                        0xFFF57C00,
+                                                      ).withValues(alpha: 0.1),
+                                              borderRadius:
+                                                  BorderRadius.circular(6),
+                                            ),
+                                            child: Text(
+                                              type,
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.w700,
+                                                color:
+                                                    type == 'UYGUN'
+                                                        ? const Color(
+                                                          0xFF2E7D32,
+                                                        )
+                                                        : const Color(
+                                                          0xFFF57C00,
+                                                        ),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                        Expanded(
+                                          child: Text(
+                                            job.title,
+                                            style: TextStyle(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w700,
+                                              color:
+                                                  isDark
+                                                      ? Colors.white
+                                                      : Colors.black87,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
@@ -400,54 +447,7 @@ Kısa ve öz ol. Türkçe yanıtla.
                         ],
                       ),
                     );
-                  }).toList(),
-
-                  // Yorum Kutusu
-                  if (!state.isLoading && state.aiContent.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF57C00).withValues(alpha: 0.05),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: const Color(0xFFF57C00).withValues(alpha: 0.2),
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Row(
-                            children: [
-                              Icon(
-                                Icons.auto_awesome_rounded,
-                                size: 20,
-                                color: Color(0xFFF57C00),
-                              ),
-                              SizedBox(width: 8),
-                              Text(
-                                'AI Değerlendirmesi',
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w800,
-                                  color: Color(0xFFF57C00),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          SelectableText(
-                            state.aiContent,
-                            style: TextStyle(
-                              fontSize: 14,
-                              height: 1.6,
-                              color: isDark ? Colors.white70 : Colors.black87,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                  }),
 
                   if (state.isLoading) ...[
                     const SizedBox(height: 24),

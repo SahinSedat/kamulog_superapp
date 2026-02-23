@@ -89,7 +89,7 @@ class CareerScreen extends ConsumerWidget {
               title: 'AI ile CV Oluştur',
               subtitle:
                   profil.remainingAiCvCount > 0
-                      ? 'Aylık 1 kullanımdan ${profil.remainingAiCvCount} hak kaldı'
+                      ? 'Aylık 1 hak — ${profil.remainingAiCvCount} kullanım kaldı'
                       : 'Bu ayki kullanım hakkınız doldu',
               color: const Color(0xFF1565C0),
               onTap: () => _showAiCvBuilder(context, ref),
@@ -269,7 +269,7 @@ class _AiCvBanner extends StatelessWidget {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        'AYLIK HAK: $remaining/2',
+                        'AYLIK HAK: $remaining/1',
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 10,

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -5,6 +6,9 @@ import 'package:kamulog_superapp/core/theme/app_theme.dart';
 import 'package:kamulog_superapp/features/kariyer/data/models/job_listing_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kamulog_superapp/features/profil/presentation/providers/profil_provider.dart';
+
+import 'package:kamulog_superapp/features/ai/presentation/providers/ai_provider.dart';
+import 'package:uuid/uuid.dart';
 
 class JobDetailScreen extends ConsumerWidget {
   final JobListingModel job;
@@ -59,41 +63,29 @@ class JobDetailScreen extends ConsumerWidget {
     // Jetonu düş
     await ref.read(profilProvider.notifier).decreaseCredits(2);
 
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Tekli ilan analizi özelliği güncelleniyor.'),
-          backgroundColor: Colors.orange,
-        ),
-      );
+    // CV içeriğini hazırla
+    final cvDoc = profil.documents.cast<DocumentInfo?>().firstWhere(
+      (doc) => doc != null && doc.category.toLowerCase() == 'cv',
+      orElse: () => null,
+    );
+
+    String cvContent;
+    if (cvDoc != null && cvDoc.content != null && cvDoc.content!.isNotEmpty) {
+      cvContent = cvDoc.content!;
+    } else {
+      cvContent =
+          'Ad: ${profil.name ?? "Belirtilmedi"}, Kurum: ${profil.institution}, Unvan: ${profil.title ?? "Belirtilmedi"}, Beceriler: ${profil.surveyInterests.join(", ")}';
     }
 
-    // Yeni analiz akışını başlat (sayfadan ayrılmadan)
-    // ref
-    //     .read(aiChatProvider.notifier)
-    //     .startJobAnalysis(
-    //       jobId: job.id,
-    //       jobCode: job.code,
-    //       jobTitle: job.title,
-    //       jobCompany: job.company,
-    //       jobDescription: job.description,
-    //       jobRequirements: job.requirements,
-    //       cvContent: cvContent,
-    //     );
+    if (!context.mounted) return;
 
-    // Modal bottom sheet ile sonucu göster
-    // if (context.mounted) {
-    //   _showAnalysisModal(context, ref);
-    // }
-
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Tekli ilan analizi özelliği güncelleniyor.'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-    }
+    // Analiz sonucunu bottom sheet ile göster
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _AnalysisBottomSheet(job: job, cvContent: cvContent),
+    );
   }
 
   @override
@@ -465,6 +457,234 @@ class JobDetailScreen extends ConsumerWidget {
           style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
         ),
       ],
+    );
+  }
+}
+
+/// Tekli ilan AI analizi bottom sheet
+class _AnalysisBottomSheet extends ConsumerStatefulWidget {
+  final JobListingModel job;
+  final String cvContent;
+
+  const _AnalysisBottomSheet({required this.job, required this.cvContent});
+
+  @override
+  ConsumerState<_AnalysisBottomSheet> createState() =>
+      _AnalysisBottomSheetState();
+}
+
+class _AnalysisBottomSheetState extends ConsumerState<_AnalysisBottomSheet> {
+  String _analysisResult = '';
+  bool _isLoading = true;
+  StreamSubscription? _sub;
+
+  @override
+  void initState() {
+    super.initState();
+    _startAnalysis();
+  }
+
+  @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
+  }
+
+  void _startAnalysis() {
+    final repository = ref.read(aiRepositoryProvider);
+    final conversationId = const Uuid().v4();
+
+    final prompt = '''
+SEN BİR İK UZMANSIN. Aşağıdaki iş ilanını kullanıcının CV'si ile karşılaştır.
+
+İLAN BİLGİLERİ:
+Başlık: ${widget.job.title}
+Şirket: ${widget.job.company}
+Tanım: ${widget.job.description}
+Gereksinimler: ${widget.job.requirements ?? 'Belirtilmedi'}
+
+KULLANICININ CV'Sİ:
+${widget.cvContent}
+
+GÖREVİN:
+1. Uyumluluk puanı ver (0-100 arası, %XX formatında)
+2. 3 madde güçlü yönler
+3. 3 madde geliştirilmesi gereken yönler
+Kısa ve öz yaz. Türkçe yanıtla.
+''';
+
+    _sub = repository
+        .sendMessage(
+          conversationId: conversationId,
+          message: 'Bu ilan için CV analizi yap.',
+          context: prompt,
+          history: [],
+        )
+        .listen(
+          (chunk) {
+            if (mounted) {
+              setState(() {
+                _analysisResult += chunk;
+              });
+            }
+          },
+          onDone: () {
+            if (mounted) {
+              setState(() {
+                _isLoading = false;
+              });
+            }
+          },
+          onError: (error) {
+            if (mounted) {
+              setState(() {
+                _isLoading = false;
+                _analysisResult += '\n\n[Hata oluştu: Sunucu yanıt veremiyor]';
+              });
+            }
+          },
+        );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.75,
+      ),
+      decoration: BoxDecoration(
+        color: isDark ? AppTheme.cardDark : Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Handle
+          Container(
+            width: 40,
+            height: 4,
+            margin: const EdgeInsets.only(top: 12),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade300,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          // Header
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.analytics_rounded,
+                    color: AppTheme.primaryColor,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'AI İlan Analizi',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      Text(
+                        widget.job.title,
+                        style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          // Content
+          Flexible(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (_analysisResult.isNotEmpty)
+                    SelectableText(
+                      _analysisResult,
+                      style: TextStyle(
+                        fontSize: 14,
+                        height: 1.6,
+                        color: isDark ? Colors.white70 : Colors.black87,
+                      ),
+                    ),
+                  if (_isLoading) ...[
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppTheme.primaryColor,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          'Analiz ediliyor...',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey[500],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          // Close button
+          Container(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+            child: SafeArea(
+              child: SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  child: const Text(
+                    'Kapat',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

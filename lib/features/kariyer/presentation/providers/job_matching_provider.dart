@@ -70,7 +70,7 @@ class JobMatchingNotifier extends Notifier<JobMatchingState> {
           )
           .listen(
             (chunk) {
-              state = state.copyWith(aiContent: state.aiContent + chunk);
+              state = state.copyWith(aiContent: '${state.aiContent}$chunk');
             },
             onDone: () {
               state = state.copyWith(isLoading: false);
@@ -79,18 +79,19 @@ class JobMatchingNotifier extends Notifier<JobMatchingState> {
               state = state.copyWith(
                 isLoading: false,
                 aiContent:
-                aiContent: '\${state.aiContent}\n\n[Hata oluştu: Sunucu yanıt veremiyor]',
+                    '${state.aiContent}\n\n[Hata oluştu: Sunucu yanıt veremiyor]',
               );
             },
           );
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        aiContent: '\${state.aiContent}\n\n[Beklenmeyen bir hata oluştu]',
+        aiContent: '${state.aiContent}\n\n[Beklenmeyen bir hata oluştu]',
       );
     }
   }
 
+  /// İlan ID'sine göre uyumluluk puanını parse et
   int? parseScoreForJob(String jobId) {
     if (state.aiContent.isEmpty) return null;
     final lines = state.aiContent.split('\n');
@@ -98,6 +99,19 @@ class JobMatchingNotifier extends Notifier<JobMatchingState> {
       if (line.contains('İLAN#$jobId') || line.contains(jobId)) {
         final match = RegExp(r'%(\d+)').firstMatch(line);
         if (match != null) return int.tryParse(match.group(1)!);
+      }
+    }
+    return null;
+  }
+
+  /// İlan tipi parse et: UYGUN veya ALTERNATİF
+  String? parseTypeForJob(String jobId) {
+    if (state.aiContent.isEmpty) return null;
+    final lines = state.aiContent.split('\n');
+    for (final line in lines) {
+      if (line.contains('İLAN#$jobId') || line.contains(jobId)) {
+        if (line.contains('ALTERNATİF')) return 'ALTERNATİF';
+        if (line.contains('UYGUN')) return 'UYGUN';
       }
     }
     return null;
