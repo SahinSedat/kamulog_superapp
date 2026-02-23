@@ -14,6 +14,7 @@ class User extends Equatable {
   final EmploymentType? employmentType;
   final int? ministryCode;
   final String? title;
+  final int credits;
 
   const User({
     required this.id,
@@ -28,6 +29,7 @@ class User extends Equatable {
     this.employmentType,
     this.ministryCode,
     this.title,
+    this.credits = 20,
   });
 
   User copyWith({
@@ -43,6 +45,7 @@ class User extends Equatable {
     EmploymentType? employmentType,
     int? ministryCode,
     String? title,
+    int? credits,
   }) {
     return User(
       id: id ?? this.id,
@@ -57,6 +60,7 @@ class User extends Equatable {
       employmentType: employmentType ?? this.employmentType,
       ministryCode: ministryCode ?? this.ministryCode,
       title: title ?? this.title,
+      credits: credits ?? this.credits,
     );
   }
 
@@ -74,5 +78,6 @@ class User extends Equatable {
     employmentType,
     ministryCode,
     title,
+    credits,
   ];
 }

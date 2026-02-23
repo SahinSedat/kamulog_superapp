@@ -15,6 +15,7 @@ class UserModel extends User {
     super.employmentType,
     super.ministryCode,
     super.title,
+    super.credits = 20,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -34,6 +35,7 @@ class UserModel extends User {
       employmentType: _parseEmploymentType(json['employmentType']),
       ministryCode: json['ministryCode'] as int?,
       title: json['title'] as String?,
+      credits: json['credits'] as int? ?? 20,
     );
   }
 
@@ -51,6 +53,7 @@ class UserModel extends User {
       'employmentType': employmentType?.name,
       'ministryCode': ministryCode,
       'title': title,
+      'credits': credits,
     };
   }
 
@@ -68,6 +71,7 @@ class UserModel extends User {
       employmentType: user.employmentType,
       ministryCode: user.ministryCode,
       title: user.title,
+      credits: user.credits,
     );
   }
 
@@ -85,6 +89,7 @@ class UserModel extends User {
     EmploymentType? employmentType,
     int? ministryCode,
     String? title,
+    int? credits,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -99,6 +104,7 @@ class UserModel extends User {
       employmentType: employmentType ?? this.employmentType,
       ministryCode: ministryCode ?? this.ministryCode,
       title: title ?? this.title,
+      credits: credits ?? this.credits,
     );
   }
 

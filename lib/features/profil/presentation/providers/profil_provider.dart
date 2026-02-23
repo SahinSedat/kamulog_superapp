@@ -21,7 +21,8 @@ class ProfilState {
   final String? surveyCity;
   final List<String> surveyInterests;
 
-  // Kariyer & Abonelik Bilgileri
+  // Kariyer & Abonelik & Jeton Bilgileri
+  final int credits;
   final bool isPremium;
   final DateTime? subscriptionEndDate;
   final List<String> aiCvUsageDates; // ISO formatında tarihler
@@ -43,6 +44,7 @@ class ProfilState {
     this.surveyInstitution,
     this.surveyCity,
     this.surveyInterests = const [],
+    this.credits = 20,
     this.isPremium = false,
     this.subscriptionEndDate,
     this.aiCvUsageDates = const [],
@@ -64,6 +66,7 @@ class ProfilState {
     String? surveyInstitution,
     String? surveyCity,
     List<String>? surveyInterests,
+    int? credits,
     bool? isPremium,
     DateTime? subscriptionEndDate,
     List<String>? aiCvUsageDates,
@@ -84,12 +87,19 @@ class ProfilState {
       surveyInstitution: surveyInstitution ?? this.surveyInstitution,
       surveyCity: surveyCity ?? this.surveyCity,
       surveyInterests: surveyInterests ?? this.surveyInterests,
+      credits: credits ?? this.credits,
       isPremium: isPremium ?? this.isPremium,
       subscriptionEndDate: subscriptionEndDate ?? this.subscriptionEndDate,
       aiCvUsageDates: aiCvUsageDates ?? this.aiCvUsageDates,
       error: error,
       profileImagePath: profileImagePath ?? this.profileImagePath,
     );
+  }
+
+  /// Seçili miktar kadar jetonu var mı? (Premium ise hep true)
+  bool hasEnoughCredits(int amount) {
+    if (isPremium) return true;
+    return credits >= amount;
   }
 
   /// Profil tamamlanma yüzdesi
@@ -118,8 +128,11 @@ class ProfilState {
     }).length;
   }
 
-  /// Kalan AI CV hakkı (Ayda 2 kez)
-  int get remainingAiCvCount => (2 - aiCvCountThisMonth).clamp(0, 2);
+  /// Kalan AI CV hakkı (Ayda 2 kez, Premium iseniz sınırsız)
+  int get remainingAiCvCount {
+    if (isPremium) return 999;
+    return (2 - aiCvCountThisMonth).clamp(0, 2);
+  }
 
   /// Formatlanmış adres (önce profil verisi, yoksa anket verisi)
   String get addressText {
@@ -198,6 +211,7 @@ class ProfilNotifier extends StateNotifier<ProfilState> {
     final isPremium = LocalStorageService.loadIsPremium();
     final subscriptionEndDate = LocalStorageService.loadSubscriptionEndDate();
     final profileImage = LocalStorageService.loadProfileImage();
+    final savedCredits = LocalStorageService.loadCredits();
 
     state = state.copyWith(
       tcKimlik: profileData['tcKimlik'],
@@ -215,6 +229,7 @@ class ProfilNotifier extends StateNotifier<ProfilState> {
       surveyInstitution: surveyData['institution'],
       surveyCity: surveyData['city'],
       surveyInterests: surveyData['interests'] ?? [],
+      credits: savedCredits,
       documents: documentsData.map((d) => DocumentInfo.fromJson(d)).toList(),
       isPremium: isPremium,
       subscriptionEndDate: subscriptionEndDate,
@@ -232,8 +247,22 @@ class ProfilNotifier extends StateNotifier<ProfilState> {
         // Eğer yerelde yoksa auth'dan gelenleri de alabiliriz
         employmentType: state.employmentType ?? user.employmentType,
         title: state.title ?? user.title,
+        credits: user.credits,
       );
+      // Kullanıcı veritabanından / backend'den gelen güncel kredi
+      LocalStorageService.saveCredits(user.credits);
     }
+  }
+
+  /// Jetonu düşer
+  Future<bool> decreaseCredits(int amount) async {
+    if (state.isPremium) return true; // Premium ise düşme
+    if (state.credits < amount) return false;
+
+    final newCredits = state.credits - amount;
+    state = state.copyWith(credits: newCredits);
+    await LocalStorageService.saveCredits(newCredits);
+    return true;
   }
 
   /// Premium aboneliği aktifleştir

@@ -5,7 +5,6 @@ import 'package:kamulog_superapp/core/theme/app_theme.dart';
 import 'package:kamulog_superapp/features/ai/presentation/providers/ai_provider.dart';
 import 'package:kamulog_superapp/features/ai/presentation/widgets/ai_message_bubble.dart';
 import 'package:kamulog_superapp/features/ai/presentation/widgets/ai_suggestion_chips.dart';
-import 'package:kamulog_superapp/features/profil/presentation/providers/profil_provider.dart';
 
 class AiAssistantScreen extends ConsumerStatefulWidget {
   const AiAssistantScreen({super.key});
@@ -213,11 +212,7 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen>
                 gradient: AppTheme.primaryGradient,
                 isDark: isDark,
                 onTap:
-                    () => ref
-                        .read(aiChatProvider.notifier)
-                        .sendMessage(
-                          'Kamu personeli hakları hakkında bilgi ver',
-                        ),
+                    () => ref.read(aiChatProvider.notifier).startMevzuatChat(),
               ),
               const SizedBox(height: AppTheme.spacingMd),
 

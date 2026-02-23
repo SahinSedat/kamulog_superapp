@@ -36,6 +36,18 @@ class LocalStorageService {
   }
 
   // ════════════════════════════════════════════
+  // JETON BAĞLAMI — cihazda kalır
+  // ════════════════════════════════════════════
+
+  static Future<void> saveCredits(int credits) async {
+    await _profile.put('credits', credits);
+  }
+
+  static int loadCredits() {
+    return _profile.get('credits', defaultValue: 20);
+  }
+
+  // ════════════════════════════════════════════
   // ABONELİK (PREMIUM) DURUMU — cihazda kalır
   // ════════════════════════════════════════════
 

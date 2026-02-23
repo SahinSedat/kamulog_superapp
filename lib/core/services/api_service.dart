@@ -32,6 +32,7 @@ class ApiService {
           'institution': profil.institution,
           'title': profil.title,
           'isPremium': profil.isPremium,
+          'credits': profil.credits,
         },
       );
       return response.statusCode == 200 || response.statusCode == 201;

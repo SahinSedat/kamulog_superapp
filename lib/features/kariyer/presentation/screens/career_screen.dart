@@ -86,6 +86,14 @@ class CareerScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 10),
             _QuickActionCard(
+              icon: Icons.hub_rounded,
+              title: 'AI İş Eşleştirme',
+              subtitle: '4 Uygun + 2 Alternatif İlan',
+              color: const Color(0xFFF57C00),
+              onTap: () => _showJobMatching(context, ref),
+            ),
+            const SizedBox(height: 10),
+            _QuickActionCard(
               icon: Icons.school_rounded,
               title: 'KPSS Hazırlık',
               subtitle: 'Sınav takvimi ve hazırlık kaynakları',
@@ -284,12 +292,39 @@ class CareerScreen extends ConsumerWidget {
                           height: 52,
                           child: ElevatedButton.icon(
                             onPressed: () async {
-                              Navigator.pop(ctx);
+                              final pNotifier = ref.read(
+                                profilProvider.notifier,
+                              );
+                              final hasCredits = profil.hasEnoughCredits(2);
+
+                              if (!hasCredits) {
+                                Navigator.pop(ctx);
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Bu işlem için yeterli jetonunuz bulunmuyor (2 Jeton gerekli).',
+                                      ),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                }
+                                return;
+                              }
+
+                              // Jetonu düş
+                              await pNotifier.decreaseCredits(2);
+
+                              if (context.mounted) Navigator.pop(ctx);
                               if (context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('AI iş analizi başlatıldı!'),
-                                    backgroundColor: Color(0xFF2E7D32),
+                                  SnackBar(
+                                    content: Text(
+                                      profil.isPremium
+                                          ? 'AI iş analizi başlatıldı!'
+                                          : 'AI iş analizi başlatıldı! (2 Jeton kullanıldı)',
+                                    ),
+                                    backgroundColor: const Color(0xFF2E7D32),
                                   ),
                                 );
                               }
@@ -298,9 +333,11 @@ class CareerScreen extends ConsumerWidget {
                               Icons.play_arrow_rounded,
                               color: Colors.white,
                             ),
-                            label: const Text(
-                              'Analizi Başlat (5 Kredi)',
-                              style: TextStyle(
+                            label: Text(
+                              profil.isPremium
+                                  ? 'Analizi Başlat (Sınırsız)'
+                                  : 'Analizi Başlat (2 Jeton)',
+                              style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w700,
                                 color: Colors.white,
@@ -308,6 +345,175 @@ class CareerScreen extends ConsumerWidget {
                             ),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF2E7D32),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+    );
+  }
+
+  void _showJobMatching(BuildContext context, WidgetRef ref) {
+    final profil = ref.read(profilProvider);
+
+    if (!profil.hasCv) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'İş Eşleştirme için önce Belgelerim sayfasından bir CV yüklemelisiniz.',
+          ),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder:
+          (ctx) => Container(
+            height: MediaQuery.of(ctx).size.height * 0.7,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            child: Column(
+              children: [
+                Container(
+                  margin: const EdgeInsets.only(top: 10),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 64,
+                        height: 64,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF57C00).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: const Icon(
+                          Icons.hub_rounded,
+                          size: 32,
+                          color: Color(0xFFF57C00),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'AI İş Eşleştirme',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'CV\'nizi analiz ederek en uygun 4 iş ve alternatif 2 kariyer yolu önerir.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(
+                      children: [
+                        _AnalysisInfoRow(
+                          icon: Icons.description_rounded,
+                          title: 'CV Kontrol Edildi',
+                          subtitle:
+                              'Analiz için sistemdeki CV\'niz kullanılacak',
+                        ),
+                        _AnalysisInfoRow(
+                          icon: Icons.stars_rounded,
+                          title: 'Uygun İşler',
+                          subtitle: 'CV\'nize en uygun 4 ilan taranır',
+                        ),
+                        _AnalysisInfoRow(
+                          icon: Icons.alt_route_rounded,
+                          title: 'Alternatif Kariyer',
+                          subtitle: '2 Adet ikincil alternatif yol önerilir',
+                        ),
+                        const SizedBox(height: 20),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 52,
+                          child: ElevatedButton.icon(
+                            onPressed: () async {
+                              final pNotifier = ref.read(
+                                profilProvider.notifier,
+                              );
+                              final hasCredits = profil.hasEnoughCredits(2);
+
+                              if (!hasCredits) {
+                                Navigator.pop(ctx);
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Bu işlem için yeterli jetonunuz bulunmuyor (2 Jeton gerekli).',
+                                      ),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                }
+                                return;
+                              }
+
+                              // Jetonu düş
+                              await pNotifier.decreaseCredits(2);
+
+                              if (context.mounted) Navigator.pop(ctx);
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      profil.isPremium
+                                          ? 'AI iş eşleştirme başlatıldı!'
+                                          : 'AI iş eşleştirme başlatıldı! (2 Jeton kullanıldı)',
+                                    ),
+                                    backgroundColor: const Color(0xFFF57C00),
+                                  ),
+                                );
+                              }
+                            },
+                            icon: const Icon(
+                              Icons.play_arrow_rounded,
+                              color: Colors.white,
+                            ),
+                            label: Text(
+                              profil.isPremium
+                                  ? 'Eşleştirmeyi Başlat (Sınırsız)'
+                                  : 'Eşleştirmeyi Başlat (2 Jeton)',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFF57C00),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(14),
                               ),
@@ -494,43 +700,6 @@ class _CvAnalysisCard extends StatelessWidget {
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
               ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ── Credit Badge Widget
-class _CreditBadge extends StatelessWidget {
-  final int credits;
-  const _CreditBadge({required this.credits});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: AppTheme.primaryColor.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppTheme.primaryColor.withValues(alpha: 0.2)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(
-            Icons.stars_rounded,
-            size: 16,
-            color: AppTheme.primaryColor,
-          ),
-          const SizedBox(width: 6),
-          Text(
-            '$credits Kredi',
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: AppTheme.primaryColor,
             ),
           ),
         ],

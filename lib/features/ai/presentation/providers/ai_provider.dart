@@ -25,6 +25,7 @@ class AiChatState {
   final List<AiMessageModel> messages;
   final bool isLoading;
   final bool isCvBuilding;
+  final bool isMevzuatChat; // Mevzuat bilgisi modu
   final bool chatLocked; // Jeton/mesaj limiti bittiğinde true olur
   final String? error;
   final String conversationId;
@@ -33,6 +34,7 @@ class AiChatState {
     this.messages = const [],
     this.isLoading = false,
     this.isCvBuilding = false,
+    this.isMevzuatChat = false,
     this.chatLocked = false,
     this.error,
     this.conversationId = '',
@@ -49,6 +51,7 @@ class AiChatState {
     List<AiMessageModel>? messages,
     bool? isLoading,
     bool? isCvBuilding,
+    bool? isMevzuatChat,
     bool? chatLocked,
     String? error,
     String? conversationId,
@@ -57,6 +60,7 @@ class AiChatState {
       messages: messages ?? this.messages,
       isLoading: isLoading ?? this.isLoading,
       isCvBuilding: isCvBuilding ?? this.isCvBuilding,
+      isMevzuatChat: isMevzuatChat ?? this.isMevzuatChat,
       chatLocked: chatLocked ?? this.chatLocked,
       error: error,
       conversationId: conversationId ?? this.conversationId,
@@ -145,6 +149,30 @@ STRATEJİ:
     return true;
   }
 
+  /// Mevzuat bilgisi bağlamını başlat
+  void startMevzuatChat() {
+    newConversation();
+    state = state.copyWith(
+      isMevzuatChat: true,
+      isCvBuilding: false,
+      error: null,
+    );
+
+    final mevzuatContext = '''
+SEN BİR KAMU MEVZUAT UZMANISIN. SADECE aşağidaki konulara cevap vereceksin:
+- 657 Sayılı Devlet Memurları Kanunu
+- Kamu çalışanları özlük hakları, izin, rapor, tayin, becayiş
+- Görevde yükselme, unvan değişikliği
+- Memur disiplin cezaları ve yasal hakları
+Eğer bu konular dışında bir şey sorulursa "Üzgünüm, bilgi alanım sadece kamu mevzuatı (657 vb.) ile ilgilidir. Lütfen mevzuatla ilgili bir soru sorun." şeklinde yanıt vererek kibarca reddet.
+''';
+
+    sendMessage(
+      'Merhaba, kamu mevzuatı, 657 sayılı kanun veya özlük hakları ile ilgili sorunuzu sorabilirsiniz.',
+      context: mevzuatContext,
+    );
+  }
+
   /// Simulate saving a PDF to documents
   Future<void> simulatePdfExport() async {
     state = state.copyWith(isLoading: true);
@@ -194,10 +222,46 @@ STRATEJİ:
       return;
     }
 
-    // Her mesaj 2 jeton şartı ve düşümü tamamen Kaldırıldı.
+    final pNotifier = _ref.read(profilProvider.notifier);
+    final profilState = _ref.read(profilProvider);
+
+    // Mevzuat bilgisi jeton kontrolü (Her mesajda 2 jeton)
+    if (state.isMevzuatChat) {
+      if (context == null) {
+        // Kullanıcı mesaj attığında
+        if (!profilState.hasEnoughCredits(2)) {
+          state = state.copyWith(
+            error:
+                'Mevzuat bilgisi mesajı için yeterli jetonunuz bulunmuyor (2 jeton).',
+            chatLocked: true,
+          );
+          return;
+        }
+        await pNotifier.decreaseCredits(2);
+      }
+    }
 
     String finalContext = context ?? '';
     if (state.isCvBuilding) {
+      // Aylık hak kontrolü (Premium dahil veya değil)
+      if (profilState.remainingAiCvCount <= 0) {
+        // Çıkış yap ve tek seferlik asistan mesajı ile sohbeti kilitle
+        final assistantMsg = AiMessageModel(
+          id: 'ai-limit-${DateTime.now().millisecondsSinceEpoch}',
+          conversationId: state.conversationId,
+          role: AiRole.assistant,
+          content:
+              'Aylık CV oluşturma hakkınız (2/2) dolmuştur. Yeni haklar bir sonraki ay yenilenecektir.',
+          createdAt: DateTime.now(),
+        );
+
+        state = state.copyWith(
+          messages: [...state.messages, assistantMsg],
+          chatLocked: true,
+        );
+        return;
+      }
+
       finalContext +=
           '\n\nKRİTİK TALİMAT: Kullanıcı şu an SADECE CV hazırlama akışında. Eğer kullanıcı CV dışı bir şey sorarsa (hava durumu, genel sohbet vb.), nazikçe sadece CV hazırlamaya odaklanması gerektiğini söyle ve kaldığın yerden devam et.';
     }
