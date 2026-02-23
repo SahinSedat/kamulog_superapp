@@ -153,10 +153,7 @@ class CvBuilderNotifier extends Notifier<CvBuilderState> {
           )
           .listen(
             (chunk) {
-              _updateStreamingMessage(
-                aiMsgId,
-                chunk is String ? chunk : chunk.content,
-              );
+              _updateStreamingMessage(aiMsgId, chunk);
             },
             onDone: () {
               _finishStreamingMessage(aiMsgId);

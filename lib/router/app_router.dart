@@ -20,6 +20,8 @@ import 'package:kamulog_superapp/features/stk/presentation/screens/stk_screen.da
 import 'package:kamulog_superapp/features/orders/presentation/screens/orders_screen.dart';
 import 'package:kamulog_superapp/features/documents/presentation/screens/documents_screen.dart';
 import 'package:kamulog_superapp/features/kariyer/presentation/screens/job_detail_screen.dart';
+import 'package:kamulog_superapp/features/kariyer/presentation/screens/ai_cv_builder_screen.dart';
+import 'package:kamulog_superapp/features/kariyer/presentation/screens/job_matching_screen.dart';
 import 'package:kamulog_superapp/features/kariyer/data/models/job_listing_model.dart';
 import 'package:kamulog_superapp/features/subscription/presentation/screens/upgrade_plan_screen.dart';
 import 'package:kamulog_superapp/features/subscription/presentation/screens/subscription_history_screen.dart';
@@ -178,6 +180,16 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/career',
         name: 'career',
         builder: (context, state) => const CareerScreen(),
+      ),
+      GoRoute(
+        path: '/career/cv-builder',
+        name: 'cv-builder',
+        builder: (context, state) => const AiCvBuilderScreen(),
+      ),
+      GoRoute(
+        path: '/career/job-matching',
+        name: 'job-matching',
+        builder: (context, state) => const JobMatchingScreen(),
       ),
       GoRoute(
         path: '/job-detail',

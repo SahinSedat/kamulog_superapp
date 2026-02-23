@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kamulog_superapp/core/theme/app_theme.dart';
@@ -8,7 +8,7 @@ import 'package:kamulog_superapp/features/ai/presentation/widgets/ai_typing_indi
 import 'package:kamulog_superapp/features/kariyer/presentation/providers/cv_builder_provider.dart';
 
 class AiCvBuilderScreen extends ConsumerStatefulWidget {
-  const AiCvBuilderScreen({Key? key}) : super(key: key);
+  const AiCvBuilderScreen({super.key});
 
   @override
   ConsumerState<AiCvBuilderScreen> createState() => _AiCvBuilderScreenState();

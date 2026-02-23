@@ -133,13 +133,14 @@ class AiMessageBubble extends StatelessWidget {
                                   width: 12,
                                   height: 12,
                                   child: CircularProgressIndicator(
-                                    strokeWidth: 1.5,
-                                    color:
-                                        isUser
-                                            ? Colors.white60
-                                            : AppTheme.primaryColor.withOpacity(
-                                              0.5,
-                                            ),
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      isUser
+                                          ? Colors.white60
+                                          : AppTheme.primaryColor.withValues(
+                                            alpha: 0.5,
+                                          ),
+                                    ),
                                   ),
                                 ),
                               ),
