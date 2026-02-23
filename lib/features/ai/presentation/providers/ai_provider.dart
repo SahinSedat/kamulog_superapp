@@ -21,16 +21,17 @@ final aiSuggestionsProvider = FutureProvider.family<List<String>, String>((
   return ref.watch(aiRepositoryProvider).getSuggestions(context);
 });
 
-// ── Chat State ──
 class AiChatState {
   final List<AiMessageModel> messages;
   final bool isLoading;
+  final bool isCvBuilding;
   final String? error;
   final String conversationId;
 
   const AiChatState({
     this.messages = const [],
     this.isLoading = false,
+    this.isCvBuilding = false,
     this.error,
     this.conversationId = '',
   });
@@ -38,12 +39,14 @@ class AiChatState {
   AiChatState copyWith({
     List<AiMessageModel>? messages,
     bool? isLoading,
+    bool? isCvBuilding,
     String? error,
     String? conversationId,
   }) {
     return AiChatState(
       messages: messages ?? this.messages,
       isLoading: isLoading ?? this.isLoading,
+      isCvBuilding: isCvBuilding ?? this.isCvBuilding,
       error: error,
       conversationId: conversationId ?? this.conversationId,
     );
@@ -73,6 +76,7 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
   /// Start CV Building flow with profile data
   void startCvBuilding(dynamic profil) {
     newConversation();
+    state = state.copyWith(isCvBuilding: true);
     final profileContext = '''
 Kullanıcı bir CV oluşturmak istiyor. Mevcut profil bilgileri:
 Ad Soyad: ${profil.name ?? 'Belirtilmedi'}
@@ -122,6 +126,12 @@ STRATEJİ:
   Future<void> sendMessage(String text, {String? context}) async {
     if (text.trim().isEmpty) return;
 
+    String finalContext = context ?? '';
+    if (state.isCvBuilding) {
+      finalContext +=
+          '\n\nKRİTİK TALİMAT: Kullanıcı şu an SADECE CV hazırlama akışında. Eğer kullanıcı CV dışı bir şey sorarsa (hava durumu, genel sohbet vb.), nazikçe sadece CV hazırlamaya odaklanması gerektiğini söyle ve kaldığın yerden devam et.';
+    }
+
     _msgCounter++;
     final userMsg = AiMessageModel(
       id: 'user-$_msgCounter-${DateTime.now().millisecondsSinceEpoch}',
@@ -160,7 +170,7 @@ STRATEJİ:
         .sendMessage(
           conversationId: state.conversationId,
           message: text.trim(),
-          context: context,
+          context: finalContext.isEmpty ? null : finalContext,
           history: history,
         )
         .listen(

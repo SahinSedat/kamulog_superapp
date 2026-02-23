@@ -36,7 +36,6 @@ class _StoryItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        // TODO: Open story detail / full screen
         _showStoryDetail(context, story);
       },
       child: SizedBox(

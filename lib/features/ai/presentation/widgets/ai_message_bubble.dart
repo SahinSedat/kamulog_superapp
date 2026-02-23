@@ -169,7 +169,9 @@ class AiMessageBubble extends StatelessWidget {
       builder: (context, ref, child) {
         return Padding(
           padding: const EdgeInsets.only(top: 12),
-          child: Row(
+          child: Wrap(
+            spacing: 8,
+            runSpacing: 8,
             children: [
               ElevatedButton.icon(
                 onPressed: () async {
@@ -204,13 +206,8 @@ class AiMessageBubble extends StatelessWidget {
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
               ),
-              const SizedBox(width: 8),
               TextButton(
                 onPressed: () {},
-                child: const Text(
-                  'Şimdi Değil',
-                  style: TextStyle(fontSize: 12),
-                ),
                 style: TextButton.styleFrom(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
@@ -218,6 +215,10 @@ class AiMessageBubble extends StatelessWidget {
                   ),
                   minimumSize: Size.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: const Text(
+                  'Şimdi Değil',
+                  style: TextStyle(fontSize: 12),
                 ),
               ),
             ],

@@ -103,7 +103,7 @@ class ProfilScreen extends ConsumerWidget {
                   border: Border.all(
                     color:
                         isDark
-                            ? Colors.white.withOpacity(0.06)
+                            ? Colors.white.withValues(alpha: 0.06)
                             : const Color(0xFFEEEEEE),
                   ),
                 ),
@@ -118,10 +118,12 @@ class ProfilScreen extends ConsumerWidget {
                             vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            color: AppTheme.primaryColor.withOpacity(0.1),
+                            color: AppTheme.primaryColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
-                              color: AppTheme.primaryColor.withOpacity(0.2),
+                              color: AppTheme.primaryColor.withValues(
+                                alpha: 0.2,
+                              ),
                             ),
                           ),
                           child: Text(
@@ -270,7 +272,7 @@ class ProfilScreen extends ConsumerWidget {
                   ),
                   style: OutlinedButton.styleFrom(
                     side: BorderSide(
-                      color: AppTheme.errorColor.withOpacity(0.3),
+                      color: AppTheme.errorColor.withValues(alpha: 0.3),
                     ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -387,12 +389,14 @@ class _ProfileCompletionBanner extends StatelessWidget {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              AppTheme.warningColor.withOpacity(0.1),
-              AppTheme.warningColor.withOpacity(0.05),
+              AppTheme.warningColor.withValues(alpha: 0.1),
+              AppTheme.warningColor.withValues(alpha: 0.05),
             ],
           ),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppTheme.warningColor.withOpacity(0.3)),
+          border: Border.all(
+            color: AppTheme.warningColor.withValues(alpha: 0.3),
+          ),
         ),
         child: Row(
           children: [
@@ -400,7 +404,7 @@ class _ProfileCompletionBanner extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: AppTheme.warningColor.withOpacity(0.15),
+                color: AppTheme.warningColor.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: const Icon(
@@ -452,7 +456,7 @@ class _MembershipCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.primaryColor.withOpacity(0.3),
+            color: AppTheme.primaryColor.withValues(alpha: 0.3),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -464,7 +468,7 @@ class _MembershipCard extends StatelessWidget {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Icon(
@@ -556,7 +560,9 @@ class _InfoMenuGroup extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color:
-              isDark ? Colors.white.withOpacity(0.06) : const Color(0xFFEEEEEE),
+              isDark
+                  ? Colors.white.withValues(alpha: 0.06)
+                  : const Color(0xFFEEEEEE),
         ),
       ),
       child: Column(
@@ -594,7 +600,7 @@ class _InfoMenuGroup extends StatelessWidget {
                           vertical: 2,
                         ),
                         decoration: BoxDecoration(
-                          color: AppTheme.errorColor.withOpacity(0.1),
+                          color: AppTheme.errorColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: const Text(
@@ -639,7 +645,7 @@ class _InfoMenuGroup extends StatelessWidget {
                 Divider(
                   height: 1,
                   indent: 50,
-                  color: Colors.grey.withOpacity(0.1),
+                  color: Colors.grey.withValues(alpha: 0.1),
                 ),
             ],
           );

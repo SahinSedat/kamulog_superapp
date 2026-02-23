@@ -167,11 +167,13 @@ class AppTheme {
       borderRadius: BorderRadius.circular(radiusLg),
       border: Border.all(
         color:
-            isDark ? Colors.white.withOpacity(0.08) : const Color(0xFFE0E0E0),
+            isDark
+                ? Colors.white.withValues(alpha: 0.08)
+                : const Color(0xFFE0E0E0),
       ),
       boxShadow: [
         BoxShadow(
-          color: Colors.black.withOpacity(isDark ? 0.2 : 0.06),
+          color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.06),
           blurRadius: 12,
           offset: const Offset(0, 4),
         ),
@@ -184,12 +186,12 @@ class AppTheme {
     BorderRadiusGeometry? borderRadius,
   }) {
     return BoxDecoration(
-      color: (isDark ? Colors.black : Colors.white).withOpacity(
-        isDark ? 0.6 : 0.85,
+      color: (isDark ? Colors.black : Colors.white).withValues(
+        alpha: isDark ? 0.6 : 0.85,
       ),
       borderRadius: borderRadius ?? BorderRadius.circular(radiusLg),
       border: Border.all(
-        color: (isDark ? Colors.white : Colors.black).withOpacity(0.08),
+        color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.08),
       ),
     );
   }
@@ -227,7 +229,7 @@ class AppTheme {
     final surface = isDark ? surfaceDark : background;
     final card = isDark ? cardDark : cardLight;
     final border =
-        isDark ? Colors.white.withOpacity(0.1) : const Color(0xFFE0E0E0);
+        isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFE0E0E0);
 
     final isWorker = type == EmploymentType.isci;
     final kamulogExt = KamulogThemeData(

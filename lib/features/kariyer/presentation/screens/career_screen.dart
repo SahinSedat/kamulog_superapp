@@ -5,6 +5,8 @@ import 'package:kamulog_superapp/core/theme/app_theme.dart';
 import 'package:kamulog_superapp/features/profil/presentation/providers/profil_provider.dart';
 import 'package:kamulog_superapp/features/ai/presentation/providers/ai_provider.dart';
 import 'package:kamulog_superapp/core/providers/home_navigation_provider.dart';
+import 'package:kamulog_superapp/features/kariyer/presentation/providers/jobs_provider.dart';
+import 'package:kamulog_superapp/features/kariyer/data/models/job_listing_model.dart';
 
 /// Kariyer modülü — AI CV oluşturma ve iş analizi
 /// Ayrı modül: features/kariyer/ — ileride ayrı API/AI entegrasyonu
@@ -15,6 +17,7 @@ class CareerScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final profil = ref.watch(profilProvider);
+    final jobsState = ref.watch(jobsProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -116,11 +119,42 @@ class CareerScreen extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: 12),
-            ..._sampleJobs.map(
-              (job) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: _JobCard(job: job, isDark: isDark),
-              ),
+            jobsState.jobs.when(
+              data: (jobs) {
+                if (jobs.isEmpty) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(20.0),
+                      child: Text('Şu an güncel ilan bulunmuyor.'),
+                    ),
+                  );
+                }
+                return Column(
+                  children:
+                      jobs
+                          .map(
+                            (job) => Padding(
+                              padding: const EdgeInsets.only(bottom: 10),
+                              child: _JobCard(job: job, isDark: isDark),
+                            ),
+                          )
+                          .toList(),
+                );
+              },
+              loading:
+                  () => const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(20.0),
+                      child: CircularProgressIndicator(),
+                    ),
+                  ),
+              error:
+                  (err, stack) => Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Text('İlanlar yüklenirken hata oluştu: \$err'),
+                    ),
+                  ),
             ),
             const SizedBox(height: 20),
           ],
@@ -326,7 +360,7 @@ class _AiCvBanner extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.primaryColor.withOpacity(0.3),
+            color: AppTheme.primaryColor.withValues(alpha: 0.3),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -344,7 +378,7 @@ class _AiCvBanner extends StatelessWidget {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Row(
@@ -381,7 +415,7 @@ class _AiCvBanner extends StatelessWidget {
                 Text(
                   'Profesyonel CV\'niz dakikalar içinde hazır.',
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.85),
+                    color: Colors.white.withValues(alpha: 0.85),
                     fontSize: 12,
                   ),
                 ),
@@ -392,7 +426,7 @@ class _AiCvBanner extends StatelessWidget {
             width: 64,
             height: 64,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(16),
             ),
             child: const Icon(
@@ -425,7 +459,7 @@ class _CvAnalysisCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -438,7 +472,7 @@ class _CvAnalysisCard extends StatelessWidget {
             height: 48,
             decoration: BoxDecoration(
               color: (hasCv ? const Color(0xFF2E7D32) : Colors.orange)
-                  .withOpacity(0.1),
+                  .withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
@@ -469,7 +503,7 @@ class _CvAnalysisCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
-              color: const Color(0xFF2E7D32).withOpacity(0.1),
+              color: const Color(0xFF2E7D32).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: const Text(
@@ -497,9 +531,9 @@ class _CreditBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: AppTheme.primaryColor.withOpacity(0.1),
+        color: AppTheme.primaryColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppTheme.primaryColor.withOpacity(0.2)),
+        border: Border.all(color: AppTheme.primaryColor.withValues(alpha: 0.2)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -552,7 +586,7 @@ class _QuickActionCard extends StatelessWidget {
           border: Border.all(color: const Color(0xFFEEEEEE)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.03),
+              color: Colors.black.withValues(alpha: 0.03),
               blurRadius: 6,
               offset: const Offset(0, 2),
             ),
@@ -564,7 +598,7 @@ class _QuickActionCard extends StatelessWidget {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: color, size: 22),
@@ -599,7 +633,7 @@ class _QuickActionCard extends StatelessWidget {
 
 // ── Job Card
 class _JobCard extends StatelessWidget {
-  final _JobItem job;
+  final JobListingModel job;
   final bool isDark;
   const _JobCard({required this.job, required this.isDark});
 
@@ -623,10 +657,14 @@ class _JobCard extends StatelessWidget {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: job.color.withOpacity(0.1),
+                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(job.icon, color: job.color, size: 20),
+                child: const Icon(
+                  Icons.business_center_rounded,
+                  color: AppTheme.primaryColor,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -641,7 +679,7 @@ class _JobCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      job.institution,
+                      job.company,
                       style: TextStyle(fontSize: 11, color: Colors.grey[500]),
                     ),
                   ],
@@ -650,12 +688,12 @@ class _JobCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF2E7D32).withOpacity(0.1),
+                  color: const Color(0xFF2E7D32).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: Text(
-                  '%${job.matchScore}',
-                  style: const TextStyle(
+                child: const Text(
+                  'Yeni',
+                  style: TextStyle(
                     color: Color(0xFF2E7D32),
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
@@ -667,14 +705,22 @@ class _JobCard extends StatelessWidget {
           const SizedBox(height: 10),
           Row(
             children: [
-              _JobTag(label: job.type, color: job.color),
-              const SizedBox(width: 8),
-              _JobTag(label: job.location, color: Colors.grey),
-              const Spacer(),
-              Text(
-                job.deadline,
-                style: TextStyle(fontSize: 10, color: Colors.grey[400]),
+              _JobTag(
+                label: job.type == 'PUBLIC' ? 'Kamu' : 'Özel Sektör',
+                color:
+                    job.type == 'PUBLIC'
+                        ? AppTheme.primaryColor
+                        : const Color(0xFF7B1FA2),
               ),
+              const SizedBox(width: 8),
+              if (job.location != null)
+                _JobTag(label: job.location!, color: Colors.grey),
+              const Spacer(),
+              if (job.deadline != null)
+                Text(
+                  '\${job.deadline!.day}.\${job.deadline!.month}.\${job.deadline!.year}',
+                  style: TextStyle(fontSize: 10, color: Colors.grey[400]),
+                ),
             ],
           ),
         ],
@@ -693,7 +739,7 @@ class _JobTag extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(5),
       ),
       child: Text(
@@ -758,69 +804,3 @@ class _AnalysisInfoRow extends StatelessWidget {
     );
   }
 }
-
-// ── Data Models
-class _JobItem {
-  final String title;
-  final String institution;
-  final String type;
-  final String location;
-  final String deadline;
-  final int matchScore;
-  final IconData icon;
-  final Color color;
-
-  const _JobItem({
-    required this.title,
-    required this.institution,
-    required this.type,
-    required this.location,
-    required this.deadline,
-    required this.matchScore,
-    required this.icon,
-    required this.color,
-  });
-}
-
-const _sampleJobs = [
-  _JobItem(
-    title: 'Bilgi İşlem Uzmanı',
-    institution: 'Hazine ve Maliye Bakanlığı',
-    type: 'Memur',
-    location: 'Ankara',
-    deadline: 'Son 5 gün',
-    matchScore: 92,
-    icon: Icons.computer_rounded,
-    color: Color(0xFF1565C0),
-  ),
-  _JobItem(
-    title: 'İdari Personel',
-    institution: 'Milli Eğitim Bakanlığı',
-    type: 'Sözleşmeli',
-    location: 'İstanbul',
-    deadline: 'Son 12 gün',
-    matchScore: 78,
-    icon: Icons.school_rounded,
-    color: Color(0xFFE65100),
-  ),
-  _JobItem(
-    title: 'Muhasebe Uzmanı',
-    institution: 'Sosyal Güvenlik Kurumu',
-    type: 'Memur',
-    location: 'Ankara',
-    deadline: 'Son 20 gün',
-    matchScore: 85,
-    icon: Icons.calculate_rounded,
-    color: Color(0xFF2E7D32),
-  ),
-  _JobItem(
-    title: 'Hukuk Müşaviri',
-    institution: 'Adalet Bakanlığı',
-    type: 'Memur',
-    location: 'Ankara',
-    deadline: 'Son 8 gün',
-    matchScore: 71,
-    icon: Icons.gavel_rounded,
-    color: Color(0xFF7B1FA2),
-  ),
-];

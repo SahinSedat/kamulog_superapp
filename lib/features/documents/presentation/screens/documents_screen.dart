@@ -1,20 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kamulog_superapp/core/theme/app_theme.dart';
+import 'package:kamulog_superapp/core/constants/enums.dart';
+import 'package:kamulog_superapp/features/profil/presentation/providers/profil_provider.dart';
+import 'package:file_picker/file_picker.dart';
 
 /// Belgelerim ekranı — STK belgeleri, CV, kimlik fotokopisi vb.
-/// Ayrı modül: features/documents/ — dosya yükleme ve görüntüleme
-class DocumentsScreen extends StatefulWidget {
+class DocumentsScreen extends ConsumerStatefulWidget {
   const DocumentsScreen({super.key});
 
   @override
-  State<DocumentsScreen> createState() => _DocumentsScreenState();
+  ConsumerState<DocumentsScreen> createState() => _DocumentsScreenState();
 }
 
-class _DocumentsScreenState extends State<DocumentsScreen>
+class _DocumentsScreenState extends ConsumerState<DocumentsScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
-  final List<_DocumentItem> _documents = List.from(_sampleDocuments);
 
   @override
   void initState() {
@@ -30,6 +32,8 @@ class _DocumentsScreenState extends State<DocumentsScreen>
 
   @override
   Widget build(BuildContext context) {
+    final profil = ref.watch(profilProvider);
+
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -62,10 +66,10 @@ class _DocumentsScreenState extends State<DocumentsScreen>
       body: TabBarView(
         controller: _tabController,
         children: [
-          _buildDocumentList(null),
-          _buildDocumentList(DocumentCategory.cv),
-          _buildDocumentList(DocumentCategory.stk),
-          _buildDocumentList(DocumentCategory.kimlik),
+          _buildDocumentList(profil.documents, null),
+          _buildDocumentList(profil.documents, DocumentCategory.cv),
+          _buildDocumentList(profil.documents, DocumentCategory.stk),
+          _buildDocumentList(profil.documents, DocumentCategory.kimlik),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -80,11 +84,14 @@ class _DocumentsScreenState extends State<DocumentsScreen>
     );
   }
 
-  Widget _buildDocumentList(DocumentCategory? filter) {
+  Widget _buildDocumentList(
+    List<DocumentInfo> allDocs,
+    DocumentCategory? filter,
+  ) {
     final filtered =
         filter == null
-            ? _documents
-            : _documents.where((d) => d.category == filter).toList();
+            ? allDocs
+            : allDocs.where((d) => d.category == filter.name).toList();
 
     if (filtered.isEmpty) {
       return Center(
@@ -158,7 +165,7 @@ class _DocumentsScreenState extends State<DocumentsScreen>
                   color: const Color(0xFF1565C0),
                   onTap: () {
                     Navigator.pop(ctx);
-                    _simulateUpload(DocumentCategory.cv, 'CV Belgesi');
+                    _pickAndUpload(DocumentCategory.cv, 'CV Belgesi');
                   },
                 ),
                 const SizedBox(height: 10),
@@ -169,7 +176,7 @@ class _DocumentsScreenState extends State<DocumentsScreen>
                   color: const Color(0xFF7B1FA2),
                   onTap: () {
                     Navigator.pop(ctx);
-                    _simulateUpload(DocumentCategory.stk, 'STK Üyelik Belgesi');
+                    _pickAndUpload(DocumentCategory.stk, 'STK Üyelik Belgesi');
                   },
                 ),
                 const SizedBox(height: 10),
@@ -180,7 +187,7 @@ class _DocumentsScreenState extends State<DocumentsScreen>
                   color: const Color(0xFFE65100),
                   onTap: () {
                     Navigator.pop(ctx);
-                    _simulateUpload(DocumentCategory.kimlik, 'Kimlik Belgesi');
+                    _pickAndUpload(DocumentCategory.kimlik, 'Kimlik Belgesi');
                   },
                 ),
                 const SizedBox(height: 10),
@@ -191,7 +198,7 @@ class _DocumentsScreenState extends State<DocumentsScreen>
                   color: const Color(0xFF2E7D32),
                   onTap: () {
                     Navigator.pop(ctx);
-                    _simulateUpload(DocumentCategory.diger, 'Diğer Belge');
+                    _pickAndUpload(DocumentCategory.diger, 'Diğer Belge');
                   },
                 ),
                 const SizedBox(height: 20),
@@ -201,31 +208,47 @@ class _DocumentsScreenState extends State<DocumentsScreen>
     );
   }
 
-  void _simulateUpload(DocumentCategory category, String title) {
-    // Gerçekte file_picker ile dosya seçilecek — şimdilik simülasyon
-    setState(() {
-      _documents.insert(
-        0,
-        _DocumentItem(
-          id: DateTime.now().millisecondsSinceEpoch.toString(),
-          title: title,
-          fileName: '${title.toLowerCase().replaceAll(' ', '_')}.pdf',
-          fileSize: '1.2 MB',
-          category: category,
-          uploadDate: 'Az önce',
-          fileType: 'PDF',
-        ),
+  Future<void> _pickAndUpload(DocumentCategory category, String title) async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'doc', 'docx', 'jpg', 'png'],
       );
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$title başarıyla yüklendi ✓'),
-        backgroundColor: const Color(0xFF2E7D32),
-      ),
-    );
+
+      if (result != null) {
+        final platformFile = result.files.first;
+        final doc = DocumentInfo(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          name: platformFile.name,
+          category: category.name,
+          fileType: platformFile.extension?.toUpperCase() ?? 'PDF',
+          uploadDate: DateTime.now(),
+        );
+
+        ref.read(profilProvider.notifier).addDocument(doc);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${platformFile.name} başarıyla yüklendi ✓'),
+              backgroundColor: const Color(0xFF2E7D32),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Dosya seçilirken bir hata oluştu.'),
+            backgroundColor: AppTheme.errorColor,
+          ),
+        );
+      }
+    }
   }
 
-  void _deleteDocument(_DocumentItem doc) {
+  void _deleteDocument(DocumentInfo doc) {
     showDialog(
       context: context,
       builder:
@@ -235,7 +258,7 @@ class _DocumentsScreenState extends State<DocumentsScreen>
             ),
             title: const Text('Belgeyi Sil'),
             content: Text(
-              '"${doc.title}" belgesini silmek istediğinize emin misiniz?',
+              '"${doc.name}" belgesini silmek istediğinize emin misiniz?',
             ),
             actions: [
               TextButton(
@@ -245,7 +268,7 @@ class _DocumentsScreenState extends State<DocumentsScreen>
               TextButton(
                 onPressed: () {
                   Navigator.pop(ctx);
-                  setState(() => _documents.remove(doc));
+                  ref.read(profilProvider.notifier).removeDocument(doc.id);
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Belge silindi')),
                   );
@@ -263,7 +286,7 @@ class _DocumentsScreenState extends State<DocumentsScreen>
     );
   }
 
-  void _showDocumentDetail(_DocumentItem doc) {
+  void _showDocumentDetail(DocumentInfo doc) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -288,20 +311,20 @@ class _DocumentsScreenState extends State<DocumentsScreen>
                   width: 64,
                   height: 64,
                   decoration: BoxDecoration(
-                    color: _getCategoryColor(
+                    color: _getCategoryColorFromStr(
                       doc.category,
                     ).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Icon(
-                    _getCategoryIcon(doc.category),
+                    _getCategoryIconFromStr(doc.category),
                     size: 32,
-                    color: _getCategoryColor(doc.category),
+                    color: _getCategoryColorFromStr(doc.category),
                   ),
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  doc.title,
+                  doc.name,
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
@@ -309,7 +332,7 @@ class _DocumentsScreenState extends State<DocumentsScreen>
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  doc.fileName,
+                  'belge_${doc.id}.pdf',
                   style: TextStyle(fontSize: 13, color: Colors.grey[500]),
                 ),
                 const SizedBox(height: 20),
@@ -318,12 +341,13 @@ class _DocumentsScreenState extends State<DocumentsScreen>
                   children: [
                     _DetailChip(
                       icon: Icons.insert_drive_file,
-                      label: doc.fileType,
+                      label: doc.fileType.toUpperCase(),
                     ),
-                    _DetailChip(icon: Icons.data_usage, label: doc.fileSize),
+                    _DetailChip(icon: Icons.data_usage, label: '1.5 MB'),
                     _DetailChip(
                       icon: Icons.calendar_today,
-                      label: doc.uploadDate,
+                      label:
+                          '${doc.uploadDate.day}.${doc.uploadDate.month}.${doc.uploadDate.year}',
                     ),
                   ],
                 ),
@@ -357,13 +381,7 @@ class _DocumentsScreenState extends State<DocumentsScreen>
                       child: ElevatedButton.icon(
                         onPressed: () {
                           Navigator.pop(ctx);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Belge görüntüleme yakında eklenecek',
-                              ),
-                            ),
-                          );
+                          _openPdfViewer(doc);
                         },
                         icon: const Icon(
                           Icons.visibility_rounded,
@@ -392,7 +410,77 @@ class _DocumentsScreenState extends State<DocumentsScreen>
     );
   }
 
-  Color _getCategoryColor(DocumentCategory cat) {
+  void _openPdfViewer(DocumentInfo doc) {
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierColor: Colors.black,
+      pageBuilder: (context, _, __) {
+        return Scaffold(
+          backgroundColor: Colors.black,
+          appBar: AppBar(
+            backgroundColor: Colors.black,
+            elevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.close, color: Colors.white),
+              onPressed: () => Navigator.pop(context),
+            ),
+            title: Text(
+              doc.name,
+              style: const TextStyle(color: Colors.white, fontSize: 16),
+            ),
+            centerTitle: true,
+          ),
+          body: Container(
+            width: double.infinity,
+            height: double.infinity,
+            color: Colors.white,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.picture_as_pdf_rounded,
+                  size: 100,
+                  color: AppTheme.errorColor.withValues(alpha: 0.5),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  doc.name,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'PDF İçeriği Görüntüleniyor',
+                  style: TextStyle(color: Colors.grey),
+                ),
+                const Padding(padding: EdgeInsets.all(32), child: Divider()),
+                const Expanded(
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.all(24),
+                    child: Text(
+                      'Bu bir simülasyon PDF içeriğidir. Gerçek uygulamada burada belgenin PDF görntüsü yer alacaktır.\n\n'
+                      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.\n\n'
+                      'Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.',
+                      style: TextStyle(height: 1.6, fontSize: 14),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Color _getCategoryColorFromStr(String catName) {
+    final cat = DocumentCategory.values.firstWhere(
+      (e) => e.name == catName,
+      orElse: () => DocumentCategory.diger,
+    );
     switch (cat) {
       case DocumentCategory.cv:
         return const Color(0xFF1565C0);
@@ -405,7 +493,11 @@ class _DocumentsScreenState extends State<DocumentsScreen>
     }
   }
 
-  IconData _getCategoryIcon(DocumentCategory cat) {
+  IconData _getCategoryIconFromStr(String catName) {
+    final cat = DocumentCategory.values.firstWhere(
+      (e) => e.name == catName,
+      orElse: () => DocumentCategory.diger,
+    );
     switch (cat) {
       case DocumentCategory.cv:
         return Icons.description_rounded;
@@ -421,7 +513,7 @@ class _DocumentsScreenState extends State<DocumentsScreen>
 
 // ── Document Card
 class _DocumentCard extends StatelessWidget {
-  final _DocumentItem document;
+  final DocumentInfo document;
   final VoidCallback onTap;
   final VoidCallback onDelete;
 
@@ -433,7 +525,11 @@ class _DocumentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = _colorFor(document.category);
+    final DocumentCategory category = DocumentCategory.values.firstWhere(
+      (e) => e.name == document.category,
+      orElse: () => DocumentCategory.diger,
+    );
+    final color = _colorFor(category);
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -459,7 +555,7 @@ class _DocumentCard extends StatelessWidget {
                 color: color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(_iconFor(document.category), color: color, size: 24),
+              child: Icon(_iconFor(category), color: color, size: 24),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -467,7 +563,7 @@ class _DocumentCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    document.title,
+                    document.name,
                     style: const TextStyle(
                       fontWeight: FontWeight.w700,
                       fontSize: 14,
@@ -476,15 +572,18 @@ class _DocumentCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      _FileTag(label: document.fileType, color: color),
+                      _FileTag(
+                        label: document.fileType.toUpperCase(),
+                        color: color,
+                      ),
                       const SizedBox(width: 8),
                       Text(
-                        document.fileSize,
+                        '1.5 MB',
                         style: TextStyle(fontSize: 11, color: Colors.grey[500]),
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        document.uploadDate,
+                        '${document.uploadDate.day}.${document.uploadDate.month}.${document.uploadDate.year}',
                         style: TextStyle(fontSize: 11, color: Colors.grey[400]),
                       ),
                     ],
@@ -630,66 +729,3 @@ class _DetailChip extends StatelessWidget {
     );
   }
 }
-
-// ── Data Models
-enum DocumentCategory { cv, stk, kimlik, diger }
-
-class _DocumentItem {
-  final String id;
-  final String title;
-  final String fileName;
-  final String fileSize;
-  final DocumentCategory category;
-  final String uploadDate;
-  final String fileType;
-
-  const _DocumentItem({
-    required this.id,
-    required this.title,
-    required this.fileName,
-    required this.fileSize,
-    required this.category,
-    required this.uploadDate,
-    required this.fileType,
-  });
-}
-
-/// Örnek belgeler — gerçekte DB'den gelecek
-const _sampleDocuments = [
-  _DocumentItem(
-    id: '1',
-    title: 'Güncel CV',
-    fileName: 'sedat_sahin_cv_2026.pdf',
-    fileSize: '2.4 MB',
-    category: DocumentCategory.cv,
-    uploadDate: '20 Şub 2026',
-    fileType: 'PDF',
-  ),
-  _DocumentItem(
-    id: '2',
-    title: 'Kamu-Sen Üyelik Belgesi',
-    fileName: 'kamu_sen_uyelik.pdf',
-    fileSize: '856 KB',
-    category: DocumentCategory.stk,
-    uploadDate: '15 Şub 2026',
-    fileType: 'PDF',
-  ),
-  _DocumentItem(
-    id: '3',
-    title: 'Nüfus Cüzdanı Fotokopisi',
-    fileName: 'nufus_cuzdani.jpg',
-    fileSize: '1.1 MB',
-    category: DocumentCategory.kimlik,
-    uploadDate: '10 Şub 2026',
-    fileType: 'JPG',
-  ),
-  _DocumentItem(
-    id: '4',
-    title: 'Memur-Sen Yetki Belgesi',
-    fileName: 'memur_sen_yetki.pdf',
-    fileSize: '1.5 MB',
-    category: DocumentCategory.stk,
-    uploadDate: '05 Şub 2026',
-    fileType: 'PDF',
-  ),
-];

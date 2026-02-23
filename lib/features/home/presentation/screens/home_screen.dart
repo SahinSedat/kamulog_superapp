@@ -6,7 +6,7 @@ import 'package:kamulog_superapp/core/widgets/animated_bottom_nav.dart';
 import 'package:kamulog_superapp/features/auth/presentation/providers/auth_provider.dart';
 import 'package:kamulog_superapp/features/stk/presentation/screens/stk_screen.dart';
 import 'package:kamulog_superapp/features/becayis/presentation/screens/becayis_screen.dart';
-import 'package:kamulog_superapp/features/kariyer/presentation/screens/kariyer_screen.dart';
+import 'package:kamulog_superapp/features/kariyer/presentation/screens/career_screen.dart';
 import 'package:kamulog_superapp/features/home/presentation/widgets/home_dashboard.dart';
 import 'package:kamulog_superapp/features/ai/presentation/screens/ai_assistant_screen.dart';
 import 'package:kamulog_superapp/features/ai/presentation/providers/ai_provider.dart';
@@ -24,11 +24,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   late final AnimationController _fadeController;
   late final Animation<double> _fadeAnimation;
 
-  final _screens = const [
+  final _screens = [
     StkScreen(),
     BecayisScreen(),
     HomeDashboard(),
-    KariyerScreen(),
+    CareerScreen(),
     AiAssistantScreen(),
   ];
 

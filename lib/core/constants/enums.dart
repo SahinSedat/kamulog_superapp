@@ -16,3 +16,6 @@ enum ConsultantCategory { hukuk, bordro, psikoloji }
 
 // ── STK Türü
 enum StkType { sendika, dernek, vakif, meslekOdasi }
+
+// ── Belge Kategorisi
+enum DocumentCategory { cv, stk, kimlik, diger }
