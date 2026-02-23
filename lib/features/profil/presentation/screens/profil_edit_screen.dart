@@ -4,10 +4,13 @@ import 'package:go_router/go_router.dart';
 import 'package:kamulog_superapp/core/theme/app_theme.dart';
 import 'package:kamulog_superapp/core/constants/enums.dart';
 import 'package:kamulog_superapp/core/utils/tc_kimlik_validator.dart';
+import 'package:kamulog_superapp/core/utils/helpers.dart';
 import 'package:kamulog_superapp/core/data/turkey_locations.dart';
 import 'package:kamulog_superapp/core/data/public_institutions.dart';
 import 'package:kamulog_superapp/features/auth/presentation/providers/auth_provider.dart';
 import 'package:kamulog_superapp/features/profil/presentation/providers/profil_provider.dart';
+import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
+import 'package:pinput/pinput.dart';
 
 /// Profil düzenleme ekranı — TC doğrulama, il/ilçe dropdown, kurum arama
 class ProfilEditScreen extends ConsumerStatefulWidget {
@@ -21,6 +24,7 @@ class _ProfilEditScreenState extends ConsumerState<ProfilEditScreen> {
   final _formKey = GlobalKey<FormState>();
   final _tcController = TextEditingController();
   final _titleController = TextEditingController();
+  final _nameController = TextEditingController();
   EmploymentType? _selectedType;
   String? _selectedCity;
   String? _selectedDistrict;
@@ -34,6 +38,7 @@ class _ProfilEditScreenState extends ConsumerState<ProfilEditScreen> {
     if (user != null) {
       _selectedType = profil.employmentType ?? user.employmentType;
       _titleController.text = profil.title ?? user.title ?? '';
+      _nameController.text = user.name ?? profil.name ?? '';
     }
     // Mevcut profil verilerini yükle
     _tcController.text = profil.tcKimlik ?? '';
@@ -46,6 +51,7 @@ class _ProfilEditScreenState extends ConsumerState<ProfilEditScreen> {
   void dispose() {
     _tcController.dispose();
     _titleController.dispose();
+    _nameController.dispose();
     super.dispose();
   }
 
@@ -55,12 +61,19 @@ class _ProfilEditScreenState extends ConsumerState<ProfilEditScreen> {
     final currentUser = ref.read(currentUserProvider);
     if (currentUser == null) return;
 
+    final newName = _nameController.text.trim();
     final updatedUser = currentUser.copyWith(
+      name: newName,
       employmentType: _selectedType,
       title: _titleController.text.trim(),
     );
 
     await ref.read(authProvider.notifier).updateUser(updatedUser);
+
+    // İsim değiştiyse profil provider'a da yansıt
+    if (newName != currentUser.name) {
+      ref.read(profilProvider.notifier).updateName(newName);
+    }
 
     if (mounted) {
       // ProfilProvider'ı güncelle — profil ekranına anında yansır
@@ -123,26 +136,49 @@ class _ProfilEditScreenState extends ConsumerState<ProfilEditScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── Kişisel Bilgiler (salt okunur — login'de girildi)
+              // ── Kişisel Bilgiler
               _SectionTitle(
                 title: 'Kişisel Bilgiler',
                 icon: Icons.person_outline,
               ),
               const SizedBox(height: 12),
-              _ReadOnlyField(
-                label: 'Ad Soyad',
-                value: user?.name ?? 'Belirtilmedi',
-                icon: Icons.person_outline,
+              TextFormField(
+                controller: _nameController,
+                keyboardType: TextInputType.name,
+                textCapitalization: TextCapitalization.words,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) {
+                    return 'Ad soyad zorunludur';
+                  }
+                  if (v.trim().length < 3) {
+                    return 'En az 3 karakter olmalıdır';
+                  }
+                  return null;
+                },
+                decoration: const InputDecoration(
+                  labelText: 'Ad Soyad',
+                  prefixIcon: Icon(Icons.person_outline, size: 20),
+                  hintText: 'Adınız ve soyadınız',
+                ),
               ),
               const SizedBox(height: 10),
-              _ReadOnlyField(
-                label: 'Telefon',
-                value: user?.phone ?? 'Belirtilmedi',
-                icon: Icons.phone_outlined,
+              _PhoneEditField(
+                phone: user?.phone ?? 'Belirtilmedi',
+                onPhoneChanged: (newPhone) {
+                  // Telefon değişikliği doğrulama sonrası gerçekleşir
+                  ref.read(profilProvider.notifier).updatePhone(newPhone);
+                  ref
+                      .read(authProvider.notifier)
+                      .updateUser(user!.copyWith(phone: newPhone));
+                },
               ),
               const SizedBox(height: 8),
               Text(
-                'Bu bilgiler kayıt sırasında alınmıştır.',
+                'Telefon değişikliği için OTP doğrulama gereklidir.',
                 style: TextStyle(
                   fontSize: 10,
                   color: Colors.grey[400],
@@ -168,7 +204,7 @@ class _ProfilEditScreenState extends ConsumerState<ProfilEditScreen> {
                   hintText: '11 haneli TC Kimlik numaranız',
                 ),
                 validator: (v) {
-                  if (v == null || v.isEmpty) return 'TC Kimlik No zorunludur';
+                  if (v == null || v.isEmpty) return null; // Opsiyonel
                   if (v.length != 11) return '11 haneli olmalıdır';
                   if (!TcKimlikValidator.validate(v)) {
                     return 'Geçersiz TC Kimlik Numarası';
@@ -517,16 +553,38 @@ class _InstitutionPickerSheetState extends State<_InstitutionPickerSheet> {
   }
 }
 
-// ── Salt okunur alan
-class _ReadOnlyField extends StatelessWidget {
-  final String label;
-  final String value;
-  final IconData icon;
-  const _ReadOnlyField({
-    required this.label,
-    required this.value,
-    required this.icon,
-  });
+// ── Telefon düzenleme alanı (OTP doğrulama ile)
+class _PhoneEditField extends ConsumerStatefulWidget {
+  final String phone;
+  final ValueChanged<String> onPhoneChanged;
+  const _PhoneEditField({required this.phone, required this.onPhoneChanged});
+
+  @override
+  ConsumerState<_PhoneEditField> createState() => _PhoneEditFieldState();
+}
+
+class _PhoneEditFieldState extends ConsumerState<_PhoneEditField> {
+  void _showPhoneChangeSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder:
+          (ctx) => _PhoneChangeSheet(
+            currentPhone: widget.phone,
+            onPhoneVerified: (newPhone) {
+              widget.onPhoneChanged(newPhone);
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Telefon numaranız güncellendi ✓'),
+                  backgroundColor: Color(0xFF2E7D32),
+                ),
+              );
+            },
+          ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -539,18 +597,18 @@ class _ReadOnlyField extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(icon, size: 20, color: Colors.grey[500]),
+          Icon(Icons.phone_outlined, size: 20, color: Colors.grey[500]),
           const SizedBox(width: 12),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                label,
+                'Telefon',
                 style: TextStyle(fontSize: 10, color: Colors.grey[400]),
               ),
               const SizedBox(height: 2),
               Text(
-                value,
+                widget.phone,
                 style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -559,8 +617,294 @@ class _ReadOnlyField extends StatelessWidget {
             ],
           ),
           const Spacer(),
-          Icon(Icons.lock_outline, size: 16, color: Colors.grey[300]),
+          GestureDetector(
+            onTap: _showPhoneChangeSheet,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                'Değiştir',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.primaryColor,
+                ),
+              ),
+            ),
+          ),
         ],
+      ),
+    );
+  }
+}
+
+// ── Telefon değiştirme bottom sheet (OTP doğrulama ile)
+class _PhoneChangeSheet extends ConsumerStatefulWidget {
+  final String currentPhone;
+  final ValueChanged<String> onPhoneVerified;
+
+  const _PhoneChangeSheet({
+    required this.currentPhone,
+    required this.onPhoneVerified,
+  });
+
+  @override
+  ConsumerState<_PhoneChangeSheet> createState() => _PhoneChangeSheetState();
+}
+
+class _PhoneChangeSheetState extends ConsumerState<_PhoneChangeSheet> {
+  final _phoneController = TextEditingController();
+  final _otpController = TextEditingController();
+  final _phoneMask = MaskTextInputFormatter(
+    mask: '### ### ## ##',
+    filter: {'#': RegExp(r'[0-9]')},
+  );
+  bool _otpSent = false;
+  bool _isLoading = false;
+  String? _errorText;
+
+  @override
+  void dispose() {
+    _phoneController.dispose();
+    _otpController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _sendOtp() async {
+    final phone = _phoneMask.getUnmaskedText();
+    final error = Validators.validatePhone(phone);
+    if (error != null) {
+      setState(() => _errorText = error);
+      return;
+    }
+
+    final formattedPhone = Formatters.formatPhoneForApi(phone);
+
+    setState(() {
+      _isLoading = true;
+      _errorText = null;
+    });
+
+    await ref.read(authProvider.notifier).sendPhoneChangeOtp(formattedPhone);
+
+    if (mounted) {
+      final authState = ref.read(authProvider);
+      setState(() {
+        _isLoading = false;
+        if (authState.status == AuthStatus.otpSent) {
+          _otpSent = true;
+        } else if (authState.error != null) {
+          _errorText = authState.error;
+        }
+      });
+    }
+  }
+
+  Future<void> _verifyOtp() async {
+    final code = _otpController.text.trim();
+    if (code.length < 4) {
+      setState(() => _errorText = 'Doğrulama kodunu eksiksiz girin');
+      return;
+    }
+
+    final phone = _phoneMask.getUnmaskedText();
+    final formattedPhone = Formatters.formatPhoneForApi(phone);
+
+    setState(() {
+      _isLoading = true;
+      _errorText = null;
+    });
+
+    final success = await ref
+        .read(authProvider.notifier)
+        .verifyPhoneChangeOtp(code, formattedPhone);
+
+    if (mounted) {
+      setState(() => _isLoading = false);
+      if (success) {
+        widget.onPhoneVerified(formattedPhone);
+      } else {
+        setState(() => _errorText = 'Doğrulama kodu hatalı');
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Telefon Numarasını Değiştir',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Mevcut: ${widget.currentPhone}',
+              style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+            ),
+            const SizedBox(height: 20),
+
+            if (!_otpSent) ...[
+              // Yeni telefon girişi
+              TextFormField(
+                controller: _phoneController,
+                keyboardType: TextInputType.phone,
+                inputFormatters: [_phoneMask],
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+                decoration: InputDecoration(
+                  labelText: 'Yeni Telefon Numarası',
+                  hintText: '5XX XXX XX XX',
+                  prefixIcon: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text('🇹🇷', style: TextStyle(fontSize: 20)),
+                        const SizedBox(width: 6),
+                        Text(
+                          '+90',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.primaryColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  prefixIconConstraints: const BoxConstraints(
+                    minWidth: 0,
+                    minHeight: 0,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton.icon(
+                  onPressed: _isLoading ? null : _sendOtp,
+                  icon:
+                      _isLoading
+                          ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                          : const Icon(Icons.sms_outlined, color: Colors.white),
+                  label: Text(
+                    _isLoading ? 'Gönderiliyor...' : 'Doğrulama Kodu Gönder',
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                ),
+              ),
+            ] else ...[
+              // OTP doğrulama
+              const Text(
+                'Doğrulama kodunu girin',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 12),
+              Pinput(
+                controller: _otpController,
+                length: 6,
+                onCompleted: (_) => _verifyOtp(),
+                autofocus: true,
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton.icon(
+                  onPressed: _isLoading ? null : _verifyOtp,
+                  icon:
+                      _isLoading
+                          ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                          : const Icon(
+                            Icons.verified_outlined,
+                            color: Colors.white,
+                          ),
+                  label: Text(
+                    _isLoading ? 'Doğrulanıyor...' : 'Numarayı Doğrula',
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF2E7D32),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+
+            if (_errorText != null) ...[
+              const SizedBox(height: 12),
+              Text(
+                _errorText!,
+                style: const TextStyle(
+                  color: AppTheme.errorColor,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+            const SizedBox(height: 16),
+          ],
+        ),
       ),
     );
   }

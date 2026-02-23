@@ -12,6 +12,7 @@ abstract class AuthRemoteDataSource {
   Future<UserModel> verifyOtp({
     required String verificationId,
     required String smsCode,
+    String? displayName,
   });
 
   Future<void> signOut();
@@ -69,14 +70,15 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   Future<UserModel> verifyOtp({
     required String verificationId,
     required String smsCode,
+    String? displayName,
   }) async {
     if (!_isFirebaseAvailable || _firebaseAuth == null) {
       // Dev mode: simulate successful verification
       await Future.delayed(const Duration(seconds: 1));
-      return const UserModel(
+      return UserModel(
         id: 'dev-user-001',
         phone: '+905551234567',
-        name: 'Geliştirici',
+        name: displayName ?? 'Geliştirici',
       );
     }
 
@@ -94,7 +96,16 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         throw const ServerException(message: 'Kullanıcı doğrulanamadı.');
       }
 
-      return UserModel(id: user.uid, phone: user.phoneNumber ?? '');
+      // Firebase'e displayName kaydet
+      if (displayName != null && displayName.isNotEmpty) {
+        await user.updateDisplayName(displayName);
+      }
+
+      return UserModel(
+        id: user.uid,
+        phone: user.phoneNumber ?? '',
+        name: displayName ?? user.displayName,
+      );
     } on FirebaseAuthException catch (e) {
       throw ServerException(message: e.message ?? 'Doğrulama hatası');
     } catch (e) {

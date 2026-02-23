@@ -169,7 +169,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = state.copyWith(status: AuthStatus.loading, error: null);
 
     final result = await _verifyOtp(
-      VerifyOtpParams(verificationId: state.verificationId!, smsCode: smsCode),
+      VerifyOtpParams(
+        verificationId: state.verificationId!,
+        smsCode: smsCode,
+        displayName: state.displayName,
+      ),
     );
 
     result.fold(
@@ -199,6 +203,87 @@ class AuthNotifier extends StateNotifier<AuthState> {
             status: AuthStatus.authenticated,
             user: updatedUser,
           ),
+    );
+  }
+
+  /// Telefon numarası değiştirmek için OTP gönder
+  /// Auth state'i DEĞİŞTİRMEZ — ayrı callback kullanır
+  String? _phoneChangeVerificationId;
+  bool _phoneChangeLoading = false;
+  String? _phoneChangeError;
+
+  bool get phoneChangeLoading => _phoneChangeLoading;
+  String? get phoneChangeError => _phoneChangeError;
+
+  Future<void> sendPhoneChangeOtp(String newPhone) async {
+    _phoneChangeLoading = true;
+    _phoneChangeError = null;
+    // State'i yenilemek için notifyListeners benzeri
+    state = state.copyWith(error: null);
+
+    final result = await _sendOtp(
+      SendOtpParams(
+        phone: newPhone,
+        onCodeSent: (verificationId, resendToken) {
+          _phoneChangeVerificationId = verificationId;
+          _phoneChangeLoading = false;
+          // Auth state değişmeden sadece notify
+          state = state.copyWith(error: null);
+        },
+        onVerificationFailed: (error) {
+          _phoneChangeLoading = false;
+          _phoneChangeError = error;
+          state = state.copyWith(error: error);
+        },
+      ),
+    );
+
+    result.fold((failure) {
+      _phoneChangeLoading = false;
+      _phoneChangeError = failure.message;
+      state = state.copyWith(error: failure.message);
+    }, (_) {});
+  }
+
+  /// Telefon değişikliğini OTP ile doğrula ve profili güncelle
+  Future<bool> verifyPhoneChangeOtp(String smsCode, String newPhone) async {
+    if (_phoneChangeVerificationId == null) {
+      _phoneChangeError = 'Verification ID missing';
+      state = state.copyWith(error: _phoneChangeError);
+      return false;
+    }
+    _phoneChangeLoading = true;
+    state = state.copyWith(error: null);
+
+    final result = await _verifyOtp(
+      VerifyOtpParams(
+        verificationId: _phoneChangeVerificationId!,
+        smsCode: smsCode,
+        displayName: state.user?.name,
+      ),
+    );
+
+    return result.fold(
+      (failure) {
+        _phoneChangeLoading = false;
+        _phoneChangeError = failure.message;
+        state = state.copyWith(error: failure.message);
+        return false;
+      },
+      (verifiedUser) {
+        _phoneChangeLoading = false;
+        _phoneChangeVerificationId = null;
+        // Kullanıcının telefon numarasını güncelle
+        final updatedUser = state.user?.copyWith(phone: newPhone);
+        if (updatedUser != null) {
+          _updateUser(updatedUser);
+          state = state.copyWith(
+            status: AuthStatus.authenticated,
+            user: updatedUser,
+          );
+        }
+        return true;
+      },
     );
   }
 

@@ -26,6 +26,8 @@ class AiChatState {
   final bool isLoading;
   final bool isCvBuilding;
   final bool isMevzuatChat; // Mevzuat bilgisi modu
+  final bool isJobAnalysis; // İlan analizi modu
+  final bool analysisComplete; // Analiz tamamlandı mı
   final bool chatLocked; // Jeton/mesaj limiti bittiğinde true olur
   final String? error;
   final String conversationId;
@@ -35,6 +37,8 @@ class AiChatState {
     this.isLoading = false,
     this.isCvBuilding = false,
     this.isMevzuatChat = false,
+    this.isJobAnalysis = false,
+    this.analysisComplete = false,
     this.chatLocked = false,
     this.error,
     this.conversationId = '',
@@ -52,6 +56,8 @@ class AiChatState {
     bool? isLoading,
     bool? isCvBuilding,
     bool? isMevzuatChat,
+    bool? isJobAnalysis,
+    bool? analysisComplete,
     bool? chatLocked,
     String? error,
     String? conversationId,
@@ -61,6 +67,8 @@ class AiChatState {
       isLoading: isLoading ?? this.isLoading,
       isCvBuilding: isCvBuilding ?? this.isCvBuilding,
       isMevzuatChat: isMevzuatChat ?? this.isMevzuatChat,
+      isJobAnalysis: isJobAnalysis ?? this.isJobAnalysis,
+      analysisComplete: analysisComplete ?? this.analysisComplete,
       chatLocked: chatLocked ?? this.chatLocked,
       error: error,
       conversationId: conversationId ?? this.conversationId,
@@ -102,7 +110,7 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
     if (profil.remainingAiCvCount <= 0) {
       state = state.copyWith(
         error:
-            'Bu ay için CV oluşturma hakkınız doldu (2/2 kullanıldı). Gelecek ay tekrar deneyebilirsiniz.',
+            'Bu ay için CV oluşturma hakkınız doldu (1/1 kullanıldı). Gelecek ay tekrar deneyebilirsiniz.',
       );
       return false;
     }
@@ -155,6 +163,7 @@ STRATEJİ:
     state = state.copyWith(
       isMevzuatChat: true,
       isCvBuilding: false,
+      isJobAnalysis: false,
       error: null,
     );
 
@@ -170,6 +179,56 @@ Eğer bu konular dışında bir şey sorulursa "Üzgünüm, bilgi alanım sadece
     sendMessage(
       'Merhaba, kamu mevzuatı, 657 sayılı kanun veya özlük hakları ile ilgili sorunuzu sorabilirsiniz.',
       context: mevzuatContext,
+    );
+  }
+
+  /// İlan bazlı CV uyumluluk analizi başlat (modal içinde gösterilir)
+  void startJobAnalysis({
+    required String jobId,
+    required String? jobCode,
+    required String jobTitle,
+    required String jobCompany,
+    required String jobDescription,
+    required String? jobRequirements,
+    required String cvContent,
+  }) {
+    newConversation();
+    state = state.copyWith(
+      isJobAnalysis: true,
+      analysisComplete: false,
+      isCvBuilding: false,
+      isMevzuatChat: false,
+      error: null,
+    );
+
+    final ilanNo = jobCode ?? jobId;
+
+    final analysisPrompt = '''
+SEN BİR KARİYER DANIŞMANISIN. Aşağıda bir iş ilanı ve kullanıcının CV bilgileri verilmiştir.
+GÖREVİN: SADECE bu ilan ile CV uyumluluğunu analiz etmektir. CV'nin tamamını yazmana gerek yok.
+
+📋 İLAN BİLGİLERİ:
+İlan No: $ilanNo
+Pozisyon: $jobTitle
+Şirket/Kurum: $jobCompany
+Açıklama: $jobDescription
+${jobRequirements != null ? 'Gereksinimler: $jobRequirements' : ''}
+
+📄 KULLANICININ CV ÖZETİ:
+$cvContent
+
+ANALİZ FORMATI:
+1. 📊 **Uyumluluk Skoru:** (0-100 arası yüzde olarak belirt)
+2. ✅ **Güçlü Yönler:** (CV'nin ilana uygun olan kısımları, madde madde)
+3. ⚠️ **Eksik/Geliştirilmesi Gereken Noktalar:** (İlana göre CV'de zayıf kalan kısımlar)
+4. 💡 **Genel Değerlendirme ve Öneri:** (Kısa paragraf halinde son görüşün)
+
+ÖNEMLİ: Sadece bu ilan (İlan No: $ilanNo) bağlamında analiz yap. Başka konulara geçme. Yanıtını Türkçe ver.
+''';
+
+    sendMessage(
+      'İlan No: $ilanNo - "$jobTitle" pozisyonu için CV uyumluluk analizi yap.',
+      context: analysisPrompt,
     );
   }
 
@@ -225,20 +284,18 @@ Eğer bu konular dışında bir şey sorulursa "Üzgünüm, bilgi alanım sadece
     final pNotifier = _ref.read(profilProvider.notifier);
     final profilState = _ref.read(profilProvider);
 
-    // Mevzuat bilgisi jeton kontrolü (Her mesajda 2 jeton)
-    if (state.isMevzuatChat) {
-      if (context == null) {
-        // Kullanıcı mesaj attığında
-        if (!profilState.hasEnoughCredits(2)) {
-          state = state.copyWith(
-            error:
-                'Mevzuat bilgisi mesajı için yeterli jetonunuz bulunmuyor (2 jeton).',
-            chatLocked: true,
-          );
-          return;
-        }
-        await pNotifier.decreaseCredits(2);
+    // Tüm modlarda jeton kontrolü (Her mesajda 2 jeton)
+    if (context == null) {
+      // Kullanıcı mesaj attığında (ilk prompt değil)
+      if (!profilState.hasEnoughCredits(2)) {
+        state = state.copyWith(
+          error:
+              'Yeterli jetonunuz bulunmuyor (2 jeton gerekli). Lütfen jeton satın alın.',
+          chatLocked: true,
+        );
+        return;
       }
+      await pNotifier.decreaseCredits(2);
     }
 
     String finalContext = context ?? '';
@@ -251,7 +308,7 @@ Eğer bu konular dışında bir şey sorulursa "Üzgünüm, bilgi alanım sadece
           conversationId: state.conversationId,
           role: AiRole.assistant,
           content:
-              'Aylık CV oluşturma hakkınız (2/2) dolmuştur. Yeni haklar bir sonraki ay yenilenecektir.',
+              'Aylık CV oluşturma hakkınız (1/1) dolmuştur. Yeni haklar bir sonraki ay yenilenecektir.',
           createdAt: DateTime.now(),
         );
 
@@ -322,7 +379,16 @@ Eğer bu konular dışında bir şey sorulursa "Üzgünüm, bilgi alanım sadece
               buffer.toString(),
               isStreaming: false,
             );
-            state = state.copyWith(isLoading: false);
+            // İş analizi modunda analiz tamamlandığında otomatik kilit
+            if (state.isJobAnalysis) {
+              state = state.copyWith(
+                isLoading: false,
+                analysisComplete: true,
+                chatLocked: true,
+              );
+            } else {
+              state = state.copyWith(isLoading: false);
+            }
           },
           onError: (error) {
             _updateLastAssistantMessage(

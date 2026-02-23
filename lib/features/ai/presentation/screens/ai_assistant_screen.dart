@@ -5,6 +5,7 @@ import 'package:kamulog_superapp/core/theme/app_theme.dart';
 import 'package:kamulog_superapp/features/ai/presentation/providers/ai_provider.dart';
 import 'package:kamulog_superapp/features/ai/presentation/widgets/ai_message_bubble.dart';
 import 'package:kamulog_superapp/features/ai/presentation/widgets/ai_suggestion_chips.dart';
+import 'package:kamulog_superapp/features/profil/presentation/providers/profil_provider.dart';
 
 class AiAssistantScreen extends ConsumerStatefulWidget {
   const AiAssistantScreen({super.key});
@@ -82,8 +83,60 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen>
       if (chatState.messages.isNotEmpty) _scrollToBottom();
     });
 
+    final profil = ref.watch(profilProvider);
+
     return Column(
       children: [
+        // Jeton bilgisi barı
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: isDark ? AppTheme.cardDark : Colors.white,
+            border: Border(
+              bottom: BorderSide(
+                color:
+                    isDark
+                        ? Colors.white.withValues(alpha: 0.06)
+                        : Colors.black.withValues(alpha: 0.06),
+              ),
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.toll_rounded,
+                size: 16,
+                color:
+                    profil.credits > 0
+                        ? AppTheme.primaryColor
+                        : AppTheme.errorColor,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                profil.isPremium
+                    ? 'Sınırsız Jeton (Premium)'
+                    : '${profil.credits} Jeton kaldı',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color:
+                      profil.credits > 0
+                          ? (isDark ? Colors.white70 : Colors.black54)
+                          : AppTheme.errorColor,
+                ),
+              ),
+              if (!profil.isPremium) ...[
+                const SizedBox(width: 4),
+                Text(
+                  '(her mesaj 2 jeton)',
+                  style: TextStyle(fontSize: 10, color: Colors.grey[500]),
+                ),
+              ],
+            ],
+          ),
+        ),
+
         // Chat area
         Expanded(
           child:
@@ -338,6 +391,7 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen>
           message: message,
           showAvatar: showAvatar,
           isDark: isDark,
+          isCvBuilding: chatState.isCvBuilding,
         );
       },
     );

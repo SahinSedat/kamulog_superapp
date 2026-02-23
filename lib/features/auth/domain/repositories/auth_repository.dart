@@ -14,6 +14,7 @@ abstract class AuthRepository {
   Future<Either<Failure, User>> verifyOtp({
     required String verificationId,
     required String smsCode,
+    String? displayName,
   });
 
   /// Update user profile (name, employmentType, etc.)

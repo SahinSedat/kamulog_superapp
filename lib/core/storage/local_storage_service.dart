@@ -114,6 +114,22 @@ class LocalStorageService {
     return _profile.get('profileImage');
   }
 
+  static Future<void> saveProfileName(String name) async {
+    await _profile.put('profileName', name);
+  }
+
+  static String? loadProfileName() {
+    return _profile.get('profileName');
+  }
+
+  static Future<void> saveProfilePhone(String phone) async {
+    await _profile.put('profilePhone', phone);
+  }
+
+  static String? loadProfilePhone() {
+    return _profile.get('profilePhone');
+  }
+
   // ════════════════════════════════════════════
   // ANKET SONUÇLARI — cihazda kalır
   // ════════════════════════════════════════════

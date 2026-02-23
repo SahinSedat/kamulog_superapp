@@ -10,12 +10,14 @@ class AiMessageBubble extends StatelessWidget {
   final AiMessageModel message;
   final bool showAvatar;
   final bool isDark;
+  final bool isCvBuilding;
 
   const AiMessageBubble({
     super.key,
     required this.message,
     required this.showAvatar,
     required this.isDark,
+    this.isCvBuilding = false,
   });
 
   bool get isUser => message.role == AiRole.user;
@@ -129,8 +131,9 @@ class AiMessageBubble extends StatelessWidget {
                               ),
                             ),
 
-                            // PDF Export Buttons
+                            // PDF Export Buttons — sadece CV oluşturma modunda
                             if (!isUser &&
+                                isCvBuilding &&
                                 (message.content.contains('PDF') ||
                                     message.content.contains(
                                       'oluşturalım mı?',
@@ -207,7 +210,14 @@ class AiMessageBubble extends StatelessWidget {
                 ),
               ),
               TextButton(
-                onPressed: () {},
+                onPressed: () {
+                  // Sohbete devam et
+                  ref
+                      .read(aiChatProvider.notifier)
+                      .sendMessage(
+                        'Şimdi PDF oluşturmak istemiyorum, sohbete devam edelim.',
+                      );
+                },
                 style: TextButton.styleFrom(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,

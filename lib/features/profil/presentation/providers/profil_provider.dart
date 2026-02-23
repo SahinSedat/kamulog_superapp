@@ -128,10 +128,10 @@ class ProfilState {
     }).length;
   }
 
-  /// Kalan AI CV hakkı (Ayda 2 kez, Premium iseniz sınırsız)
+  /// Kalan AI CV hakkı (Ayda 1 kez, Premium iseniz sınırsız)
   int get remainingAiCvCount {
     if (isPremium) return 999;
-    return (2 - aiCvCountThisMonth).clamp(0, 2);
+    return (1 - aiCvCountThisMonth).clamp(0, 1);
   }
 
   /// Formatlanmış adres (önce profil verisi, yoksa anket verisi)
@@ -334,6 +334,18 @@ class ProfilNotifier extends StateNotifier<ProfilState> {
     final newDocs = state.documents.where((d) => d.id != docId).toList();
     state = state.copyWith(documents: newDocs);
     await LocalStorageService.removeDocument(docId);
+  }
+
+  /// İsim güncelle
+  Future<void> updateName(String name) async {
+    state = state.copyWith(name: name);
+    await LocalStorageService.saveProfileName(name);
+  }
+
+  /// Telefon numarasını güncelle (doğrulama sonrası çağırılır)
+  Future<void> updatePhone(String phone) async {
+    state = state.copyWith(phone: phone);
+    await LocalStorageService.saveProfilePhone(phone);
   }
 
   /// Profil Fotoğrafı Güncelle

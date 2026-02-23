@@ -44,12 +44,14 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<Either<Failure, User>> verifyOtp({
     required String verificationId,
     required String smsCode,
+    String? displayName,
   }) async {
     if (connectivityService.isConnected) {
       try {
         final userModel = await remoteDataSource.verifyOtp(
           verificationId: verificationId,
           smsCode: smsCode,
+          displayName: displayName,
         );
         await localDataSource.cacheUser(userModel);
         return Right(userModel);

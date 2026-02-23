@@ -7,6 +7,7 @@ import 'package:kamulog_superapp/features/ai/presentation/providers/ai_provider.
 import 'package:kamulog_superapp/core/providers/home_navigation_provider.dart';
 import 'package:kamulog_superapp/features/kariyer/presentation/providers/jobs_provider.dart';
 import 'package:kamulog_superapp/features/kariyer/data/models/job_listing_model.dart';
+import 'package:kamulog_superapp/features/ai/data/models/ai_message_model.dart';
 
 /// Kariyer modülü — AI CV oluşturma ve iş analizi
 /// Ayrı modül: features/kariyer/ — ileride ayrı API/AI entegrasyonu
@@ -91,7 +92,7 @@ class CareerScreen extends ConsumerWidget {
               title: 'AI ile CV Oluştur',
               subtitle:
                   profil.remainingAiCvCount > 0
-                      ? 'Aylık 2 kullanımdan ${profil.remainingAiCvCount} hak kaldı'
+                      ? 'Aylık 1 kullanımdan ${profil.remainingAiCvCount} hak kaldı'
                       : 'Bu ayki kullanım hakkınız doldu',
               color: const Color(0xFF1565C0),
               onTap: () => _showAiCvBuilder(context, ref),
@@ -106,17 +107,9 @@ class CareerScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 10),
             _QuickActionCard(
-              icon: Icons.analytics_rounded,
-              title: 'İş İlanlarını Analiz Et',
-              subtitle: 'CV eşleştirme analizi',
-              color: const Color(0xFF2E7D32),
-              onTap: () => _showJobAnalysis(context, ref),
-            ),
-            const SizedBox(height: 10),
-            _QuickActionCard(
               icon: Icons.hub_rounded,
               title: 'AI İş Eşleştirme',
-              subtitle: '4 Uygun + 2 Alternatif İlan',
+              subtitle: '4 Uygun + 2 Alternatif İlan Önerisi',
               color: const Color(0xFFF57C00),
               onTap: () => _showJobMatching(context, ref),
             ),
@@ -215,181 +208,6 @@ class CareerScreen extends ConsumerWidget {
     context.pop(); // Geriye (Home'a) dön ki tablar gözüksün
   }
 
-  void _showJobAnalysis(BuildContext context, WidgetRef ref) {
-    final profil = ref.read(profilProvider);
-
-    if (!profil.hasCv) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Analiz için önce Belgelerim sayfasından bir CV yüklemelisiniz.',
-          ),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      return;
-    }
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder:
-          (ctx) => Container(
-            height: MediaQuery.of(ctx).size.height * 0.7,
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-            ),
-            child: Column(
-              children: [
-                Container(
-                  margin: const EdgeInsets.only(top: 10),
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    children: [
-                      Container(
-                        width: 64,
-                        height: 64,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF2E7D32).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: const Icon(
-                          Icons.analytics_rounded,
-                          size: 32,
-                          color: Color(0xFF2E7D32),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'AI İş Analizi',
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Yapay zeka, CV\'nizi analiz ederek en uygun iş ilanlarını bulur.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-                      ),
-                    ],
-                  ),
-                ),
-                const Divider(),
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Column(
-                      children: [
-                        _AnalysisInfoRow(
-                          icon: Icons.description_rounded,
-                          title: 'CV Kontrol Edildi',
-                          subtitle:
-                              'Analiz için sistemdeki CV\'niz kullanılacak',
-                        ),
-                        _AnalysisInfoRow(
-                          icon: Icons.search_rounded,
-                          title: 'Otomatik Tarama',
-                          subtitle: 'Kamu ve özel sektör ilanları taranır',
-                        ),
-                        _AnalysisInfoRow(
-                          icon: Icons.score_rounded,
-                          title: 'Uyumluluk Skoru',
-                          subtitle:
-                              'Her ilan için yüzdelik uyumluluk hesaplanır',
-                        ),
-                        _AnalysisInfoRow(
-                          icon: Icons.tips_and_updates_rounded,
-                          title: 'Öneriler',
-                          subtitle: 'CV iyileştirme önerileri sunulur',
-                        ),
-                        const SizedBox(height: 20),
-                        SizedBox(
-                          width: double.infinity,
-                          height: 52,
-                          child: ElevatedButton.icon(
-                            onPressed: () async {
-                              final pNotifier = ref.read(
-                                profilProvider.notifier,
-                              );
-                              final hasCredits = profil.hasEnoughCredits(2);
-
-                              if (!hasCredits) {
-                                Navigator.pop(ctx);
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        'Bu işlem için yeterli jetonunuz bulunmuyor (2 Jeton gerekli).',
-                                      ),
-                                      backgroundColor: Colors.red,
-                                    ),
-                                  );
-                                }
-                                return;
-                              }
-
-                              // Jetonu düş
-                              await pNotifier.decreaseCredits(2);
-
-                              if (context.mounted) Navigator.pop(ctx);
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      profil.isPremium
-                                          ? 'AI iş analizi başlatıldı!'
-                                          : 'AI iş analizi başlatıldı! (2 Jeton kullanıldı)',
-                                    ),
-                                    backgroundColor: const Color(0xFF2E7D32),
-                                  ),
-                                );
-                              }
-                            },
-                            icon: const Icon(
-                              Icons.play_arrow_rounded,
-                              color: Colors.white,
-                            ),
-                            label: Text(
-                              profil.isPremium
-                                  ? 'Analizi Başlat (Sınırsız)'
-                                  : 'Analizi Başlat (2 Jeton)',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                              ),
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF2E7D32),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-    );
-  }
-
   void _showJobMatching(BuildContext context, WidgetRef ref) {
     final profil = ref.read(profilProvider);
 
@@ -476,12 +294,18 @@ class CareerScreen extends ConsumerWidget {
                         _AnalysisInfoRow(
                           icon: Icons.stars_rounded,
                           title: 'Uygun İşler',
-                          subtitle: 'CV\'nize en uygun 4 ilan taranır',
+                          subtitle: 'CV\'nize en uygun 4 ilan önerilir',
                         ),
                         _AnalysisInfoRow(
                           icon: Icons.alt_route_rounded,
                           title: 'Alternatif Kariyer',
                           subtitle: '2 Adet ikincil alternatif yol önerilir',
+                        ),
+                        _AnalysisInfoRow(
+                          icon: Icons.comment_rounded,
+                          title: 'AI Yorumu',
+                          subtitle:
+                              'Her öneri detaylı açıklama ve yorum içerir',
                         ),
                         const SizedBox(height: 20),
                         SizedBox(
@@ -512,17 +336,68 @@ class CareerScreen extends ConsumerWidget {
                               // Jetonu düş
                               await pNotifier.decreaseCredits(2);
 
+                              // CV içeriğini hazırla
+                              final cvDoc = profil.documents
+                                  .cast<DocumentInfo?>()
+                                  .firstWhere(
+                                    (doc) =>
+                                        doc != null &&
+                                        doc.category.toLowerCase() == 'cv',
+                                    orElse: () => null,
+                                  );
+
+                              String cvContent;
+                              if (cvDoc != null &&
+                                  cvDoc.content != null &&
+                                  cvDoc.content!.isNotEmpty) {
+                                cvContent = cvDoc.content!;
+                              } else {
+                                cvContent =
+                                    'Ad: ${profil.name ?? "Belirtilmedi"}, Kurum: ${profil.effectiveInstitution}, Unvan: ${profil.title ?? "Belirtilmedi"}, Beceriler: ${profil.surveyInterests.join(", ")}';
+                              }
+
+                              // AI’ya iş eşleştirme prompt'u gönder
+                              final matchingPrompt = '''
+SEN BİR KARİYER DANIŞMANISIN. Aşağıdaki CV bilgilerine dayanarak bana İş önerilerinde bulun.
+
+KULLANICININ CV BİLGİLERİ:
+$cvContent
+
+GÖREVİN:
+1. **4 UYGUN İŞ İLANI**: CV'ye en uygun 4 iş ilanını öner. Her biri için:
+   - 💼 **Pozisyon Adı**
+   - 🏢 **Kurum/Şirket** (kamu veya özel sektör olabilir)
+   - 📊 **Uyumluluk Yüzdesi** (0-100)
+   - 💡 **Neden Uygun:** (kısa açıklama)
+
+2. **2 ALTERNATİF KARİYER YOLU**: CV'nin güçlü yönlerini değerlendirerek 2 alternatif kariyer önerisi yap. Her biri için:
+   - 🔄 **Alternatif Pozisyon**
+   - 🏢 **Tipik Kurum**
+   - ✨ **Neden Alternatif:** (neden bu yönü düşünmeli, hangi becerileri kullanabilir)
+
+3. **GENEL DEĞERLENDİRME**: Kullanıcının kariyer profili hakkında kısa bir genel değerlendirme paragrafı.
+
+Yanıtını Türkçe ver. Gerçekçi ve özgün önerilerde bulun.
+''';
+
+                              ref
+                                  .read(aiChatProvider.notifier)
+                                  .sendMessage(
+                                    'CV\'me en uygun iş ilanlarını bul ve alternatif kariyer yolları öner.',
+                                    context: matchingPrompt,
+                                  );
+
                               if (context.mounted) Navigator.pop(ctx);
                               if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      profil.isPremium
-                                          ? 'AI iş eşleştirme başlatıldı!'
-                                          : 'AI iş eşleştirme başlatıldı! (2 Jeton kullanıldı)',
-                                    ),
-                                    backgroundColor: const Color(0xFFF57C00),
-                                  ),
+                                // Sonucu kariyer sayfasında modal ile göster
+                                showModalBottomSheet(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  isDismissible: false,
+                                  enableDrag: false,
+                                  backgroundColor: Colors.transparent,
+                                  builder:
+                                      (_) => const _JobMatchingResultSheet(),
                                 );
                               }
                             },
@@ -996,6 +871,219 @@ class _AnalysisInfoRow extends StatelessWidget {
                   style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                 ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// AI İş Eşleştirme sonuçlarını gösteren modal bottom sheet
+class _JobMatchingResultSheet extends ConsumerWidget {
+  const _JobMatchingResultSheet();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final chatState = ref.watch(aiChatProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final assistantMessages =
+        chatState.messages.where((m) => m.role == AiRole.assistant).toList();
+    final lastAssistantMsg =
+        assistantMessages.isNotEmpty ? assistantMessages.last : null;
+
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.85,
+      decoration: BoxDecoration(
+        color: isDark ? AppTheme.cardDark : Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Column(
+        children: [
+          // Handle
+          Container(
+            margin: const EdgeInsets.only(top: 12),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+
+          // Başlık
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+            child: Row(
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF57C00).withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.hub_rounded,
+                    color: Color(0xFFF57C00),
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'AI İş Eşleştirme Sonuçları',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      Text(
+                        '4 uygun + 2 alternatif öneri',
+                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+          const Divider(height: 1),
+
+          // Sonuçlar
+          Expanded(
+            child:
+                chatState.isLoading && lastAssistantMsg == null
+                    ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          SizedBox(
+                            width: 40,
+                            height: 40,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 3,
+                              color: const Color(0xFFF57C00),
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          const Text(
+                            'CV\'nize uygun işler aranıyor...',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                    : lastAssistantMsg != null
+                    ? SingleChildScrollView(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Mesaj içeriği
+                          SelectableText(
+                            lastAssistantMsg.content,
+                            style: TextStyle(
+                              fontSize: 14,
+                              height: 1.6,
+                              color: isDark ? Colors.white : Colors.black87,
+                            ),
+                          ),
+                          if (chatState.isLoading) ...[
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: const Color(0xFFF57C00),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Eşleştirme devam ediyor...',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[500],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ],
+                      ),
+                    )
+                    : Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          SizedBox(
+                            width: 40,
+                            height: 40,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 3,
+                              color: const Color(0xFFF57C00),
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          const Text(
+                            'CV\'nize uygun işler aranıyor...',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+          ),
+
+          // Alt buton
+          Container(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+            decoration: BoxDecoration(
+              border: Border(top: BorderSide(color: Colors.grey.shade200)),
+            ),
+            child: SafeArea(
+              child: SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton.icon(
+                  onPressed:
+                      chatState.isLoading
+                          ? null
+                          : () {
+                            ref.read(aiChatProvider.notifier).newConversation();
+                            Navigator.pop(context);
+                          },
+                  icon: const Icon(Icons.check_rounded, color: Colors.white),
+                  label: const Text(
+                    'Kapat',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFF57C00),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                ),
+              ),
             ),
           ),
         ],

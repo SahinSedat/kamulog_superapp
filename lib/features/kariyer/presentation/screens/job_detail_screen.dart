@@ -6,7 +6,7 @@ import 'package:kamulog_superapp/features/kariyer/data/models/job_listing_model.
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kamulog_superapp/features/profil/presentation/providers/profil_provider.dart';
 import 'package:kamulog_superapp/features/ai/presentation/providers/ai_provider.dart';
-import 'package:kamulog_superapp/core/providers/home_navigation_provider.dart';
+import 'package:kamulog_superapp/features/ai/data/models/ai_message_model.dart';
 
 class JobDetailScreen extends ConsumerWidget {
   final JobListingModel job;
@@ -61,37 +61,49 @@ class JobDetailScreen extends ConsumerWidget {
     // Jetonu düş
     await ref.read(profilProvider.notifier).decreaseCredits(2);
 
-    // Kullanıcının yüklü CV'sini bul
+    // CV içeriğini hazırla
     final cvDoc = profil.documents.cast<DocumentInfo?>().firstWhere(
       (doc) => doc != null && doc.category.toLowerCase() == 'cv',
       orElse: () => null,
     );
 
-    String cvTextContent = '';
+    String cvContent;
     if (cvDoc != null && cvDoc.content != null && cvDoc.content!.isNotEmpty) {
-      cvTextContent =
-          '\n\n--- KULLANICININ YÜKLEDİĞİ CV İÇERİĞİ ---\n${cvDoc.content}\n--- CV BİTİŞ ---\n\nYukarıdaki CV içeriğini dikkatlice okuyarak aşağıdaki ilan ile uyumluluk analizi yap.\n';
+      cvContent = cvDoc.content!;
     } else {
-      cvTextContent =
-          '\n\nKullanıcının profil verileri: Ad: ${profil.name ?? "Belirtilmedi"}, Kurum: ${profil.effectiveInstitution}, Unvan: ${profil.title ?? "Belirtilmedi"}, Beceriler: ${profil.surveyInterests.join(", ")}\n\nBu profil verilerine göre aşağıdaki ilan ile uyumluluk analizi yap.';
+      cvContent =
+          'Ad: ${profil.name ?? "Belirtilmedi"}, Kurum: ${profil.effectiveInstitution}, Unvan: ${profil.title ?? "Belirtilmedi"}, Beceriler: ${profil.surveyInterests.join(", ")}';
     }
 
-    // İlan bilgilerini ayrıntılı biçimde gönder
-    final deadlineStr =
-        job.deadline != null
-            ? '${job.deadline!.day}.${job.deadline!.month}.${job.deadline!.year}'
-            : 'Belirtilmemiş';
-    final jobInfo =
-        '\n\n--- İLAN BİLGİLERİ ---\nİlan No: ${job.code ?? job.id}\nİlan Başlığı: ${job.title}\nKurum/Şirket: ${job.company}\nKonum: ${job.location ?? "Belirtilmemiş"}\nTür: ${job.type == "PUBLIC" ? "Kamu" : "Özel Sektör"}\nİş Tanımı: ${job.description}\nAranan Nitelikler: ${job.requirements ?? "Belirtilmemiş"}\nSon Başvuru: $deadlineStr\n--- İLAN BİTİŞ ---\n\nBana bu ilana uygunluk oranımı yüzdelik olarak ver, güçlü yönlerimi, zayıf yönlerimi ve geliştirmem gereken alanları listele.\n';
+    // Yeni analiz akışını başlat (sayfadan ayrılmadan)
+    ref
+        .read(aiChatProvider.notifier)
+        .startJobAnalysis(
+          jobId: job.id,
+          jobCode: job.code,
+          jobTitle: job.title,
+          jobCompany: job.company,
+          jobDescription: job.description,
+          jobRequirements: job.requirements,
+          cvContent: cvContent,
+        );
 
-    final prompt = '$cvTextContent$jobInfo';
-    ref.read(aiChatProvider.notifier).sendMessage(prompt);
-
-    // AI Asistan tab'ına yönlendir
+    // Modal bottom sheet ile sonucu göster
     if (context.mounted) {
-      ref.read(homeNavigationProvider.notifier).setIndex(4);
-      context.go('/');
+      _showAnalysisModal(context, ref);
     }
+  }
+
+  void _showAnalysisModal(BuildContext context, WidgetRef ref) {
+    final ilanNo = job.code ?? job.id;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      isDismissible: false,
+      enableDrag: false,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _JobAnalysisSheet(ilanNo: ilanNo, jobTitle: job.title),
+    );
   }
 
   @override
@@ -463,6 +475,255 @@ class JobDetailScreen extends ConsumerWidget {
           style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
         ),
       ],
+    );
+  }
+}
+
+/// İlan analizi sonuçlarını gösteren modal bottom sheet
+class _JobAnalysisSheet extends ConsumerWidget {
+  final String ilanNo;
+  final String jobTitle;
+
+  const _JobAnalysisSheet({required this.ilanNo, required this.jobTitle});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final chatState = ref.watch(aiChatProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // AI asistan mesajlarını filtrele
+    final assistantMessages =
+        chatState.messages.where((m) => m.role == AiRole.assistant).toList();
+    final lastAssistantMsg =
+        assistantMessages.isNotEmpty ? assistantMessages.last : null;
+
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.85,
+      decoration: BoxDecoration(
+        color: isDark ? AppTheme.cardDark : Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Column(
+        children: [
+          // Handle
+          Container(
+            margin: const EdgeInsets.only(top: 12),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+
+          // Başlık
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+            child: Row(
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    gradient: AppTheme.aiGradient,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.analytics_rounded,
+                    color: Colors.white,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'İlan Analizi — $ilanNo',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      Text(
+                        jobTitle,
+                        style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+          const Divider(height: 1),
+
+          // Analiz sonucu
+          Expanded(
+            child:
+                chatState.isLoading && lastAssistantMsg == null
+                    ? _buildLoadingView()
+                    : lastAssistantMsg != null
+                    ? SingleChildScrollView(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Analiz tamamlandı banner
+                          if (chatState.analysisComplete) ...[
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: const Color(
+                                  0xFF2E7D32,
+                                ).withValues(alpha: 0.08),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: const Color(
+                                    0xFF2E7D32,
+                                  ).withValues(alpha: 0.2),
+                                ),
+                              ),
+                              child: const Row(
+                                children: [
+                                  Icon(
+                                    Icons.check_circle_rounded,
+                                    color: Color(0xFF2E7D32),
+                                    size: 20,
+                                  ),
+                                  SizedBox(width: 10),
+                                  Text(
+                                    'Analiz Tamamlandı',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFF2E7D32),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                          ],
+
+                          // Mesaj içeriği
+                          SelectableText(
+                            lastAssistantMsg.content,
+                            style: TextStyle(
+                              fontSize: 14,
+                              height: 1.6,
+                              color: isDark ? Colors.white : Colors.black87,
+                            ),
+                          ),
+
+                          // Loading indicator while streaming
+                          if (chatState.isLoading) ...[
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: AppTheme.primaryColor,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Analiz devam ediyor...',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[500],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ],
+                      ),
+                    )
+                    : _buildLoadingView(),
+          ),
+
+          // Alt butonlar
+          Container(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+            decoration: BoxDecoration(
+              border: Border(top: BorderSide(color: Colors.grey.shade200)),
+            ),
+            child: SafeArea(
+              child: SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton.icon(
+                  onPressed:
+                      chatState.isLoading
+                          ? null
+                          : () {
+                            ref.read(aiChatProvider.notifier).newConversation();
+                            Navigator.pop(context);
+                          },
+                  icon: Icon(
+                    chatState.analysisComplete
+                        ? Icons.check_rounded
+                        : Icons.close_rounded,
+                    color: Colors.white,
+                  ),
+                  label: Text(
+                    chatState.analysisComplete ? 'Analizi Kapat' : 'Kapat',
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor:
+                        chatState.analysisComplete
+                            ? const Color(0xFF2E7D32)
+                            : Colors.grey[600],
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoadingView() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: 40,
+            height: 40,
+            child: CircularProgressIndicator(
+              strokeWidth: 3,
+              color: AppTheme.primaryColor,
+            ),
+          ),
+          const SizedBox(height: 20),
+          const Text(
+            'CV uyumluluk analizi yapılıyor...',
+            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'İlan No: $ilanNo',
+            style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+          ),
+        ],
+      ),
     );
   }
 }

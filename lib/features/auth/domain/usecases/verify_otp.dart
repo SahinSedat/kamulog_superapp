@@ -14,6 +14,7 @@ class VerifyOtpUseCase extends UseCase<User, VerifyOtpParams> {
     return await repository.verifyOtp(
       verificationId: params.verificationId,
       smsCode: params.smsCode,
+      displayName: params.displayName,
     );
   }
 }
@@ -21,6 +22,11 @@ class VerifyOtpUseCase extends UseCase<User, VerifyOtpParams> {
 class VerifyOtpParams {
   final String verificationId;
   final String smsCode;
+  final String? displayName;
 
-  const VerifyOtpParams({required this.verificationId, required this.smsCode});
+  const VerifyOtpParams({
+    required this.verificationId,
+    required this.smsCode,
+    this.displayName,
+  });
 }
