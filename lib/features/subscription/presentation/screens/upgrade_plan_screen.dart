@@ -237,10 +237,6 @@ class _UpgradePlanScreenState extends ConsumerState<UpgradePlanScreen> {
       ),
     );
     await Future.delayed(const Duration(seconds: 2));
-
-    // Kredi ekle
-    await ref.read(profilProvider.notifier).addCredits(1000);
-
     // Premium durumunu aktifleştir (aylık = 30 gün, yıllık = 365 gün)
     final duration = plan == 'yillik' ? 365 : 30;
     await ref

@@ -10,7 +10,6 @@ class User extends Equatable {
   final String role;
   final bool isVerified;
   final DateTime? createdAt;
-  final int credits;
   final String? subscriptionTier;
   final EmploymentType? employmentType;
   final int? ministryCode;
@@ -25,7 +24,6 @@ class User extends Equatable {
     this.role = 'USER',
     this.isVerified = false,
     this.createdAt,
-    this.credits = 0,
     this.subscriptionTier,
     this.employmentType,
     this.ministryCode,
@@ -41,7 +39,6 @@ class User extends Equatable {
     String? role,
     bool? isVerified,
     DateTime? createdAt,
-    int? credits,
     String? subscriptionTier,
     EmploymentType? employmentType,
     int? ministryCode,
@@ -56,7 +53,6 @@ class User extends Equatable {
       role: role ?? this.role,
       isVerified: isVerified ?? this.isVerified,
       createdAt: createdAt ?? this.createdAt,
-      credits: credits ?? this.credits,
       subscriptionTier: subscriptionTier ?? this.subscriptionTier,
       employmentType: employmentType ?? this.employmentType,
       ministryCode: ministryCode ?? this.ministryCode,
@@ -74,7 +70,6 @@ class User extends Equatable {
     role,
     isVerified,
     createdAt,
-    credits,
     subscriptionTier,
     employmentType,
     ministryCode,

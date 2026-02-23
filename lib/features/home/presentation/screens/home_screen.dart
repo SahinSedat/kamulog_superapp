@@ -55,8 +55,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   void _onTabChanged(int index) {
     final currentIndex = ref.read(homeNavigationProvider);
     if (index == currentIndex) return;
-    _fadeController.forward(from: 0);
+    // Önce state'i güncelle - anlık geçiş sağlar
     ref.read(homeNavigationProvider.notifier).setIndex(index);
+    // Smooth fade-in animasyonu arka planda çalışsın ama geçişi engellemesin
+    _fadeController.value = 1.0;
   }
 
   @override

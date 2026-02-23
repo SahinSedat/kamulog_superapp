@@ -21,11 +21,11 @@ class ProfilState {
   final String? surveyCity;
   final List<String> surveyInterests;
 
-  // Kariyer & Abonelik & Kredi Bilgileri
-  final int credits;
+  // Kariyer & Abonelik Bilgileri
   final bool isPremium;
   final DateTime? subscriptionEndDate;
   final List<String> aiCvUsageDates; // ISO formatında tarihler
+  final String? profileImagePath; // Local profile image path
 
   final String? error;
 
@@ -43,11 +43,11 @@ class ProfilState {
     this.surveyInstitution,
     this.surveyCity,
     this.surveyInterests = const [],
-    this.credits = 10,
     this.isPremium = false,
     this.subscriptionEndDate,
     this.aiCvUsageDates = const [],
     this.error,
+    this.profileImagePath,
   });
 
   ProfilState copyWith({
@@ -64,11 +64,11 @@ class ProfilState {
     String? surveyInstitution,
     String? surveyCity,
     List<String>? surveyInterests,
-    int? credits,
     bool? isPremium,
     DateTime? subscriptionEndDate,
     List<String>? aiCvUsageDates,
     String? error,
+    String? profileImagePath,
   }) {
     return ProfilState(
       isLoading: isLoading ?? this.isLoading,
@@ -84,11 +84,11 @@ class ProfilState {
       surveyInstitution: surveyInstitution ?? this.surveyInstitution,
       surveyCity: surveyCity ?? this.surveyCity,
       surveyInterests: surveyInterests ?? this.surveyInterests,
-      credits: credits ?? this.credits,
       isPremium: isPremium ?? this.isPremium,
       subscriptionEndDate: subscriptionEndDate ?? this.subscriptionEndDate,
       aiCvUsageDates: aiCvUsageDates ?? this.aiCvUsageDates,
       error: error,
+      profileImagePath: profileImagePath ?? this.profileImagePath,
     );
   }
 
@@ -194,8 +194,10 @@ class ProfilNotifier extends StateNotifier<ProfilState> {
     final profileData = LocalStorageService.loadProfile();
     final surveyData = LocalStorageService.loadSurveyResults();
     final documentsData = LocalStorageService.loadDocuments();
-    final credits = LocalStorageService.loadCredits();
     final aiCvUsage = LocalStorageService.loadAiCvUsage();
+    final isPremium = LocalStorageService.loadIsPremium();
+    final subscriptionEndDate = LocalStorageService.loadSubscriptionEndDate();
+    final profileImage = LocalStorageService.loadProfileImage();
 
     state = state.copyWith(
       tcKimlik: profileData['tcKimlik'],
@@ -214,8 +216,10 @@ class ProfilNotifier extends StateNotifier<ProfilState> {
       surveyCity: surveyData['city'],
       surveyInterests: surveyData['interests'] ?? [],
       documents: documentsData.map((d) => DocumentInfo.fromJson(d)).toList(),
-      credits: credits,
+      isPremium: isPremium,
+      subscriptionEndDate: subscriptionEndDate,
       aiCvUsageDates: aiCvUsage,
+      profileImagePath: profileImage,
     );
   }
 
@@ -232,32 +236,22 @@ class ProfilNotifier extends StateNotifier<ProfilState> {
     }
   }
 
-  /// Kredi harca (Analiz vs. için)
-  Future<bool> useCredits(int amount) async {
-    if (state.credits < amount) return false;
-
-    final newCredits = state.credits - amount;
-    state = state.copyWith(credits: newCredits);
-    await LocalStorageService.saveCredits(newCredits);
-    return true;
-  }
-
-  /// Kredi ekle (Satın alım vs. sonrası için)
-  Future<void> addCredits(int amount) async {
-    final newCredits = state.credits + amount;
-    state = state.copyWith(credits: newCredits);
-    await LocalStorageService.saveCredits(newCredits);
-  }
-
   /// Premium aboneliği aktifleştir
   Future<void> activatePremium(DateTime endDate) async {
     state = state.copyWith(isPremium: true, subscriptionEndDate: endDate);
-    // İleride LocalStorageService'e de kaydedilecek
+    await LocalStorageService.savePremiumStatus(true, endDate);
   }
 
   /// Premium aboneliği iptal et
-  void cancelPremium() {
+  Future<void> cancelPremium() async {
     state = state.copyWith(isPremium: false, subscriptionEndDate: null);
+    await LocalStorageService.savePremiumStatus(false, null);
+  }
+
+  /// Profil sıfırlama (test amaçlı desteklenebilir, veya iptal edilebilir)
+  Future<void> clearPremiumStatus() async {
+    state = state.copyWith(isPremium: false, subscriptionEndDate: null);
+    await LocalStorageService.savePremiumStatus(false, null);
   }
 
   /// AI CV kullanımını kaydet
@@ -311,6 +305,12 @@ class ProfilNotifier extends StateNotifier<ProfilState> {
     final newDocs = state.documents.where((d) => d.id != docId).toList();
     state = state.copyWith(documents: newDocs);
     await LocalStorageService.removeDocument(docId);
+  }
+
+  /// Profil Fotoğrafı Güncelle
+  Future<void> updateProfileImage(String path) async {
+    state = state.copyWith(profileImagePath: path);
+    await LocalStorageService.saveProfileImage(path);
   }
 }
 

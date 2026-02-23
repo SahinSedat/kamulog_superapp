@@ -22,16 +22,8 @@ class LocalStorageService {
   }
 
   // ════════════════════════════════════════════
-  // KARIYER & KREDI — cihazda kalır
+  // KARIYER & AI CV KULLANIMI — cihazda kalır
   // ════════════════════════════════════════════
-
-  static Future<void> saveCredits(int credits) async {
-    await _career.put('credits', credits);
-  }
-
-  static int loadCredits() {
-    return _career.get('credits', defaultValue: 10); // Başlangıç 10 kredi
-  }
 
   static Future<void> saveAiCvUsage(List<String> dates) async {
     await _career.put('aiCvUsage', dates);
@@ -41,6 +33,32 @@ class LocalStorageService {
     final raw = _career.get('aiCvUsage');
     if (raw == null) return [];
     return (raw as List).cast<String>();
+  }
+
+  // ════════════════════════════════════════════
+  // ABONELİK (PREMIUM) DURUMU — cihazda kalır
+  // ════════════════════════════════════════════
+
+  static Future<void> savePremiumStatus(
+    bool isPremium,
+    DateTime? endDate,
+  ) async {
+    await _career.put('isPremium', isPremium);
+    if (endDate != null) {
+      await _career.put('subscriptionEndDate', endDate.toIso8601String());
+    } else {
+      await _career.delete('subscriptionEndDate');
+    }
+  }
+
+  static bool loadIsPremium() {
+    return _career.get('isPremium', defaultValue: false);
+  }
+
+  static DateTime? loadSubscriptionEndDate() {
+    final raw = _career.get('subscriptionEndDate');
+    if (raw == null) return null;
+    return DateTime.tryParse(raw);
   }
 
   // ════════════════════════════════════════════
@@ -74,6 +92,14 @@ class LocalStorageService {
       'institution': _profile.get('institution'),
       'title': _profile.get('title'),
     };
+  }
+
+  static Future<void> saveProfileImage(String path) async {
+    await _profile.put('profileImage', path);
+  }
+
+  static String? loadProfileImage() {
+    return _profile.get('profileImage');
   }
 
   // ════════════════════════════════════════════

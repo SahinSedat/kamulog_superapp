@@ -25,6 +25,7 @@ class AiChatState {
   final List<AiMessageModel> messages;
   final bool isLoading;
   final bool isCvBuilding;
+  final bool chatLocked; // Jeton/mesaj limiti bittiğinde true olur
   final String? error;
   final String conversationId;
 
@@ -32,14 +33,23 @@ class AiChatState {
     this.messages = const [],
     this.isLoading = false,
     this.isCvBuilding = false,
+    this.chatLocked = false,
     this.error,
     this.conversationId = '',
   });
+
+  /// Mevcut oturumdaki kullanıcı mesaj sayısı
+  int get userMessageCount =>
+      messages.where((m) => m.role == AiRole.user).length;
+
+  /// Kalan mesaj hakkı
+  int get remainingMessages => (20 - userMessageCount).clamp(0, 20);
 
   AiChatState copyWith({
     List<AiMessageModel>? messages,
     bool? isLoading,
     bool? isCvBuilding,
+    bool? chatLocked,
     String? error,
     String? conversationId,
   }) {
@@ -47,6 +57,7 @@ class AiChatState {
       messages: messages ?? this.messages,
       isLoading: isLoading ?? this.isLoading,
       isCvBuilding: isCvBuilding ?? this.isCvBuilding,
+      chatLocked: chatLocked ?? this.chatLocked,
       error: error,
       conversationId: conversationId ?? this.conversationId,
     );
@@ -83,16 +94,34 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
       return false;
     }
 
-    if (_ref.read(profilProvider).credits < 1) {
+    // CV oluşturma hakkı kontrolü (aylık 2 kez)
+    if (profil.remainingAiCvCount <= 0) {
       state = state.copyWith(
         error:
-            'Yetersiz kredi. Lütfen profil sayfasından kredi veya abonelik satın alarak devam edin.',
+            'Bu ay için CV oluşturma hakkınız doldu (2/2 kullanıldı). Gelecek ay tekrar deneyebilirsiniz.',
       );
       return false;
     }
 
     newConversation();
     state = state.copyWith(isCvBuilding: true, error: null);
+
+    // Kullanıcının yüklediği PDF CV belgesi varsa metni de bağlama ekle
+    String cvPdfContext = '';
+    final cvDocs = profil.documents.where((d) => d.category == 'cv');
+    if (cvDocs.isNotEmpty) {
+      final latestCv = cvDocs.last;
+      if (latestCv.content != null && latestCv.content!.isNotEmpty) {
+        cvPdfContext = '''
+
+Kullanıcının daha önce yüklemiş olduğu CV belgesi içeriği:
+--- CV Başlangıç ---
+${latestCv.content}
+--- CV Bitiş ---
+Bu bilgileri baz alarak CV'yi zenginleştir. Eksik kısımları kullanıcıya sor.
+''';
+      }
+    }
 
     final profileContext = '''
 Kullanıcı bir CV oluşturmak istiyor. Mevcut profil bilgileri:
@@ -102,7 +131,7 @@ Kurum: ${profil.effectiveInstitution}
 Unvan: ${profil.title ?? 'Belirtilmedi'}
 İl/İlçe: ${profil.addressText}
 Beceriler: ${profil.surveyInterests.join(', ')}
-
+$cvPdfContext
 STRATEJİ:
 1. Kullanıcıya merhaba de ve mevcut bilgilerini teyit et.
 2. Her seferinde SADECE BİR soru sor (Eğitim, Deneyim, Sertifikalar vb.).
@@ -144,29 +173,28 @@ STRATEJİ:
   Future<void> sendMessage(String text, {String? context}) async {
     if (text.trim().isEmpty) return;
 
-    final profilState = _ref.read(profilProvider);
+    // Sohbet kilitli mi?
+    if (state.chatLocked) {
+      state = state.copyWith(
+        error: 'Sohbet kapalı. Jeton yetersiz veya mesaj limiti doldu.',
+      );
+      return;
+    }
+
     final userMessageCount =
         state.messages.where((m) => m.role == AiRole.user).length;
 
+    // 20 mesaj limiti
     if (userMessageCount >= 20) {
       state = state.copyWith(
         error:
             'Sohbet limitine (20 mesaj) ulaşıldı. Lütfen yeni bir sohbet başlatın.',
+        chatLocked: true,
       );
       return;
     }
 
-    if (profilState.credits < 1) {
-      state = state.copyWith(
-        error:
-            'Yetersiz kredi. Lütfen profil sayfasından kredi veya abonelik satın alarak devam edin.',
-      );
-      return;
-    }
-
-    // Her yapay zeka cevap isteği için 1 kredi kes
-    final success = await _ref.read(profilProvider.notifier).useCredits(1);
-    if (!success) return;
+    // Her mesaj 2 jeton şartı ve düşümü tamamen Kaldırıldı.
 
     String finalContext = context ?? '';
     if (state.isCvBuilding) {

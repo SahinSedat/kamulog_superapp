@@ -5,6 +5,7 @@ import 'package:kamulog_superapp/core/theme/app_theme.dart';
 import 'package:kamulog_superapp/features/ai/presentation/providers/ai_provider.dart';
 import 'package:kamulog_superapp/features/ai/presentation/widgets/ai_message_bubble.dart';
 import 'package:kamulog_superapp/features/ai/presentation/widgets/ai_suggestion_chips.dart';
+import 'package:kamulog_superapp/features/profil/presentation/providers/profil_provider.dart';
 
 class AiAssistantScreen extends ConsumerStatefulWidget {
   const AiAssistantScreen({super.key});
@@ -88,17 +89,48 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen>
         Expanded(
           child:
               chatState.messages.isEmpty
-                  ? _buildWelcomeView(theme, isDark)
+                  ? _buildWelcomeView(theme, isDark, ref)
                   : _buildChatList(chatState, theme, isDark),
         ),
 
-        // Input area
-        _buildInputBar(chatState, theme, isDark),
+        // Input area (chatLocked ise uyarı göster)
+        if (chatState.chatLocked)
+          _buildLockedBar(isDark)
+        else
+          _buildInputBar(chatState, theme, isDark),
       ],
     );
   }
 
-  Widget _buildWelcomeView(ThemeData theme, bool isDark) {
+  Widget _buildLockedBar(bool isDark) {
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+    return Container(
+      padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + bottomPadding),
+      decoration: BoxDecoration(
+        color: isDark ? AppTheme.cardDark : Colors.white,
+        border: Border(
+          top: BorderSide(color: AppTheme.errorColor.withValues(alpha: 0.3)),
+        ),
+      ),
+      child: const Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.lock_rounded, color: AppTheme.errorColor, size: 18),
+          SizedBox(width: 8),
+          Text(
+            'Sohbet limitiniz (20 Mesaj) doldu.',
+            style: TextStyle(
+              color: AppTheme.errorColor,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWelcomeView(ThemeData theme, bool isDark, WidgetRef ref) {
     return FadeTransition(
       opacity: CurvedAnimation(parent: _welcomeAnim, curve: Curves.easeOut),
       child: SlideTransition(
@@ -167,7 +199,10 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen>
                 description: 'CV hazırlama, mülakat ipuçları, kariyer planı',
                 gradient: AppTheme.aiGradient,
                 isDark: isDark,
-                onTap: () => _send('Kariyer planlamasında bana yardım et'),
+                onTap:
+                    () => ref
+                        .read(aiChatProvider.notifier)
+                        .sendMessage('Kariyer planlamasında bana yardım et'),
               ),
               const SizedBox(height: AppTheme.spacingMd),
 
@@ -177,7 +212,12 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen>
                 description: 'Kanunlar, yönetmelikler, özlük hakları',
                 gradient: AppTheme.primaryGradient,
                 isDark: isDark,
-                onTap: () => _send('Kamu personeli hakları hakkında bilgi ver'),
+                onTap:
+                    () => ref
+                        .read(aiChatProvider.notifier)
+                        .sendMessage(
+                          'Kamu personeli hakları hakkında bilgi ver',
+                        ),
               ),
               const SizedBox(height: AppTheme.spacingMd),
 
@@ -189,7 +229,10 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen>
                   colors: [Color(0xFF00B894), Color(0xFF00CEC9)],
                 ),
                 isDark: isDark,
-                onTap: () => _send('Becayiş süreci hakkında bilgi ver'),
+                onTap:
+                    () => ref
+                        .read(aiChatProvider.notifier)
+                        .sendMessage('Becayiş süreci hakkında bilgi ver'),
               ),
               const SizedBox(height: AppTheme.spacingMd),
 

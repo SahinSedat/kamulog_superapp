@@ -45,19 +45,7 @@ class JobDetailScreen extends ConsumerWidget {
       return;
     }
 
-    if (profil.credits < 5) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Yetersiz kredi. İş analizi için 5 kredi gereklidir.'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    // Kredi/limit düş ve AI a soruyu gönder
-    final success = await ref.read(profilProvider.notifier).useCredits(5);
-    if (!success) return;
+    // Profil yüklendiğinden emin olduktan sonra AI Asistanına pasla.
 
     final cvDoc = profil.documents.cast<DocumentInfo?>().firstWhere(
       (doc) => doc != null && doc.category.toLowerCase() == 'cv',

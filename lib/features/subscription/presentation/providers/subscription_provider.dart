@@ -1,23 +1,20 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:kamulog_superapp/features/subscription/data/subscription_service.dart';
-import 'package:kamulog_superapp/features/profil/presentation/providers/profil_provider.dart';
 
 final subscriptionStateProvider = StateNotifierProvider<
   SubscriptionNotifier,
   AsyncValue<List<ProductDetails>>
 >((ref) {
   final service = ref.watch(subscriptionServiceProvider);
-  return SubscriptionNotifier(service, ref);
+  return SubscriptionNotifier(service);
 });
 
 class SubscriptionNotifier
     extends StateNotifier<AsyncValue<List<ProductDetails>>> {
   final SubscriptionService _service;
-  final Ref _ref;
 
-  SubscriptionNotifier(this._service, this._ref)
-    : super(const AsyncValue.loading()) {
+  SubscriptionNotifier(this._service) : super(const AsyncValue.loading()) {
     _init();
   }
 
@@ -47,13 +44,8 @@ class SubscriptionNotifier
   }
 
   Future<void> _handleSuccessfulPurchase(PurchaseDetails purchase) async {
-    // Burada satın alınan id'ye göre profile jeton/sınırsız erişim tanımlaması yapıyoruz.
-    // Şimdilik sınırsız erişim tanımlaması (veya belirli miktar jeton) eklenecek:
-    // ref.read(profilProvider.notifier).setUnlimitedCredits() gibi bir metot eklenebilir.
-    // Ya da 1000 kredi verilir.
-
-    // Geçici Demo Jetonu Ekleme:
-    await _ref.read(profilProvider.notifier).addCredits(100);
+    // Burada satın alınan id'ye göre profile premium tanımlaması yapıyoruz.
+    // İleride API ile doğrulanacaktır.
   }
 
   Future<void> buyPlan(ProductDetails plan) async {

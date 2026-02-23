@@ -22,6 +22,7 @@ import 'package:kamulog_superapp/features/documents/presentation/screens/documen
 import 'package:kamulog_superapp/features/kariyer/presentation/screens/job_detail_screen.dart';
 import 'package:kamulog_superapp/features/kariyer/data/models/job_listing_model.dart';
 import 'package:kamulog_superapp/features/subscription/presentation/screens/upgrade_plan_screen.dart';
+import 'package:kamulog_superapp/features/subscription/presentation/screens/subscription_history_screen.dart';
 import 'package:kamulog_superapp/features/messaging/presentation/screens/chat_screen.dart';
 
 /// Bridges Riverpod state changes to GoRouter's refreshListenable
@@ -147,6 +148,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/upgrade',
         name: 'upgrade',
         builder: (context, state) => const UpgradePlanScreen(),
+      ),
+      GoRoute(
+        path: '/subscription-history',
+        name: 'subscription-history',
+        builder: (context, state) => const SubscriptionHistoryScreen(),
       ),
       GoRoute(
         path: '/chat',

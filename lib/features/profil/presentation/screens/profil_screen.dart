@@ -1,6 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:kamulog_superapp/core/theme/app_theme.dart';
 import 'package:kamulog_superapp/features/auth/presentation/providers/auth_provider.dart';
 import 'package:kamulog_superapp/features/profil/presentation/providers/profil_provider.dart';
@@ -33,10 +35,6 @@ class ProfilScreen extends ConsumerWidget {
               _ProfileCompletionBanner(
                 onTap: () => context.push('/profile/edit'),
               ),
-
-            // ── Üyelik Durumu
-            _SectionHeader(title: 'Üyelik & Abonelik'),
-            _MembershipCard(isDark: isDark, profil: profil),
 
             // ── Bilgilerim (Kişisel + Çalışma birleştirildi)
             _SectionHeader(title: 'Bilgilerim'),
@@ -195,6 +193,14 @@ class ProfilScreen extends ConsumerWidget {
                   trailing: 'CV eşleştirme',
                   onTap: () => context.push('/career'),
                 ),
+              ],
+              isDark: isDark,
+            ),
+
+            // ── Mesajlarım
+            _SectionHeader(title: 'Mesajlarım'),
+            _InfoMenuGroup(
+              items: [
                 _MenuItem(
                   icon: Icons.chat_bubble_outline_rounded,
                   title: 'Danışman ile Canlı Sohbet',
@@ -219,7 +225,7 @@ class ProfilScreen extends ConsumerWidget {
                   icon: Icons.card_membership_outlined,
                   title: 'Üyelik Geçmişi',
                   trailing: 'Görüntüle',
-                  onTap: () => context.push('/orders'),
+                  onTap: () => context.push('/subscription-history'),
                 ),
               ],
               isDark: isDark,
@@ -350,44 +356,131 @@ class ProfilScreen extends ConsumerWidget {
 }
 
 // ── Profile Header
-class _ProfileHeader extends StatelessWidget {
+class _ProfileHeader extends ConsumerWidget {
   final dynamic user;
   final bool isDark;
   const _ProfileHeader({required this.user, required this.isDark});
 
+  Future<void> _pickImage(BuildContext context, WidgetRef ref) async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      ref.read(profilProvider.notifier).updateProfileImage(pickedFile.path);
+    }
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final name = user?.name ?? 'Kullanıcı';
     final phone = user?.phone ?? '';
     final initial = name.isNotEmpty ? name[0].toUpperCase() : 'K';
 
+    final profil = ref.watch(profilProvider);
+    final imagePath = profil.profileImagePath;
+
     return Column(
       children: [
-        Container(
-          width: 80,
-          height: 80,
-          decoration: const BoxDecoration(
-            gradient: AppTheme.primaryGradient,
-            shape: BoxShape.circle,
-          ),
-          child: Center(
-            child: Text(
-              initial,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 32,
-                fontWeight: FontWeight.w800,
+        GestureDetector(
+          onTap: () => _pickImage(context, ref),
+          child: Stack(
+            children: [
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  gradient: imagePath == null ? AppTheme.primaryGradient : null,
+                  shape: BoxShape.circle,
+                  image:
+                      imagePath != null
+                          ? DecorationImage(
+                            image: FileImage(File(imagePath)),
+                            fit: BoxFit.cover,
+                          )
+                          : null,
+                ),
+                child:
+                    imagePath == null
+                        ? Center(
+                          child: Text(
+                            initial,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 32,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        )
+                        : null,
               ),
-            ),
+              Positioned(
+                bottom: 0,
+                right: 0,
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isDark ? AppTheme.surfaceDark : Colors.white,
+                      width: 2,
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.camera_alt_rounded,
+                    color: Colors.white,
+                    size: 14,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
-        const SizedBox(height: 12),
         Text(
           name,
           style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
         ),
         const SizedBox(height: 4),
         Text(phone, style: TextStyle(fontSize: 14, color: Colors.grey[500])),
+        const SizedBox(height: 8),
+
+        // ── Plan Bilgisi Gösterimi
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          decoration: BoxDecoration(
+            color:
+                profil.isPremium
+                    ? AppTheme.accentColor.withValues(alpha: 0.1)
+                    : Colors.grey.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color:
+                  profil.isPremium
+                      ? AppTheme.accentColor.withValues(alpha: 0.5)
+                      : Colors.grey.withValues(alpha: 0.5),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                profil.isPremium
+                    ? Icons.star_rounded
+                    : Icons.star_border_rounded,
+                size: 14,
+                color: profil.isPremium ? AppTheme.accentColor : Colors.grey,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                profil.isPremium ? 'Premium Plan' : 'Temel Plan',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: profil.isPremium ? AppTheme.accentColor : Colors.grey,
+                ),
+              ),
+            ],
+          ),
+        ),
       ],
     );
   }
@@ -453,153 +546,6 @@ class _ProfileCompletionBanner extends StatelessWidget {
               Icons.chevron_right_rounded,
               color: AppTheme.warningColor,
             ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ── Membership Card (Premium UI Destekli)
-class _MembershipCard extends StatelessWidget {
-  final bool isDark;
-  final ProfilState profil;
-
-  const _MembershipCard({required this.isDark, required this.profil});
-
-  @override
-  Widget build(BuildContext context) {
-    final bool isPremium = profil.isPremium;
-
-    return GestureDetector(
-      onTap: () {
-        if (!isPremium) context.push('/upgrade');
-        // İptal yönetimi App Store / Play Store ayarlarına yönlendirmelidir.
-      },
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          // Premium ise altın rengi özel gradyan, değilse klasik primary gradient
-          gradient:
-              isPremium
-                  ? const LinearGradient(
-                    colors: [Color(0xFFD4AF37), Color(0xFFAA771C)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  )
-                  : AppTheme.primaryGradient,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            if (!isPremium)
-              BoxShadow(
-                color: AppTheme.primaryColor.withValues(alpha: 0.3),
-                blurRadius: 16,
-                offset: const Offset(0, 6),
-              ),
-            if (isPremium)
-              BoxShadow(
-                color: const Color(0xFFD4AF37).withValues(alpha: 0.4),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
-              ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                isPremium
-                    ? Icons.workspace_premium_rounded
-                    : Icons.star_rounded,
-                color: Colors.white,
-                size: 28,
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    isPremium ? 'Premium Üye' : 'Temel Plan',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 16,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    isPremium
-                        ? 'Tüm limitler kaldırıldı (Bitiş: \${profil.subscriptionEndDate != null ? "\${profil.subscriptionEndDate!.day}/\${profil.subscriptionEndDate!.month}/\${profil.subscriptionEndDate!.year}" : "Sınırsız"})'
-                        : 'Premium\'a yükselterek tüm özelliklere erişin',
-                    style: TextStyle(
-                      color: isPremium ? Colors.white : Colors.white70,
-                      fontSize: 11,
-                      fontWeight:
-                          isPremium ? FontWeight.w600 : FontWeight.normal,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (!isPremium)
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Text(
-                  'Yükselt',
-                  style: TextStyle(
-                    color: AppTheme.primaryColor,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 12,
-                  ),
-                ),
-              )
-            else
-              GestureDetector(
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Abonelik yönetimi mağaza ayarlarından (App Store/Play Store) yapılmaktadır.',
-                      ),
-                    ),
-                  );
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.white30),
-                  ),
-                  child: const Text(
-                    'İptal Et',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 11,
-                    ),
-                  ),
-                ),
-              ),
           ],
         ),
       ),

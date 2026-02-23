@@ -14,6 +14,9 @@ _MessageModel _$MessageModelFromJson(Map<String, dynamic> json) =>
       timestamp: DateTime.parse(json['timestamp'] as String),
       isMyMessage: json['isMyMessage'] as bool? ?? false,
       isSystemMessage: json['isSystemMessage'] as bool? ?? false,
+      status:
+          $enumDecodeNullable(_$MessageStatusEnumMap, json['status']) ??
+          MessageStatus.sent,
     );
 
 Map<String, dynamic> _$MessageModelToJson(_MessageModel instance) =>
@@ -24,4 +27,11 @@ Map<String, dynamic> _$MessageModelToJson(_MessageModel instance) =>
       'timestamp': instance.timestamp.toIso8601String(),
       'isMyMessage': instance.isMyMessage,
       'isSystemMessage': instance.isSystemMessage,
+      'status': _$MessageStatusEnumMap[instance.status]!,
     };
+
+const _$MessageStatusEnumMap = {
+  MessageStatus.sent: 'sent',
+  MessageStatus.delivered: 'delivered',
+  MessageStatus.read: 'read',
+};

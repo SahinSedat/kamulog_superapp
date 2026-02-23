@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$MessageModel {
 
- String get id; String get text; String get senderId; DateTime get timestamp; bool get isMyMessage; bool get isSystemMessage;
+ String get id; String get text; String get senderId; DateTime get timestamp; bool get isMyMessage; bool get isSystemMessage; MessageStatus get status;
 /// Create a copy of MessageModel
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $MessageModelCopyWith<MessageModel> get copyWith => _$MessageModelCopyWithImpl<M
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageModel&&(identical(other.id, id) || other.id == id)&&(identical(other.text, text) || other.text == text)&&(identical(other.senderId, senderId) || other.senderId == senderId)&&(identical(other.timestamp, timestamp) || other.timestamp == timestamp)&&(identical(other.isMyMessage, isMyMessage) || other.isMyMessage == isMyMessage)&&(identical(other.isSystemMessage, isSystemMessage) || other.isSystemMessage == isSystemMessage));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageModel&&(identical(other.id, id) || other.id == id)&&(identical(other.text, text) || other.text == text)&&(identical(other.senderId, senderId) || other.senderId == senderId)&&(identical(other.timestamp, timestamp) || other.timestamp == timestamp)&&(identical(other.isMyMessage, isMyMessage) || other.isMyMessage == isMyMessage)&&(identical(other.isSystemMessage, isSystemMessage) || other.isSystemMessage == isSystemMessage)&&(identical(other.status, status) || other.status == status));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,text,senderId,timestamp,isMyMessage,isSystemMessage);
+int get hashCode => Object.hash(runtimeType,id,text,senderId,timestamp,isMyMessage,isSystemMessage,status);
 
 @override
 String toString() {
-  return 'MessageModel(id: $id, text: $text, senderId: $senderId, timestamp: $timestamp, isMyMessage: $isMyMessage, isSystemMessage: $isSystemMessage)';
+  return 'MessageModel(id: $id, text: $text, senderId: $senderId, timestamp: $timestamp, isMyMessage: $isMyMessage, isSystemMessage: $isSystemMessage, status: $status)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $MessageModelCopyWith<$Res>  {
   factory $MessageModelCopyWith(MessageModel value, $Res Function(MessageModel) _then) = _$MessageModelCopyWithImpl;
 @useResult
 $Res call({
- String id, String text, String senderId, DateTime timestamp, bool isMyMessage, bool isSystemMessage
+ String id, String text, String senderId, DateTime timestamp, bool isMyMessage, bool isSystemMessage, MessageStatus status
 });
 
 
@@ -65,7 +65,7 @@ class _$MessageModelCopyWithImpl<$Res>
 
 /// Create a copy of MessageModel
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? text = null,Object? senderId = null,Object? timestamp = null,Object? isMyMessage = null,Object? isSystemMessage = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? text = null,Object? senderId = null,Object? timestamp = null,Object? isMyMessage = null,Object? isSystemMessage = null,Object? status = null,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,text: null == text ? _self.text : text // ignore: cast_nullable_to_non_nullable
@@ -73,7 +73,8 @@ as String,senderId: null == senderId ? _self.senderId : senderId // ignore: cast
 as String,timestamp: null == timestamp ? _self.timestamp : timestamp // ignore: cast_nullable_to_non_nullable
 as DateTime,isMyMessage: null == isMyMessage ? _self.isMyMessage : isMyMessage // ignore: cast_nullable_to_non_nullable
 as bool,isSystemMessage: null == isSystemMessage ? _self.isSystemMessage : isSystemMessage // ignore: cast_nullable_to_non_nullable
-as bool,
+as bool,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
+as MessageStatus,
   ));
 }
 
@@ -158,10 +159,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String text,  String senderId,  DateTime timestamp,  bool isMyMessage,  bool isSystemMessage)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String text,  String senderId,  DateTime timestamp,  bool isMyMessage,  bool isSystemMessage,  MessageStatus status)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _MessageModel() when $default != null:
-return $default(_that.id,_that.text,_that.senderId,_that.timestamp,_that.isMyMessage,_that.isSystemMessage);case _:
+return $default(_that.id,_that.text,_that.senderId,_that.timestamp,_that.isMyMessage,_that.isSystemMessage,_that.status);case _:
   return orElse();
 
 }
@@ -179,10 +180,10 @@ return $default(_that.id,_that.text,_that.senderId,_that.timestamp,_that.isMyMes
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String text,  String senderId,  DateTime timestamp,  bool isMyMessage,  bool isSystemMessage)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String text,  String senderId,  DateTime timestamp,  bool isMyMessage,  bool isSystemMessage,  MessageStatus status)  $default,) {final _that = this;
 switch (_that) {
 case _MessageModel():
-return $default(_that.id,_that.text,_that.senderId,_that.timestamp,_that.isMyMessage,_that.isSystemMessage);case _:
+return $default(_that.id,_that.text,_that.senderId,_that.timestamp,_that.isMyMessage,_that.isSystemMessage,_that.status);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -199,10 +200,10 @@ return $default(_that.id,_that.text,_that.senderId,_that.timestamp,_that.isMyMes
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String text,  String senderId,  DateTime timestamp,  bool isMyMessage,  bool isSystemMessage)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String text,  String senderId,  DateTime timestamp,  bool isMyMessage,  bool isSystemMessage,  MessageStatus status)?  $default,) {final _that = this;
 switch (_that) {
 case _MessageModel() when $default != null:
-return $default(_that.id,_that.text,_that.senderId,_that.timestamp,_that.isMyMessage,_that.isSystemMessage);case _:
+return $default(_that.id,_that.text,_that.senderId,_that.timestamp,_that.isMyMessage,_that.isSystemMessage,_that.status);case _:
   return null;
 
 }
@@ -214,7 +215,7 @@ return $default(_that.id,_that.text,_that.senderId,_that.timestamp,_that.isMyMes
 @JsonSerializable()
 
 class _MessageModel implements MessageModel {
-  const _MessageModel({required this.id, required this.text, required this.senderId, required this.timestamp, this.isMyMessage = false, this.isSystemMessage = false});
+  const _MessageModel({required this.id, required this.text, required this.senderId, required this.timestamp, this.isMyMessage = false, this.isSystemMessage = false, this.status = MessageStatus.sent});
   factory _MessageModel.fromJson(Map<String, dynamic> json) => _$MessageModelFromJson(json);
 
 @override final  String id;
@@ -223,6 +224,7 @@ class _MessageModel implements MessageModel {
 @override final  DateTime timestamp;
 @override@JsonKey() final  bool isMyMessage;
 @override@JsonKey() final  bool isSystemMessage;
+@override@JsonKey() final  MessageStatus status;
 
 /// Create a copy of MessageModel
 /// with the given fields replaced by the non-null parameter values.
@@ -237,16 +239,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _MessageModel&&(identical(other.id, id) || other.id == id)&&(identical(other.text, text) || other.text == text)&&(identical(other.senderId, senderId) || other.senderId == senderId)&&(identical(other.timestamp, timestamp) || other.timestamp == timestamp)&&(identical(other.isMyMessage, isMyMessage) || other.isMyMessage == isMyMessage)&&(identical(other.isSystemMessage, isSystemMessage) || other.isSystemMessage == isSystemMessage));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _MessageModel&&(identical(other.id, id) || other.id == id)&&(identical(other.text, text) || other.text == text)&&(identical(other.senderId, senderId) || other.senderId == senderId)&&(identical(other.timestamp, timestamp) || other.timestamp == timestamp)&&(identical(other.isMyMessage, isMyMessage) || other.isMyMessage == isMyMessage)&&(identical(other.isSystemMessage, isSystemMessage) || other.isSystemMessage == isSystemMessage)&&(identical(other.status, status) || other.status == status));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,text,senderId,timestamp,isMyMessage,isSystemMessage);
+int get hashCode => Object.hash(runtimeType,id,text,senderId,timestamp,isMyMessage,isSystemMessage,status);
 
 @override
 String toString() {
-  return 'MessageModel(id: $id, text: $text, senderId: $senderId, timestamp: $timestamp, isMyMessage: $isMyMessage, isSystemMessage: $isSystemMessage)';
+  return 'MessageModel(id: $id, text: $text, senderId: $senderId, timestamp: $timestamp, isMyMessage: $isMyMessage, isSystemMessage: $isSystemMessage, status: $status)';
 }
 
 
@@ -257,7 +259,7 @@ abstract mixin class _$MessageModelCopyWith<$Res> implements $MessageModelCopyWi
   factory _$MessageModelCopyWith(_MessageModel value, $Res Function(_MessageModel) _then) = __$MessageModelCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String text, String senderId, DateTime timestamp, bool isMyMessage, bool isSystemMessage
+ String id, String text, String senderId, DateTime timestamp, bool isMyMessage, bool isSystemMessage, MessageStatus status
 });
 
 
@@ -274,7 +276,7 @@ class __$MessageModelCopyWithImpl<$Res>
 
 /// Create a copy of MessageModel
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? text = null,Object? senderId = null,Object? timestamp = null,Object? isMyMessage = null,Object? isSystemMessage = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? text = null,Object? senderId = null,Object? timestamp = null,Object? isMyMessage = null,Object? isSystemMessage = null,Object? status = null,}) {
   return _then(_MessageModel(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,text: null == text ? _self.text : text // ignore: cast_nullable_to_non_nullable
@@ -282,7 +284,8 @@ as String,senderId: null == senderId ? _self.senderId : senderId // ignore: cast
 as String,timestamp: null == timestamp ? _self.timestamp : timestamp // ignore: cast_nullable_to_non_nullable
 as DateTime,isMyMessage: null == isMyMessage ? _self.isMyMessage : isMyMessage // ignore: cast_nullable_to_non_nullable
 as bool,isSystemMessage: null == isSystemMessage ? _self.isSystemMessage : isSystemMessage // ignore: cast_nullable_to_non_nullable
-as bool,
+as bool,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
+as MessageStatus,
   ));
 }
 

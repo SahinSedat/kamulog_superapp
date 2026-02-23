@@ -27,10 +27,7 @@ class CareerScreen extends ConsumerWidget {
         ),
         title: const Text('Kariyer'),
         centerTitle: true,
-        actions: [
-          _CreditBadge(credits: profil.credits),
-          const SizedBox(width: 12),
-        ],
+        actions: [const SizedBox(width: 12)],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -83,7 +80,7 @@ class CareerScreen extends ConsumerWidget {
             _QuickActionCard(
               icon: Icons.analytics_rounded,
               title: 'İş İlanlarını Analiz Et',
-              subtitle: 'CV eşleştirme analizi (5 Kredi)',
+              subtitle: 'CV eşleştirme analizi',
               color: const Color(0xFF2E7D32),
               onTap: () => _showJobAnalysis(context, ref),
             ),
@@ -197,16 +194,6 @@ class CareerScreen extends ConsumerWidget {
       return;
     }
 
-    if (profil.credits < 5) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Yetersiz kredi. İş analizi için 5 kredi gereklidir.'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -256,7 +243,7 @@ class CareerScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Yapay zeka, CV\'nizi analiz ederek en uygun iş ilanlarını bulur.\nMaliyet: 5 Kredi (Mevcut: ${profil.credits})',
+                        'Yapay zeka, CV\'nizi analiz ederek en uygun iş ilanlarını bulur.',
                         textAlign: TextAlign.center,
                         style: TextStyle(fontSize: 14, color: Colors.grey[500]),
                       ),
@@ -298,16 +285,10 @@ class CareerScreen extends ConsumerWidget {
                           child: ElevatedButton.icon(
                             onPressed: () async {
                               Navigator.pop(ctx);
-                              final success = await ref
-                                  .read(profilProvider.notifier)
-                                  .useCredits(5);
-
-                              if (success && context.mounted) {
+                              if (context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
-                                    content: Text(
-                                      'AI iş analizi başlatıldı! 5 kredi düşüldü.',
-                                    ),
+                                    content: Text('AI iş analizi başlatıldı!'),
                                     backgroundColor: Color(0xFF2E7D32),
                                   ),
                                 );
