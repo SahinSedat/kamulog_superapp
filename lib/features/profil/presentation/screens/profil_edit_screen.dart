@@ -417,7 +417,7 @@ class _ProfilEditScreenState extends ConsumerState<ProfilEditScreen> {
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        'TC Kimlik ve adres bilgileriniz STK üyeliği, CV oluşturma ve Becayiş ilanı vermek için zorunludur.',
+                        'TC Kimlik, kurum ve adres bilgileriniz STK üyeliği, CV oluşturma ve Becayiş ilanı için kullanılır (opsiyonel).',
                         style: TextStyle(
                           fontSize: 11,
                           color: AppTheme.infoColor.withValues(alpha: 0.8),
@@ -691,13 +691,13 @@ class _PhoneChangeSheetState extends ConsumerState<_PhoneChangeSheet> {
     await ref.read(authProvider.notifier).sendPhoneChangeOtp(formattedPhone);
 
     if (mounted) {
-      final authState = ref.read(authProvider);
+      final authNotifier = ref.read(authProvider.notifier);
       setState(() {
         _isLoading = false;
-        if (authState.status == AuthStatus.otpSent) {
+        if (authNotifier.phoneChangeError == null) {
           _otpSent = true;
-        } else if (authState.error != null) {
-          _errorText = authState.error;
+        } else {
+          _errorText = authNotifier.phoneChangeError;
         }
       });
     }

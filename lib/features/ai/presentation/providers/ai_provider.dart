@@ -31,6 +31,7 @@ class AiChatState {
   final bool chatLocked; // Jeton/mesaj limiti bittiğinde true olur
   final String? error;
   final String conversationId;
+  final int aiAssistantCredits; // AI Asistan modülü kendi jeton havuzu (20)
 
   const AiChatState({
     this.messages = const [],
@@ -42,6 +43,7 @@ class AiChatState {
     this.chatLocked = false,
     this.error,
     this.conversationId = '',
+    this.aiAssistantCredits = 20,
   });
 
   /// Mevcut oturumdaki kullanıcı mesaj sayısı
@@ -61,6 +63,7 @@ class AiChatState {
     bool? chatLocked,
     String? error,
     String? conversationId,
+    int? aiAssistantCredits,
   }) {
     return AiChatState(
       messages: messages ?? this.messages,
@@ -72,6 +75,7 @@ class AiChatState {
       chatLocked: chatLocked ?? this.chatLocked,
       error: error,
       conversationId: conversationId ?? this.conversationId,
+      aiAssistantCredits: aiAssistantCredits ?? this.aiAssistantCredits,
     );
   }
 }
@@ -98,15 +102,7 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
 
   /// Switch to CV building context
   bool startCvBuilding(ProfilState profil) {
-    if (profil.tcKimlik == null || profil.tcKimlik!.isEmpty) {
-      state = state.copyWith(
-        error:
-            'CV oluşturmak için önce profil bilgilerinizi (TC Kimlik, Adres vs.) tamamlamalısınız.',
-      );
-      return false;
-    }
-
-    // CV oluşturma hakkı kontrolü (aylık 2 kez)
+    // CV oluşturma hakkı kontrolü (aylık 1 kez)
     if (profil.remainingAiCvCount <= 0) {
       state = state.copyWith(
         error:
@@ -217,13 +213,13 @@ ${jobRequirements != null ? 'Gereksinimler: $jobRequirements' : ''}
 📄 KULLANICININ CV ÖZETİ:
 $cvContent
 
-ANALİZ FORMATI:
-1. 📊 **Uyumluluk Skoru:** (0-100 arası yüzde olarak belirt)
-2. ✅ **Güçlü Yönler:** (CV'nin ilana uygun olan kısımları, madde madde)
-3. ⚠️ **Eksik/Geliştirilmesi Gereken Noktalar:** (İlana göre CV'de zayıf kalan kısımlar)
-4. 💡 **Genel Değerlendirme ve Öneri:** (Kısa paragraf halinde son görüşün)
+ANALİZ FORMATI (KISA ve GRAFİK tut):
+1. 📊 **Uyumluluk Skoru:** (0-100 arası yüzde olarak belirt ve kısa açıklama)
+2. ✅ **Güçlü Yönler:** (maksimum 3 madde, kısa)
+3. ⚠️ **Eksikler:** (maksimum 3 madde, kısa)
+4. 🎯 **Sonuç:** UYGUN veya ALTERNATİF olarak belirt (1 cümle açıklama)
 
-ÖNEMLİ: Sadece bu ilan (İlan No: $ilanNo) bağlamında analiz yap. Başka konulara geçme. Yanıtını Türkçe ver.
+ÖNEMLİ: Kısa ve öz yaz. Uzun paragraflardan kaçın. Sadece bu ilan (No: $ilanNo) bağlamında analiz yap. Türkçe yanıtla.
 ''';
 
     sendMessage(
@@ -284,18 +280,32 @@ ANALİZ FORMATI:
     final pNotifier = _ref.read(profilProvider.notifier);
     final profilState = _ref.read(profilProvider);
 
-    // Tüm modlarda jeton kontrolü (Her mesajda 2 jeton)
+    // Jeton kontrolü — sadece kullanıcının kendi mesajında (context == null)
     if (context == null) {
-      // Kullanıcı mesaj attığında (ilk prompt değil)
-      if (!profilState.hasEnoughCredits(2)) {
+      // AI Asistanda kullanıcı kendi sohbet ediyorsa ayrı jeton havuzu
+      if (!state.isJobAnalysis && !state.isMevzuatChat) {
+        // AI Asistan kendi jeton havuzu
+        if (state.aiAssistantCredits < 2) {
+          state = state.copyWith(
+            error: 'AI Asistan jetonunuz bitti (2 jeton gerekli).',
+            chatLocked: true,
+          );
+          return;
+        }
         state = state.copyWith(
-          error:
-              'Yeterli jetonunuz bulunmuyor (2 jeton gerekli). Lütfen jeton satın alın.',
-          chatLocked: true,
+          aiAssistantCredits: state.aiAssistantCredits - 2,
         );
-        return;
+      } else {
+        // Kariyer modülü (iş analizi, mevzuat) — profil jetonları
+        if (!profilState.hasEnoughCredits(2)) {
+          state = state.copyWith(
+            error: 'Yeterli jetonunuz bulunmuyor (2 jeton gerekli).',
+            chatLocked: true,
+          );
+          return;
+        }
+        await pNotifier.decreaseCredits(2);
       }
-      await pNotifier.decreaseCredits(2);
     }
 
     String finalContext = context ?? '';
