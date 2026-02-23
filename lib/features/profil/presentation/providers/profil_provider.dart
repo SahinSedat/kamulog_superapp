@@ -1,8 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kamulog_superapp/features/auth/presentation/providers/auth_provider.dart';
 import 'package:kamulog_superapp/core/constants/enums.dart';
+import 'package:kamulog_superapp/core/storage/local_storage_service.dart';
 
-/// Profil bilgilerini tutan state — TC, il/ilçe, kurum, unvan, belgeler
+/// Profil bilgilerini tutan state — TC, il/ilçe, kurum, unvan, belgeler ve anket sonuçları
 class ProfilState {
   final bool isLoading;
   final String? name;
@@ -14,6 +15,16 @@ class ProfilState {
   final String? institution;
   final String? title;
   final List<DocumentInfo> documents;
+
+  // Anketten gelen veriler
+  final String? surveyInstitution;
+  final String? surveyCity;
+  final List<String> surveyInterests;
+
+  // Kariyer & Kredi Bilgileri
+  final int credits;
+  final List<String> aiCvUsageDates; // ISO formatında tarihler
+
   final String? error;
 
   const ProfilState({
@@ -27,6 +38,11 @@ class ProfilState {
     this.institution,
     this.title,
     this.documents = const [],
+    this.surveyInstitution,
+    this.surveyCity,
+    this.surveyInterests = const [],
+    this.credits = 10,
+    this.aiCvUsageDates = const [],
     this.error,
   });
 
@@ -41,6 +57,11 @@ class ProfilState {
     String? institution,
     String? title,
     List<DocumentInfo>? documents,
+    String? surveyInstitution,
+    String? surveyCity,
+    List<String>? surveyInterests,
+    int? credits,
+    List<String>? aiCvUsageDates,
     String? error,
   }) {
     return ProfilState(
@@ -54,6 +75,11 @@ class ProfilState {
       institution: institution ?? this.institution,
       title: title ?? this.title,
       documents: documents ?? this.documents,
+      surveyInstitution: surveyInstitution ?? this.surveyInstitution,
+      surveyCity: surveyCity ?? this.surveyCity,
+      surveyInterests: surveyInterests ?? this.surveyInterests,
+      credits: credits ?? this.credits,
+      aiCvUsageDates: aiCvUsageDates ?? this.aiCvUsageDates,
       error: error,
     );
   }
@@ -75,12 +101,29 @@ class ProfilState {
   /// CV belgesi var mı?
   bool get hasCv => documents.any((d) => d.category == 'cv');
 
-  /// Formatlanmış adres
-  String get addressText {
-    if (city == null) return 'Girilmedi';
-    if (district != null) return '$district / $city';
-    return city!;
+  /// Bu ay kaç AI CV oluşturuldu?
+  int get aiCvCountThisMonth {
+    final now = DateTime.now();
+    return aiCvUsageDates.where((dateStr) {
+      final date = DateTime.parse(dateStr);
+      return date.year == now.year && date.month == now.month;
+    }).length;
   }
+
+  /// Kalan AI CV hakkı (Ayda 2 kez)
+  int get remainingAiCvCount => (2 - aiCvCountThisMonth).clamp(0, 2);
+
+  /// Formatlanmış adres (önce profil verisi, yoksa anket verisi)
+  String get addressText {
+    final effectiveCity = city ?? surveyCity;
+    if (effectiveCity == null) return 'Girilmedi';
+    if (district != null) return '$district / $effectiveCity';
+    return effectiveCity;
+  }
+
+  /// Formatlanmış kurum (önce profil verisi, yoksa anket verisi)
+  String get effectiveInstitution =>
+      institution ?? surveyInstitution ?? 'Belirtilmedi';
 
   /// Formatlanmış çalışma durumu
   String get employmentText {
@@ -111,10 +154,58 @@ class DocumentInfo {
     required this.fileType,
     required this.uploadDate,
   });
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'category': category,
+    'fileType': fileType,
+    'uploadDate': uploadDate.toIso8601String(),
+  };
+
+  factory DocumentInfo.fromJson(Map<String, dynamic> json) => DocumentInfo(
+    id: json['id'],
+    name: json['name'],
+    category: json['category'],
+    fileType: json['fileType'],
+    uploadDate: DateTime.parse(json['uploadDate']),
+  );
 }
 
 class ProfilNotifier extends StateNotifier<ProfilState> {
-  ProfilNotifier() : super(const ProfilState());
+  ProfilNotifier() : super(const ProfilState()) {
+    _init();
+  }
+
+  /// Başlangıçta yerel hafızadan verileri yükle
+  void _init() {
+    final profileData = LocalStorageService.loadProfile();
+    final surveyData = LocalStorageService.loadSurveyResults();
+    final documentsData = LocalStorageService.loadDocuments();
+    final credits = LocalStorageService.loadCredits();
+    final aiCvUsage = LocalStorageService.loadAiCvUsage();
+
+    state = state.copyWith(
+      tcKimlik: profileData['tcKimlik'],
+      city: profileData['city'],
+      district: profileData['district'],
+      employmentType:
+          profileData['employmentType'] != null
+              ? EmploymentType.values.firstWhere(
+                (e) => e.name == profileData['employmentType'],
+                orElse: () => EmploymentType.memur,
+              )
+              : null,
+      institution: profileData['institution'],
+      title: profileData['title'],
+      surveyInstitution: surveyData['institution'],
+      surveyCity: surveyData['city'],
+      surveyInterests: surveyData['interests'] ?? [],
+      documents: documentsData.map((d) => DocumentInfo.fromJson(d)).toList(),
+      credits: credits,
+      aiCvUsageDates: aiCvUsage,
+    );
+  }
 
   /// Login'den gelen bilgilerle profili başlat
   void loadFromAuth(dynamic user) {
@@ -122,21 +213,42 @@ class ProfilNotifier extends StateNotifier<ProfilState> {
       state = state.copyWith(
         name: user.name,
         phone: user.phone,
-        employmentType: user.employmentType,
-        title: user.title,
+        // Eğer yerelde yoksa auth'dan gelenleri de alabiliriz
+        employmentType: state.employmentType ?? user.employmentType,
+        title: state.title ?? user.title,
       );
     }
   }
 
+  /// Kredi harca (Analiz vs. için)
+  Future<bool> useCredits(int amount) async {
+    if (state.credits < amount) return false;
+
+    final newCredits = state.credits - amount;
+    state = state.copyWith(credits: newCredits);
+    await LocalStorageService.saveCredits(newCredits);
+    return true;
+  }
+
+  /// AI CV kullanımını kaydet
+  Future<bool> recordAiCvUsage() async {
+    if (state.remainingAiCvCount <= 0) return false;
+
+    final newList = [...state.aiCvUsageDates, DateTime.now().toIso8601String()];
+    state = state.copyWith(aiCvUsageDates: newList);
+    await LocalStorageService.saveAiCvUsage(newList);
+    return true;
+  }
+
   /// Bilgilerim bölümünü güncelle
-  void updatePersonalInfo({
+  Future<void> updatePersonalInfo({
     String? tcKimlik,
     String? city,
     String? district,
     EmploymentType? employmentType,
     String? institution,
     String? title,
-  }) {
+  }) async {
     state = state.copyWith(
       tcKimlik: tcKimlik,
       city: city,
@@ -145,18 +257,30 @@ class ProfilNotifier extends StateNotifier<ProfilState> {
       institution: institution,
       title: title,
     );
+
+    // Yerel hafızaya kaydet
+    await LocalStorageService.saveProfile(
+      tcKimlik: tcKimlik,
+      city: city,
+      district: district,
+      employmentType: employmentType?.name,
+      institution: institution,
+      title: title,
+    );
   }
 
   /// Belge ekle
-  void addDocument(DocumentInfo doc) {
-    state = state.copyWith(documents: [...state.documents, doc]);
+  Future<void> addDocument(DocumentInfo doc) async {
+    final newDocs = [...state.documents, doc];
+    state = state.copyWith(documents: newDocs);
+    await LocalStorageService.saveDocument(doc.toJson());
   }
 
   /// Belge sil
-  void removeDocument(String docId) {
-    state = state.copyWith(
-      documents: state.documents.where((d) => d.id != docId).toList(),
-    );
+  Future<void> removeDocument(String docId) async {
+    final newDocs = state.documents.where((d) => d.id != docId).toList();
+    state = state.copyWith(documents: newDocs);
+    await LocalStorageService.removeDocument(docId);
   }
 }
 

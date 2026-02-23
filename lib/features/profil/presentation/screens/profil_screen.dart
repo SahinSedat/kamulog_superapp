@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:kamulog_superapp/core/theme/app_theme.dart';
 import 'package:kamulog_superapp/features/auth/presentation/providers/auth_provider.dart';
 import 'package:kamulog_superapp/features/profil/presentation/providers/profil_provider.dart';
+import 'package:kamulog_superapp/features/ai/presentation/providers/ai_provider.dart';
+import 'package:kamulog_superapp/core/providers/home_navigation_provider.dart';
 
 /// Gelişmiş Profil Ekranı — kullanıcı bilgileri, üyelik, satın alımlar, çıkış
 class ProfilScreen extends ConsumerWidget {
@@ -75,7 +77,7 @@ class ProfilScreen extends ConsumerWidget {
                 _MenuItem(
                   icon: Icons.business_outlined,
                   title: 'Kurum',
-                  trailing: profil.institution ?? 'Belirtilmedi',
+                  trailing: profil.effectiveInstitution,
                   onTap: () => context.push('/profile/edit'),
                 ),
                 _MenuItem(
@@ -87,6 +89,54 @@ class ProfilScreen extends ConsumerWidget {
               ],
               isDark: isDark,
             ),
+
+            // ── İlgi Alanlarım (Anketten)
+            if (profil.surveyInterests.isNotEmpty) ...[
+              _SectionHeader(title: 'İlgi Alanlarım'),
+              Container(
+                width: double.infinity,
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: isDark ? AppTheme.cardDark : Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color:
+                        isDark
+                            ? Colors.white.withOpacity(0.06)
+                            : const Color(0xFFEEEEEE),
+                  ),
+                ),
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children:
+                      profil.surveyInterests.map((interest) {
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: AppTheme.primaryColor.withOpacity(0.2),
+                            ),
+                          ),
+                          child: Text(
+                            interest,
+                            style: const TextStyle(
+                              color: AppTheme.primaryColor,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                ),
+              ),
+            ],
 
             // ── Belgelerim
             _SectionHeader(title: 'Belgelerim'),
@@ -116,7 +166,13 @@ class ProfilScreen extends ConsumerWidget {
                   icon: Icons.auto_awesome_rounded,
                   title: 'AI CV Oluşturucu',
                   trailing: 'Yapay zeka ile',
-                  onTap: () => context.push('/career'),
+                  onTap: () {
+                    final profil = ref.read(profilProvider);
+                    ref.read(aiChatProvider.notifier).startCvBuilding(profil);
+                    ref.read(homeNavigationProvider.notifier).setIndex(4);
+                    // Ana sayfaya dön (AI tabı orada)
+                    context.go('/');
+                  },
                 ),
                 _MenuItem(
                   icon: Icons.analytics_rounded,
@@ -214,7 +270,7 @@ class ProfilScreen extends ConsumerWidget {
                   ),
                   style: OutlinedButton.styleFrom(
                     side: BorderSide(
-                      color: AppTheme.errorColor.withValues(alpha: 0.3),
+                      color: AppTheme.errorColor.withOpacity(0.3),
                     ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -331,14 +387,12 @@ class _ProfileCompletionBanner extends StatelessWidget {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              AppTheme.warningColor.withValues(alpha: 0.1),
-              AppTheme.warningColor.withValues(alpha: 0.05),
+              AppTheme.warningColor.withOpacity(0.1),
+              AppTheme.warningColor.withOpacity(0.05),
             ],
           ),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: AppTheme.warningColor.withValues(alpha: 0.3),
-          ),
+          border: Border.all(color: AppTheme.warningColor.withOpacity(0.3)),
         ),
         child: Row(
           children: [
@@ -346,7 +400,7 @@ class _ProfileCompletionBanner extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: AppTheme.warningColor.withValues(alpha: 0.15),
+                color: AppTheme.warningColor.withOpacity(0.15),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: const Icon(
@@ -398,7 +452,7 @@ class _MembershipCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.primaryColor.withValues(alpha: 0.3),
+            color: AppTheme.primaryColor.withOpacity(0.3),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -410,7 +464,7 @@ class _MembershipCard extends StatelessWidget {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
+              color: Colors.white.withOpacity(0.2),
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Icon(
@@ -502,9 +556,7 @@ class _InfoMenuGroup extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color:
-              isDark
-                  ? Colors.white.withValues(alpha: 0.06)
-                  : const Color(0xFFEEEEEE),
+              isDark ? Colors.white.withOpacity(0.06) : const Color(0xFFEEEEEE),
         ),
       ),
       child: Column(
@@ -524,11 +576,14 @@ class _InfoMenuGroup extends StatelessWidget {
                 ),
                 title: Row(
                   children: [
-                    Text(
-                      item.title,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
+                    Expanded(
+                      child: Text(
+                        item.title,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
                     if (item.showWarning) ...[
@@ -539,7 +594,7 @@ class _InfoMenuGroup extends StatelessWidget {
                           vertical: 2,
                         ),
                         decoration: BoxDecoration(
-                          color: AppTheme.errorColor.withValues(alpha: 0.1),
+                          color: AppTheme.errorColor.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: const Text(
@@ -558,9 +613,15 @@ class _InfoMenuGroup extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     if (item.trailing != null)
-                      Text(
-                        item.trailing!,
-                        style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                      Flexible(
+                        child: Text(
+                          item.trailing!,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[500],
+                          ),
+                        ),
                       ),
                     if (item.onTap != null) ...[
                       const SizedBox(width: 4),
@@ -578,7 +639,7 @@ class _InfoMenuGroup extends StatelessWidget {
                 Divider(
                   height: 1,
                   indent: 50,
-                  color: Colors.grey.withValues(alpha: 0.1),
+                  color: Colors.grey.withOpacity(0.1),
                 ),
             ],
           );

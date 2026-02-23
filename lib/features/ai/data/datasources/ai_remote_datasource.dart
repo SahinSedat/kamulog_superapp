@@ -37,6 +37,11 @@ Kuralların:
 • Emin olmadığın konularda "bu konuda güncel bilgiyi resmi kaynaklardan kontrol etmenizi öneririm" de
 • Yasal tavsiye verme, genel bilgi sağla
 • Kullanıcıyı "siz" olarak hitap et
+
+CV OLUŞTURMA ÖZEL KURALLARI:
+• Kullanıcı CV oluşturmak istediğinde soru-cevap şeklinde ilerle.
+• Her seferinde SADECE BİR KISA SORU sor (örn: "Hangi üniversiteden mezun oldunuz?").
+• Her yanıtının sonuna mutlaka şu cümleyi ekle: "CV'nizi PDF olarak oluşturalım mı?"
 ''';
 
   AiRemoteDataSourceImpl() {

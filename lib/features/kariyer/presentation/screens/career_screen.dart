@@ -1,15 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kamulog_superapp/core/theme/app_theme.dart';
+import 'package:kamulog_superapp/features/profil/presentation/providers/profil_provider.dart';
+import 'package:kamulog_superapp/features/ai/presentation/providers/ai_provider.dart';
+import 'package:kamulog_superapp/core/providers/home_navigation_provider.dart';
 
 /// Kariyer modülü — AI CV oluşturma ve iş analizi
 /// Ayrı modül: features/kariyer/ — ileride ayrı API/AI entegrasyonu
-class CareerScreen extends StatelessWidget {
+class CareerScreen extends ConsumerWidget {
   const CareerScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final profil = ref.watch(profilProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -19,6 +24,10 @@ class CareerScreen extends StatelessWidget {
         ),
         title: const Text('Kariyer'),
         centerTitle: true,
+        actions: [
+          _CreditBadge(credits: profil.credits),
+          const SizedBox(width: 12),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -26,11 +35,11 @@ class CareerScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ── AI CV Oluşturucu Banner
-            _AiCvBanner(isDark: isDark),
+            _AiCvBanner(isDark: isDark, remaining: profil.remainingAiCvCount),
             const SizedBox(height: 20),
 
             // ── CV Analizi
-            _CvAnalysisCard(isDark: isDark),
+            _CvAnalysisCard(isDark: isDark, hasCv: profil.hasCv),
             const SizedBox(height: 20),
 
             // ── Hızlı Eylemler
@@ -52,9 +61,12 @@ class CareerScreen extends StatelessWidget {
             _QuickActionCard(
               icon: Icons.auto_awesome_rounded,
               title: 'AI ile CV Oluştur',
-              subtitle: 'Bilgilerinizle profesyonel CV oluşturun',
+              subtitle:
+                  profil.remainingAiCvCount > 0
+                      ? 'Aylık 2 kullanımdan ${profil.remainingAiCvCount} hak kaldı'
+                      : 'Bu ayki kullanım hakkınız doldu',
               color: const Color(0xFF1565C0),
-              onTap: () => _showAiCvBuilder(context),
+              onTap: () => _showAiCvBuilder(context, ref),
             ),
             const SizedBox(height: 10),
             _QuickActionCard(
@@ -68,9 +80,9 @@ class CareerScreen extends StatelessWidget {
             _QuickActionCard(
               icon: Icons.analytics_rounded,
               title: 'İş İlanlarını Analiz Et',
-              subtitle: 'CV\'niz ile eşleşen ilanları AI analiz etsin',
+              subtitle: 'CV eşleştirme analizi (5 Kredi)',
               color: const Color(0xFF2E7D32),
-              onTap: () => _showJobAnalysis(context),
+              onTap: () => _showJobAnalysis(context, ref),
             ),
             const SizedBox(height: 10),
             _QuickActionCard(
@@ -117,153 +129,50 @@ class CareerScreen extends StatelessWidget {
     );
   }
 
-  void _showAiCvBuilder(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder:
-          (ctx) => Container(
-            height: MediaQuery.of(ctx).size.height * 0.85,
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-            ),
-            child: Column(
-              children: [
-                Container(
-                  margin: const EdgeInsets.only(top: 10),
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    children: [
-                      Container(
-                        width: 64,
-                        height: 64,
-                        decoration: BoxDecoration(
-                          gradient: AppTheme.primaryGradient,
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: const Icon(
-                          Icons.auto_awesome_rounded,
-                          size: 32,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'AI CV Oluşturucu',
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Yapay zeka, bilgilerinize göre profesyonel bir CV hazırlayacak.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-                      ),
-                    ],
-                  ),
-                ),
-                const Divider(),
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _CvStepItem(
-                          step: 1,
-                          title: 'Kişisel Bilgiler',
-                          subtitle: 'Profil bilgileriniz otomatik doldurulacak',
-                          icon: Icons.person_rounded,
-                          isCompleted: true,
-                        ),
-                        _CvStepItem(
-                          step: 2,
-                          title: 'Eğitim Bilgileri',
-                          subtitle: 'Üniversite, lise ve sertifikalar',
-                          icon: Icons.school_rounded,
-                          isCompleted: false,
-                        ),
-                        _CvStepItem(
-                          step: 3,
-                          title: 'İş Deneyimi',
-                          subtitle: 'Önceki ve mevcut iş deneyimleriniz',
-                          icon: Icons.work_rounded,
-                          isCompleted: false,
-                        ),
-                        _CvStepItem(
-                          step: 4,
-                          title: 'Beceriler & Yetkinlikler',
-                          subtitle: 'AI sizin için öneriler sunacak',
-                          icon: Icons.psychology_rounded,
-                          isCompleted: false,
-                        ),
-                        _CvStepItem(
-                          step: 5,
-                          title: 'AI ile Optimize Et',
-                          subtitle:
-                              'CV\'niz AI tarafından düzenlenir ve PDF olarak hazırlanır',
-                          icon: Icons.auto_fix_high_rounded,
-                          isCompleted: false,
-                        ),
-                        const SizedBox(height: 24),
-                        SizedBox(
-                          width: double.infinity,
-                          height: 52,
-                          child: ElevatedButton.icon(
-                            onPressed: () {
-                              Navigator.pop(ctx);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'AI CV oluşturma başlatıldı — API entegrasyonu gerekli',
-                                  ),
-                                  backgroundColor: Color(0xFF1565C0),
-                                ),
-                              );
-                            },
-                            icon: const Icon(
-                              Icons.auto_awesome_rounded,
-                              color: Colors.white,
-                            ),
-                            label: const Text(
-                              'CV Oluşturmaya Başla',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                              ),
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.primaryColor,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-    );
+  void _showAiCvBuilder(BuildContext context, WidgetRef ref) {
+    final profil = ref.read(profilProvider);
+
+    if (profil.remainingAiCvCount <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Bu ayki AI CV oluşturma hakkınız dolmuştur (2/2).'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // AI Asistanına yönlendir ve CV akışını başlat
+    ref.read(aiChatProvider.notifier).startCvBuilding(profil);
+    ref.read(homeNavigationProvider.notifier).setIndex(4);
+    context.pop(); // Geriye (Home'a) dön ki tablar gözüksün
   }
 
-  void _showJobAnalysis(BuildContext context) {
+  void _showJobAnalysis(BuildContext context, WidgetRef ref) {
+    final profil = ref.read(profilProvider);
+
+    if (!profil.hasCv) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Analiz için önce Belgelerim sayfasından bir CV yüklemelisiniz.',
+          ),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    if (profil.credits < 5) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Yetersiz kredi. İş analizi için 5 kredi gereklidir.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -313,7 +222,7 @@ class CareerScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Yapay zeka, CV\'nizi analiz ederek en uygun iş ilanlarını bulur.',
+                        'Yapay zeka, CV\'nizi analiz ederek en uygun iş ilanlarını bulur.\nMaliyet: 5 Kredi (Mevcut: ${profil.credits})',
                         textAlign: TextAlign.center,
                         style: TextStyle(fontSize: 14, color: Colors.grey[500]),
                       ),
@@ -328,9 +237,9 @@ class CareerScreen extends StatelessWidget {
                       children: [
                         _AnalysisInfoRow(
                           icon: Icons.description_rounded,
-                          title: 'CV Gerekli',
+                          title: 'CV Kontrol Edildi',
                           subtitle:
-                              'Önce Belgelerim\'den CV yüklemeniz gerekir',
+                              'Analiz için sistemdeki CV\'niz kullanılacak',
                         ),
                         _AnalysisInfoRow(
                           icon: Icons.search_rounded,
@@ -353,23 +262,29 @@ class CareerScreen extends StatelessWidget {
                           width: double.infinity,
                           height: 52,
                           child: ElevatedButton.icon(
-                            onPressed: () {
+                            onPressed: () async {
                               Navigator.pop(ctx);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'AI iş analizi başlatıldı — API entegrasyonu gerekli',
+                              final success = await ref
+                                  .read(profilProvider.notifier)
+                                  .useCredits(5);
+
+                              if (success && context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'AI iş analizi başlatıldı! 5 kredi düşüldü.',
+                                    ),
+                                    backgroundColor: Color(0xFF2E7D32),
                                   ),
-                                  backgroundColor: Color(0xFF2E7D32),
-                                ),
-                              );
+                                );
+                              }
                             },
                             icon: const Icon(
                               Icons.play_arrow_rounded,
                               color: Colors.white,
                             ),
                             label: const Text(
-                              'Analizi Başlat',
+                              'Analizi Başlat (5 Kredi)',
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w700,
@@ -399,7 +314,8 @@ class CareerScreen extends StatelessWidget {
 // ── AI CV Banner
 class _AiCvBanner extends StatelessWidget {
   final bool isDark;
-  const _AiCvBanner({required this.isDark});
+  final int remaining;
+  const _AiCvBanner({required this.isDark, required this.remaining});
 
   @override
   Widget build(BuildContext context) {
@@ -410,7 +326,7 @@ class _AiCvBanner extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.primaryColor.withValues(alpha: 0.3),
+            color: AppTheme.primaryColor.withOpacity(0.3),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -428,17 +344,21 @@ class _AiCvBanner extends StatelessWidget {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
+                    color: Colors.white.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(6),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.auto_awesome, size: 12, color: Colors.white),
-                      SizedBox(width: 4),
+                      const Icon(
+                        Icons.auto_awesome,
+                        size: 12,
+                        color: Colors.white,
+                      ),
+                      const SizedBox(width: 4),
                       Text(
-                        'AI POWERED',
-                        style: TextStyle(
+                        'AYLIK HAK: $remaining/2',
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 10,
                           fontWeight: FontWeight.w700,
@@ -461,7 +381,7 @@ class _AiCvBanner extends StatelessWidget {
                 Text(
                   'Profesyonel CV\'niz dakikalar içinde hazır.',
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.85),
+                    color: Colors.white.withOpacity(0.85),
                     fontSize: 12,
                   ),
                 ),
@@ -472,7 +392,7 @@ class _AiCvBanner extends StatelessWidget {
             width: 64,
             height: 64,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
+              color: Colors.white.withOpacity(0.2),
               borderRadius: BorderRadius.circular(16),
             ),
             child: const Icon(
@@ -490,7 +410,8 @@ class _AiCvBanner extends StatelessWidget {
 // ── CV Analiz Kartı
 class _CvAnalysisCard extends StatelessWidget {
   final bool isDark;
-  const _CvAnalysisCard({required this.isDark});
+  final bool hasCv;
+  const _CvAnalysisCard({required this.isDark, required this.hasCv});
 
   @override
   Widget build(BuildContext context) {
@@ -504,7 +425,7 @@ class _CvAnalysisCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Colors.black.withOpacity(0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -516,12 +437,13 @@ class _CvAnalysisCard extends StatelessWidget {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: const Color(0xFF2E7D32).withValues(alpha: 0.1),
+              color: (hasCv ? const Color(0xFF2E7D32) : Colors.orange)
+                  .withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(
-              Icons.analytics_rounded,
-              color: Color(0xFF2E7D32),
+            child: Icon(
+              hasCv ? Icons.analytics_rounded : Icons.warning_amber_rounded,
+              color: hasCv ? const Color(0xFF2E7D32) : Colors.orange,
               size: 24,
             ),
           ),
@@ -536,7 +458,9 @@ class _CvAnalysisCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'CV\'nizi yüklediğinizde AI analiz raporu oluşturur',
+                  hasCv
+                      ? 'AI analiz raporu oluşturmaya hazır'
+                      : 'Analiz için önce CV yüklemelisiniz',
                   style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                 ),
               ],
@@ -545,16 +469,53 @@ class _CvAnalysisCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
-              color: const Color(0xFF2E7D32).withValues(alpha: 0.1),
+              color: const Color(0xFF2E7D32).withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: const Text(
-              'Premium',
+              '5 Kredi',
               style: TextStyle(
                 color: Color(0xFF1565C0),
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Credit Badge Widget
+class _CreditBadge extends StatelessWidget {
+  final int credits;
+  const _CreditBadge({required this.credits});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppTheme.primaryColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppTheme.primaryColor.withOpacity(0.2)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.stars_rounded,
+            size: 16,
+            color: AppTheme.primaryColor,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            '$credits Kredi',
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: AppTheme.primaryColor,
             ),
           ),
         ],
@@ -591,7 +552,7 @@ class _QuickActionCard extends StatelessWidget {
           border: Border.all(color: const Color(0xFFEEEEEE)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
+              color: Colors.black.withOpacity(0.03),
               blurRadius: 6,
               offset: const Offset(0, 2),
             ),
@@ -603,7 +564,7 @@ class _QuickActionCard extends StatelessWidget {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
+                color: color.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: color, size: 22),
@@ -662,7 +623,7 @@ class _JobCard extends StatelessWidget {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: job.color.withValues(alpha: 0.1),
+                  color: job.color.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(job.icon, color: job.color, size: 20),
@@ -689,7 +650,7 @@ class _JobCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF2E7D32).withValues(alpha: 0.1),
+                  color: const Color(0xFF2E7D32).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
@@ -732,7 +693,7 @@ class _JobTag extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
+        color: color.withOpacity(0.08),
         borderRadius: BorderRadius.circular(5),
       ),
       child: Text(
@@ -742,84 +703,6 @@ class _JobTag extends StatelessWidget {
           fontWeight: FontWeight.w600,
           color: color,
         ),
-      ),
-    );
-  }
-}
-
-class _CvStepItem extends StatelessWidget {
-  final int step;
-  final String title;
-  final String subtitle;
-  final IconData icon;
-  final bool isCompleted;
-
-  const _CvStepItem({
-    required this.step,
-    required this.title,
-    required this.subtitle,
-    required this.icon,
-    required this.isCompleted,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color:
-                  isCompleted
-                      ? const Color(0xFF2E7D32).withValues(alpha: 0.1)
-                      : Colors.grey.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Center(
-              child:
-                  isCompleted
-                      ? const Icon(
-                        Icons.check_rounded,
-                        size: 18,
-                        color: Color(0xFF2E7D32),
-                      )
-                      : Text(
-                        '$step',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14,
-                  ),
-                ),
-                Text(
-                  subtitle,
-                  style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-                ),
-              ],
-            ),
-          ),
-          Icon(
-            isCompleted ? Icons.check_circle : Icons.chevron_right_rounded,
-            size: 20,
-            color: isCompleted ? const Color(0xFF2E7D32) : Colors.grey[400],
-          ),
-        ],
       ),
     );
   }

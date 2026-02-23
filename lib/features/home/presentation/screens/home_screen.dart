@@ -10,6 +10,7 @@ import 'package:kamulog_superapp/features/kariyer/presentation/screens/kariyer_s
 import 'package:kamulog_superapp/features/home/presentation/widgets/home_dashboard.dart';
 import 'package:kamulog_superapp/features/ai/presentation/screens/ai_assistant_screen.dart';
 import 'package:kamulog_superapp/features/ai/presentation/providers/ai_provider.dart';
+import 'package:kamulog_superapp/core/providers/home_navigation_provider.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -20,7 +21,6 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen>
     with TickerProviderStateMixin {
-  int _currentIndex = 2;
   late final AnimationController _fadeController;
   late final Animation<double> _fadeAnimation;
 
@@ -53,9 +53,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   void _onTabChanged(int index) {
-    if (index == _currentIndex) return;
+    final currentIndex = ref.read(homeNavigationProvider);
+    if (index == currentIndex) return;
     _fadeController.forward(from: 0);
-    setState(() => _currentIndex = index);
+    ref.read(homeNavigationProvider.notifier).setIndex(index);
   }
 
   @override
@@ -64,15 +65,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
+    final currentIndex = ref.watch(homeNavigationProvider);
     return Scaffold(
       body:
-          _currentIndex == 2
+          currentIndex == 2
               ? _buildHomeWithHeader(user, theme, isDark)
-              : _currentIndex == 4
+              : currentIndex == 4
               ? _buildAiScreen(theme, isDark)
               : _buildRegularScreen(user, theme, isDark),
       bottomNavigationBar: AnimatedBottomNavBar(
-        currentIndex: _currentIndex,
+        currentIndex: currentIndex,
         onTap: _onTabChanged,
       ),
     );
@@ -248,7 +250,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         Expanded(
           child: FadeTransition(
             opacity: _fadeAnimation,
-            child: _screens[_currentIndex],
+            child: _screens[ref.watch(homeNavigationProvider)],
           ),
         ),
       ],
@@ -317,7 +319,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       ),
       body: FadeTransition(
         opacity: _fadeAnimation,
-        child: _screens[_currentIndex],
+        child: _screens[ref.watch(homeNavigationProvider)],
       ),
     );
   }
@@ -330,7 +332,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       appBar: AppBar(
         backgroundColor: isDark ? AppTheme.surfaceDark : Colors.white,
         title: Text(
-          titles[_currentIndex],
+          titles[ref.watch(homeNavigationProvider)],
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w800,
@@ -375,7 +377,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           ),
         ],
       ),
-      body: _screens[_currentIndex],
+      body: _screens[ref.watch(homeNavigationProvider)],
     );
   }
 }

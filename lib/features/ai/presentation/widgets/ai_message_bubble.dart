@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kamulog_superapp/core/theme/app_theme.dart';
 import 'package:kamulog_superapp/features/ai/data/models/ai_message_model.dart';
+import 'package:kamulog_superapp/features/ai/presentation/providers/ai_provider.dart';
 import 'package:kamulog_superapp/features/ai/presentation/widgets/ai_typing_indicator.dart';
 
 class AiMessageBubble extends StatelessWidget {
@@ -126,6 +128,15 @@ class AiMessageBubble extends StatelessWidget {
                                         : Colors.black87,
                               ),
                             ),
+
+                            // PDF Export Buttons
+                            if (!isUser &&
+                                (message.content.contains('PDF') ||
+                                    message.content.contains(
+                                      'oluşturalım mı?',
+                                    )))
+                              _buildPdfActionButtons(context),
+
                             if (message.isStreaming)
                               Padding(
                                 padding: const EdgeInsets.only(top: 4),
@@ -150,6 +161,69 @@ class AiMessageBubble extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildPdfActionButtons(BuildContext context) {
+    return Consumer(
+      builder: (context, ref, child) {
+        return Padding(
+          padding: const EdgeInsets.only(top: 12),
+          child: Row(
+            children: [
+              ElevatedButton.icon(
+                onPressed: () async {
+                  await ref.read(aiChatProvider.notifier).simulatePdfExport();
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'CV\'niz başarıyla "Belgelerim" bölümüne kaydedildi.',
+                        ),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
+                },
+                icon: const Icon(
+                  Icons.picture_as_pdf_rounded,
+                  size: 16,
+                  color: Colors.white,
+                ),
+                label: const Text(
+                  'Evet, PDF Oluştur',
+                  style: TextStyle(fontSize: 12, color: Colors.white),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryColor,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+              ),
+              const SizedBox(width: 8),
+              TextButton(
+                onPressed: () {},
+                child: const Text(
+                  'Şimdi Değil',
+                  style: TextStyle(fontSize: 12),
+                ),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

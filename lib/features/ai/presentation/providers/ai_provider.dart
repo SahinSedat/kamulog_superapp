@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kamulog_superapp/features/ai/data/datasources/ai_remote_datasource.dart';
 import 'package:kamulog_superapp/features/ai/data/models/ai_message_model.dart';
 import 'package:kamulog_superapp/features/ai/data/repositories/ai_repository_impl.dart';
+import 'package:kamulog_superapp/features/profil/presentation/providers/profil_provider.dart';
 
 // ── Providers ──
 final aiRemoteDataSourceProvider = Provider<AiRemoteDataSource>((ref) {
@@ -51,11 +52,12 @@ class AiChatState {
 
 // ── Chat Notifier ──
 class AiChatNotifier extends StateNotifier<AiChatState> {
+  final Ref _ref;
   final AiRepository _repository;
   StreamSubscription<String>? _streamSub;
   int _msgCounter = 0;
 
-  AiChatNotifier(this._repository)
+  AiChatNotifier(this._repository, this._ref)
     : super(
         AiChatState(
           conversationId: 'conv-${DateTime.now().millisecondsSinceEpoch}',
@@ -66,6 +68,54 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
   void dispose() {
     _streamSub?.cancel();
     super.dispose();
+  }
+
+  /// Start CV Building flow with profile data
+  void startCvBuilding(dynamic profil) {
+    newConversation();
+    final profileContext = '''
+Kullanıcı bir CV oluşturmak istiyor. Mevcut profil bilgileri:
+Ad Soyad: ${profil.name ?? 'Belirtilmedi'}
+Telefon: ${profil.phone ?? 'Belirtilmedi'}
+Kurum: ${profil.effectiveInstitution}
+Unvan: ${profil.title ?? 'Belirtilmedi'}
+İl/İlçe: ${profil.addressText}
+Beceriler: ${profil.surveyInterests.join(', ')}
+
+STRATEJİ:
+1. Kullanıcıya merhaba de ve mevcut bilgilerini teyit et.
+2. Her seferinde SADECE BİR soru sor (Eğitim, Deneyim, Sertifikalar vb.).
+3. Her yanıtının sonuna mutlaka şu cümleyi ekle: "CV'nizi PDF olarak oluşturalım mı?"
+4. Eğer kullanıcı PDF oluşturulmasını isterse, "Peki, PDF olarak CV'nizi hazırlıyorum ve 'Belgelerim' kısmına ekliyorum." de ve işlemi bitir.
+''';
+    sendMessage(
+      'Merhaba, profil bilgilerime dayanarak bir CV oluşturmaya başlayabilir miyiz?',
+      context: profileContext,
+    );
+  }
+
+  /// Simulate saving a PDF to documents
+  Future<void> simulatePdfExport() async {
+    state = state.copyWith(isLoading: true);
+
+    // Simulate processing
+    await Future.delayed(const Duration(seconds: 2));
+
+    // Add to actual documents
+    final docId = 'cv-${DateTime.now().millisecondsSinceEpoch}';
+    final doc = DocumentInfo(
+      id: docId,
+      name:
+          'Yapay Zeka Hazırlanan CV - ${DateTime.now().day}.${DateTime.now().month}.${DateTime.now().year}',
+      category: 'cv',
+      fileType: 'pdf',
+      uploadDate: DateTime.now(),
+    );
+
+    await _ref.read(profilProvider.notifier).addDocument(doc);
+    await _ref.read(profilProvider.notifier).recordAiCvUsage();
+
+    state = state.copyWith(isLoading: false);
   }
 
   /// Send a user message and receive a streamed AI response.
@@ -175,5 +225,5 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
 final aiChatProvider = StateNotifierProvider<AiChatNotifier, AiChatState>((
   ref,
 ) {
-  return AiChatNotifier(ref.watch(aiRepositoryProvider));
+  return AiChatNotifier(ref.watch(aiRepositoryProvider), ref);
 });

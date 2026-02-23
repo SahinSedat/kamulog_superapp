@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:kamulog_superapp/core/theme/app_theme.dart';
+import 'package:kamulog_superapp/core/storage/local_storage_service.dart';
 
 /// 3-step survey (removed duplicate employment type step).
 /// Steps: Institution → City → Interests
@@ -89,6 +90,14 @@ class _OnboardingSurveyScreenState
   }
 
   Future<void> _complete() async {
+    // Seçimleri yerel hafızaya kaydet
+    await LocalStorageService.saveSurveyResults(
+      institution: _selectedInstitution,
+      city: _selectedCity,
+      interests: _interests.toList(),
+    );
+    await LocalStorageService.markSurveyCompleted();
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('hasSeenOnboarding', true);
     if (mounted) context.go('/login');
