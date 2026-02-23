@@ -102,7 +102,12 @@ class JobDetailScreen extends ConsumerWidget {
       isDismissible: false,
       enableDrag: false,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => _JobAnalysisSheet(ilanNo: ilanNo, jobTitle: job.title),
+      builder:
+          (ctx) => _JobAnalysisSheet(
+            ilanNo: ilanNo,
+            jobTitle: job.title,
+            applicationUrl: job.applicationUrl ?? job.sourceUrl,
+          ),
     );
   }
 
@@ -483,19 +488,56 @@ class JobDetailScreen extends ConsumerWidget {
 class _JobAnalysisSheet extends ConsumerWidget {
   final String ilanNo;
   final String jobTitle;
+  final String? applicationUrl;
 
-  const _JobAnalysisSheet({required this.ilanNo, required this.jobTitle});
+  const _JobAnalysisSheet({
+    required this.ilanNo,
+    required this.jobTitle,
+    this.applicationUrl,
+  });
+
+  /// AI yanıtından uyumluluk skorunu parse et
+  int? _parseScore(String content) {
+    final patterns = [
+      RegExp(r'Uyumluluk Skoru[:\s]*[%]?(\d{1,3})'),
+      RegExp(r'%(\d{1,3})'),
+      RegExp(r'(\d{1,3})%'),
+    ];
+    for (final pattern in patterns) {
+      final match = pattern.firstMatch(content);
+      if (match != null) {
+        final score = int.tryParse(match.group(1)!);
+        if (score != null && score >= 0 && score <= 100) return score;
+      }
+    }
+    return null;
+  }
+
+  /// AI yanıtında UYGUN mu ALTERNATİF mi?
+  bool _isUygun(String content) {
+    final score = _parseScore(content);
+    if (score != null && score >= 60) return true;
+    final lower = content.toLowerCase();
+    if (lower.contains('sonuç: uygun') || lower.contains('sonuç:** uygun')) {
+      return true;
+    }
+    return false;
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final chatState = ref.watch(aiChatProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // AI asistan mesajlarını filtrele
     final assistantMessages =
         chatState.messages.where((m) => m.role == AiRole.assistant).toList();
     final lastAssistantMsg =
         assistantMessages.isNotEmpty ? assistantMessages.last : null;
+
+    final score =
+        lastAssistantMsg != null ? _parseScore(lastAssistantMsg.content) : null;
+    final isUygun =
+        lastAssistantMsg != null ? _isUygun(lastAssistantMsg.content) : false;
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.85,
@@ -573,34 +615,52 @@ class _JobAnalysisSheet extends ConsumerWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Analiz tamamlandı banner
+                          // Uyumluluk skoru gauge
+                          if (score != null && chatState.analysisComplete) ...[
+                            _buildScoreGauge(score, isUygun, isDark),
+                            const SizedBox(height: 20),
+                          ],
+
+                          // Sonuç banner
                           if (chatState.analysisComplete) ...[
                             Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: const Color(
-                                  0xFF2E7D32,
-                                ).withValues(alpha: 0.08),
+                                color: (isUygun
+                                        ? const Color(0xFF2E7D32)
+                                        : const Color(0xFFF57C00))
+                                    .withValues(alpha: 0.08),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: const Color(
-                                    0xFF2E7D32,
-                                  ).withValues(alpha: 0.2),
+                                  color: (isUygun
+                                          ? const Color(0xFF2E7D32)
+                                          : const Color(0xFFF57C00))
+                                      .withValues(alpha: 0.2),
                                 ),
                               ),
-                              child: const Row(
+                              child: Row(
                                 children: [
                                   Icon(
-                                    Icons.check_circle_rounded,
-                                    color: Color(0xFF2E7D32),
+                                    isUygun
+                                        ? Icons.check_circle_rounded
+                                        : Icons.info_rounded,
+                                    color:
+                                        isUygun
+                                            ? const Color(0xFF2E7D32)
+                                            : const Color(0xFFF57C00),
                                     size: 20,
                                   ),
-                                  SizedBox(width: 10),
+                                  const SizedBox(width: 10),
                                   Text(
-                                    'Analiz Tamamlandı',
+                                    isUygun
+                                        ? 'Bu ilan size uygun!'
+                                        : 'Alternatif olarak değerlendirin',
                                     style: TextStyle(
                                       fontWeight: FontWeight.w700,
-                                      color: Color(0xFF2E7D32),
+                                      color:
+                                          isUygun
+                                              ? const Color(0xFF2E7D32)
+                                              : const Color(0xFFF57C00),
                                     ),
                                   ),
                                 ],
@@ -656,42 +716,158 @@ class _JobAnalysisSheet extends ConsumerWidget {
               border: Border(top: BorderSide(color: Colors.grey.shade200)),
             ),
             child: SafeArea(
-              child: SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton.icon(
-                  onPressed:
-                      chatState.isLoading
-                          ? null
-                          : () {
-                            ref.read(aiChatProvider.notifier).newConversation();
-                            Navigator.pop(context);
-                          },
-                  icon: Icon(
-                    chatState.analysisComplete
-                        ? Icons.check_rounded
-                        : Icons.close_rounded,
-                    color: Colors.white,
-                  ),
-                  label: Text(
-                    chatState.analysisComplete ? 'Analizi Kapat' : 'Kapat',
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Başvur / Yine de Başvur
+                  if (chatState.analysisComplete && applicationUrl != null) ...[
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: ElevatedButton.icon(
+                        onPressed: () => launchUrl(Uri.parse(applicationUrl!)),
+                        icon: Icon(
+                          isUygun
+                              ? Icons.send_rounded
+                              : Icons.open_in_new_rounded,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                        label: Text(
+                          isUygun ? 'Hemen Başvur' : 'Yine de Başvur',
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              isUygun
+                                  ? const Color(0xFF2E7D32)
+                                  : const Color(0xFFF57C00),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor:
+                    const SizedBox(height: 8),
+                  ],
+                  // Kapat
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: OutlinedButton.icon(
+                      onPressed:
+                          chatState.isLoading
+                              ? null
+                              : () {
+                                ref
+                                    .read(aiChatProvider.notifier)
+                                    .newConversation();
+                                Navigator.pop(context);
+                              },
+                      icon: Icon(
                         chatState.analysisComplete
-                            ? const Color(0xFF2E7D32)
-                            : Colors.grey[600],
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+                            ? Icons.check_rounded
+                            : Icons.close_rounded,
+                      ),
+                      label: Text(
+                        chatState.analysisComplete ? 'Analizi Kapat' : 'Kapat',
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
                     ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildScoreGauge(int score, bool isUygun, bool isDark) {
+    final color =
+        score >= 70
+            ? const Color(0xFF2E7D32)
+            : score >= 40
+            ? const Color(0xFFF57C00)
+            : AppTheme.errorColor;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: 0.15)),
+      ),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 70,
+            height: 70,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                SizedBox(
+                  width: 70,
+                  height: 70,
+                  child: CircularProgressIndicator(
+                    value: score / 100,
+                    strokeWidth: 6,
+                    backgroundColor: color.withValues(alpha: 0.15),
+                    color: color,
+                    strokeCap: StrokeCap.round,
                   ),
                 ),
-              ),
+                Text(
+                  '%$score',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    color: color,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Uyumluluk Skoru',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  score >= 70
+                      ? 'CV\'niz bu ilan için yüksek uyum gösteriyor'
+                      : score >= 40
+                      ? 'Kısmen uyumlu — bazı eksiklikler var'
+                      : 'Düşük uyumluluk — alternatif değerlendirin',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                    height: 1.3,
+                  ),
+                ),
+              ],
             ),
           ),
         ],

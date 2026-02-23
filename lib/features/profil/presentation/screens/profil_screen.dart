@@ -6,7 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:kamulog_superapp/core/theme/app_theme.dart';
 import 'package:kamulog_superapp/features/auth/presentation/providers/auth_provider.dart';
 import 'package:kamulog_superapp/features/profil/presentation/providers/profil_provider.dart';
-import 'package:kamulog_superapp/features/ai/presentation/providers/ai_provider.dart';
+
 import 'package:kamulog_superapp/core/providers/home_navigation_provider.dart';
 
 /// Gelişmiş Profil Ekranı — kullanıcı bilgileri, üyelik, satın alımlar, çıkış
@@ -167,24 +167,9 @@ class ProfilScreen extends ConsumerWidget {
                   title: 'AI CV Oluşturucu',
                   trailing: 'Yapay zeka ile',
                   onTap: () {
-                    final profil = ref.read(profilProvider);
-                    final started = ref
-                        .read(aiChatProvider.notifier)
-                        .startCvBuilding(profil);
-                    if (started) {
-                      ref.read(homeNavigationProvider.notifier).setIndex(4);
-                      context.go('/');
-                    } else {
-                      final errorMsg = ref.read(aiChatProvider).error;
-                      if (errorMsg != null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(errorMsg),
-                            backgroundColor: AppTheme.errorColor,
-                          ),
-                        );
-                      }
-                    }
+                    // CV oluşturma sadece Kariyer modülünden yapılır
+                    ref.read(homeNavigationProvider.notifier).setIndex(3);
+                    context.go('/');
                   },
                 ),
                 _MenuItem(

@@ -31,7 +31,7 @@ class AiChatState {
   final bool chatLocked; // Jeton/mesaj limiti bittiğinde true olur
   final String? error;
   final String conversationId;
-  final int aiAssistantCredits; // AI Asistan modülü kendi jeton havuzu (20)
+  final int aiAssistantCredits; // AI Asistan modülü kendi jeton havuzu (30)
 
   const AiChatState({
     this.messages = const [],
@@ -43,7 +43,7 @@ class AiChatState {
     this.chatLocked = false,
     this.error,
     this.conversationId = '',
-    this.aiAssistantCredits = 20,
+    this.aiAssistantCredits = 30,
   });
 
   /// Mevcut oturumdaki kullanıcı mesaj sayısı
@@ -284,16 +284,16 @@ ANALİZ FORMATI (KISA ve GRAFİK tut):
     if (context == null) {
       // AI Asistanda kullanıcı kendi sohbet ediyorsa ayrı jeton havuzu
       if (!state.isJobAnalysis && !state.isMevzuatChat) {
-        // AI Asistan kendi jeton havuzu
-        if (state.aiAssistantCredits < 2) {
+        // AI Asistan kendi jeton havuzu — her mesaj 1 jeton
+        if (state.aiAssistantCredits < 1) {
           state = state.copyWith(
-            error: 'AI Asistan jetonunuz bitti (2 jeton gerekli).',
+            error: 'AI Asistan jetonunuz bitti.',
             chatLocked: true,
           );
           return;
         }
         state = state.copyWith(
-          aiAssistantCredits: state.aiAssistantCredits - 2,
+          aiAssistantCredits: state.aiAssistantCredits - 1,
         );
       } else {
         // Kariyer modülü (iş analizi, mevzuat) — profil jetonları

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kamulog_superapp/core/providers/core_providers.dart';
 import 'package:kamulog_superapp/core/usecase/usecase.dart';
@@ -218,8 +219,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> sendPhoneChangeOtp(String newPhone) async {
     _phoneChangeLoading = true;
     _phoneChangeError = null;
-    // State'i yenilemek için notifyListeners benzeri
+    _phoneChangeVerificationId = null;
     state = state.copyWith(error: null);
+
+    final completer = Completer<void>();
 
     final result = await _sendOtp(
       SendOtpParams(
@@ -227,22 +230,33 @@ class AuthNotifier extends StateNotifier<AuthState> {
         onCodeSent: (verificationId, resendToken) {
           _phoneChangeVerificationId = verificationId;
           _phoneChangeLoading = false;
-          // Auth state değişmeden sadece notify
+          _phoneChangeError = null;
           state = state.copyWith(error: null);
+          if (!completer.isCompleted) completer.complete();
         },
         onVerificationFailed: (error) {
           _phoneChangeLoading = false;
           _phoneChangeError = error;
           state = state.copyWith(error: error);
+          if (!completer.isCompleted) completer.complete();
         },
       ),
     );
 
-    result.fold((failure) {
-      _phoneChangeLoading = false;
-      _phoneChangeError = failure.message;
-      state = state.copyWith(error: failure.message);
-    }, (_) {});
+    result.fold(
+      (failure) {
+        _phoneChangeLoading = false;
+        _phoneChangeError = failure.message;
+        state = state.copyWith(error: failure.message);
+        if (!completer.isCompleted) completer.complete();
+      },
+      (_) {
+        // UseCase başarılı — callback'i bekle
+      },
+    );
+
+    // Firebase callback'inin tamamlanmasını bekle
+    await completer.future;
   }
 
   /// Telefon değişikliğini OTP ile doğrula ve profili güncelle

@@ -247,7 +247,7 @@ class _ProfilEditScreenState extends ConsumerState<ProfilEditScreen> {
                     _selectedDistrict = null; // İl değişince ilçeyi sıfırla
                   });
                 },
-                validator: (v) => v == null ? 'İl seçiniz' : null,
+                validator: (v) => null, // Opsiyonel
               ),
               const SizedBox(height: 14),
 
@@ -274,11 +274,7 @@ class _ProfilEditScreenState extends ConsumerState<ProfilEditScreen> {
                         )
                         .toList(),
                 onChanged: (v) => setState(() => _selectedDistrict = v),
-                validator:
-                    (v) =>
-                        v == null && _selectedCity != null
-                            ? 'İlçe seçiniz'
-                            : null,
+                validator: (v) => null, // Opsiyonel
               ),
 
               const SizedBox(height: 24),

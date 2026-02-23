@@ -210,6 +210,7 @@ class CareerScreen extends ConsumerWidget {
 
   void _showJobMatching(BuildContext context, WidgetRef ref) {
     final profil = ref.read(profilProvider);
+    final jobsState = ref.read(jobsProvider);
 
     if (!profil.hasCv) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -217,6 +218,18 @@ class CareerScreen extends ConsumerWidget {
           content: Text(
             'İş Eşleştirme için önce Belgelerim sayfasından bir CV yüklemelisiniz.',
           ),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    // Mevcut ilanları al
+    final jobs = jobsState.jobs.valueOrNull ?? [];
+    if (jobs.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Şu anda sistemde aktif iş ilanı bulunmuyor.'),
           backgroundColor: Colors.orange,
         ),
       );
@@ -272,7 +285,7 @@ class CareerScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'CV\'nizi analiz ederek en uygun 4 iş ve alternatif 2 kariyer yolu önerir.',
+                        'Sistemdeki ${jobs.length} ilanı CV\'niz ile karşılaştırıp uyumluluk grafikleri oluşturur.',
                         textAlign: TextAlign.center,
                         style: TextStyle(fontSize: 14, color: Colors.grey[500]),
                       ),
@@ -292,20 +305,16 @@ class CareerScreen extends ConsumerWidget {
                               'Analiz için sistemdeki CV\'niz kullanılacak',
                         ),
                         _AnalysisInfoRow(
-                          icon: Icons.stars_rounded,
-                          title: 'Uygun İşler',
-                          subtitle: 'CV\'nize en uygun 4 ilan önerilir',
-                        ),
-                        _AnalysisInfoRow(
-                          icon: Icons.alt_route_rounded,
-                          title: 'Alternatif Kariyer',
-                          subtitle: '2 Adet ikincil alternatif yol önerilir',
-                        ),
-                        _AnalysisInfoRow(
-                          icon: Icons.comment_rounded,
-                          title: 'AI Yorumu',
+                          icon: Icons.bar_chart_rounded,
+                          title: 'Uyumluluk Grafikleri',
                           subtitle:
-                              'Her öneri detaylı açıklama ve yorum içerir',
+                              'Her ilan için uyumluluk yüzdesi gösterilir',
+                        ),
+                        _AnalysisInfoRow(
+                          icon: Icons.touch_app_rounded,
+                          title: 'İlan Detay & Başvuru',
+                          subtitle:
+                              'Her ilana dokunarak detay inceleyebilirsiniz',
                         ),
                         const SizedBox(height: 20),
                         SizedBox(
@@ -356,40 +365,44 @@ class CareerScreen extends ConsumerWidget {
                                     'Ad: ${profil.name ?? "Belirtilmedi"}, Kurum: ${profil.effectiveInstitution}, Unvan: ${profil.title ?? "Belirtilmedi"}, Beceriler: ${profil.surveyInterests.join(", ")}';
                               }
 
-                              // AI’ya iş eşleştirme prompt'u gönder
+                              // Mevcut ilanların özetini hazırla
+                              final jobsSummary = jobs
+                                  .take(10)
+                                  .map((j) {
+                                    return '- İLAN#${j.id}: "${j.title}" | ${j.company} | ${(j.description ?? '').length > 150 ? (j.description ?? '').substring(0, 150) : (j.description ?? '')}';
+                                  })
+                                  .join('\n');
+
+                              // AI'ya mevcut ilanlarla karşılaştırma prompt'u
                               final matchingPrompt = '''
-SEN BİR KARİYER DANIŞMANISIN. Aşağıdaki CV bilgilerine dayanarak bana İş önerilerinde bulun.
+SEN BİR KARİYER DANIŞMANISIN. Aşağıdaki CV ile SİSTEMDEKİ mevcut iş ilanlarını karşılaştır.
 
 KULLANICININ CV BİLGİLERİ:
 $cvContent
 
+SİSTEMDEKİ MEVCUT İLANLAR:
+$jobsSummary
+
 GÖREVİN:
-1. **4 UYGUN İŞ İLANI**: CV'ye en uygun 4 iş ilanını öner. Her biri için:
-   - 💼 **Pozisyon Adı**
-   - 🏢 **Kurum/Şirket** (kamu veya özel sektör olabilir)
-   - 📊 **Uyumluluk Yüzdesi** (0-100)
-   - 💡 **Neden Uygun:** (kısa açıklama)
+Her ilan için aşağıdaki formatta kısa analiz yap:
 
-2. **2 ALTERNATİF KARİYER YOLU**: CV'nin güçlü yönlerini değerlendirerek 2 alternatif kariyer önerisi yap. Her biri için:
-   - 🔄 **Alternatif Pozisyon**
-   - 🏢 **Tipik Kurum**
-   - ✨ **Neden Alternatif:** (neden bu yönü düşünmeli, hangi becerileri kullanabilir)
+📊 İLAN#[kod]: "[başlık]"
+Uyumluluk: %[skor] | [UYGUN/ALTERNATİF]
+Yorum: [1 cümle kısa açıklama]
 
-3. **GENEL DEĞERLENDİRME**: Kullanıcının kariyer profili hakkında kısa bir genel değerlendirme paragrafı.
-
-Yanıtını Türkçe ver. Gerçekçi ve özgün önerilerde bulun.
+Sonunda 1 paragraf genel kariyer değerlendirmesi yaz.
+Kısa ve öz ol. Türkçe yanıtla.
 ''';
 
                               ref
                                   .read(aiChatProvider.notifier)
                                   .sendMessage(
-                                    'CV\'me en uygun iş ilanlarını bul ve alternatif kariyer yolları öner.',
+                                    'Sistemdeki mevcut ilanları CV\'mle karşılaştır.',
                                     context: matchingPrompt,
                                   );
 
                               if (context.mounted) Navigator.pop(ctx);
                               if (context.mounted) {
-                                // Sonucu kariyer sayfasında modal ile göster
                                 showModalBottomSheet(
                                   context: context,
                                   isScrollControlled: true,
@@ -397,7 +410,8 @@ Yanıtını Türkçe ver. Gerçekçi ve özgün önerilerde bulun.
                                   enableDrag: false,
                                   backgroundColor: Colors.transparent,
                                   builder:
-                                      (_) => const _JobMatchingResultSheet(),
+                                      (_) =>
+                                          _JobMatchingResultSheet(jobs: jobs),
                                 );
                               }
                             },
@@ -881,7 +895,26 @@ class _AnalysisInfoRow extends StatelessWidget {
 
 /// AI İş Eşleştirme sonuçlarını gösteren modal bottom sheet
 class _JobMatchingResultSheet extends ConsumerWidget {
-  const _JobMatchingResultSheet();
+  final List<JobListing> jobs;
+  const _JobMatchingResultSheet({required this.jobs});
+
+  /// AI yanıtından ilan ID'sine göre uyumluluk yüzdesini parse et
+  int? _parseScoreForJob(String content, String jobId) {
+    final lines = content.split('\n');
+    for (final line in lines) {
+      if (line.contains('İLAN#$jobId') || line.contains(jobId)) {
+        final match = RegExp(r'%(\d+)').firstMatch(line);
+        if (match != null) return int.tryParse(match.group(1)!);
+      }
+    }
+    return null;
+  }
+
+  Color _scoreColor(int score) {
+    if (score >= 70) return const Color(0xFF2E7D32);
+    if (score >= 40) return const Color(0xFFF57C00);
+    return const Color(0xFFD32F2F);
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -892,6 +925,7 @@ class _JobMatchingResultSheet extends ConsumerWidget {
         chatState.messages.where((m) => m.role == AiRole.assistant).toList();
     final lastAssistantMsg =
         assistantMessages.isNotEmpty ? assistantMessages.last : null;
+    final aiContent = lastAssistantMsg?.content ?? '';
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.85,
@@ -931,11 +965,11 @@ class _JobMatchingResultSheet extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(width: 12),
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      const Text(
                         'AI İş Eşleştirme Sonuçları',
                         style: TextStyle(
                           fontSize: 16,
@@ -943,8 +977,9 @@ class _JobMatchingResultSheet extends ConsumerWidget {
                         ),
                       ),
                       Text(
-                        '4 uygun + 2 alternatif öneri',
-                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                        '${jobs.length} ilan CV\'niz ile karşılaştırıldı',
+                        style:
+                            const TextStyle(fontSize: 12, color: Colors.grey),
                       ),
                     ],
                   ),
@@ -974,7 +1009,7 @@ class _JobMatchingResultSheet extends ConsumerWidget {
                           ),
                           const SizedBox(height: 20),
                           const Text(
-                            'CV\'nize uygun işler aranıyor...',
+                            'İlanlar CV\'niz ile karşılaştırılıyor...',
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
@@ -985,19 +1020,199 @@ class _JobMatchingResultSheet extends ConsumerWidget {
                     )
                     : lastAssistantMsg != null
                     ? SingleChildScrollView(
-                      padding: const EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(16),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Mesaj içeriği
-                          SelectableText(
-                            lastAssistantMsg.content,
-                            style: TextStyle(
-                              fontSize: 14,
-                              height: 1.6,
-                              color: isDark ? Colors.white : Colors.black87,
+                          // İlan kartları — her ilan için uyumluluk barı
+                          ...jobs.take(10).map((job) {
+                            final score =
+                                _parseScoreForJob(aiContent, job.id);
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 12),
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color:
+                                    isDark
+                                        ? Colors.grey[850]
+                                        : Colors.grey[50],
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(
+                                  color:
+                                      score != null && score >= 70
+                                          ? const Color(
+                                            0xFF2E7D32,
+                                          ).withValues(alpha: 0.3)
+                                          : Colors.grey.shade200,
+                                ),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // İlan başlığı ve şirket
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              job.title,
+                                              style: const TextStyle(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            const SizedBox(height: 2),
+                                            Text(
+                                              '${job.company} • ${job.city}',
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                color: Colors.grey[500],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      if (score != null) ...[
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 10,
+                                            vertical: 4,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: _scoreColor(
+                                              score,
+                                            ).withValues(alpha: 0.1),
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                          ),
+                                          child: Text(
+                                            '%$score',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w800,
+                                              color: _scoreColor(score),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+
+                                  // Uyumluluk barı
+                                  if (score != null) ...[
+                                    const SizedBox(height: 10),
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(6),
+                                      child: LinearProgressIndicator(
+                                        value: score / 100,
+                                        minHeight: 8,
+                                        backgroundColor: Colors.grey[200],
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              _scoreColor(score),
+                                            ),
+                                      ),
+                                    ),
+                                  ],
+
+                                  const SizedBox(height: 10),
+
+                                  // Detay butonu
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: SizedBox(
+                                          height: 36,
+                                          child: OutlinedButton.icon(
+                                            onPressed: () {
+                                              Navigator.pop(context);
+                                              context.push(
+                                                '/career/job/${job.id}',
+                                              );
+                                            },
+                                            icon: const Icon(
+                                              Icons.visibility_rounded,
+                                              size: 16,
+                                            ),
+                                            label: const Text(
+                                              'İncele',
+                                              style: TextStyle(fontSize: 12),
+                                            ),
+                                            style: OutlinedButton.styleFrom(
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(10),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            );
+                          }),
+
+                          // AI Genel Yorum
+                          if (!chatState.isLoading && aiContent.isNotEmpty) ...[
+                            const SizedBox(height: 16),
+                            Container(
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: const Color(
+                                  0xFFF57C00,
+                                ).withValues(alpha: 0.06),
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(
+                                  color: const Color(
+                                    0xFFF57C00,
+                                  ).withValues(alpha: 0.2),
+                                ),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Row(
+                                    children: [
+                                      Icon(
+                                        Icons.auto_awesome_rounded,
+                                        size: 18,
+                                        color: Color(0xFFF57C00),
+                                      ),
+                                      SizedBox(width: 6),
+                                      Text(
+                                        'AI Değerlendirmesi',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w700,
+                                          color: Color(0xFFF57C00),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  SelectableText(
+                                    aiContent,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      height: 1.5,
+                                      color:
+                                          isDark
+                                              ? Colors.white70
+                                              : Colors.black87,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
+                          ],
+
                           if (chatState.isLoading) ...[
                             const SizedBox(height: 12),
                             Row(
@@ -1038,7 +1253,7 @@ class _JobMatchingResultSheet extends ConsumerWidget {
                           ),
                           const SizedBox(height: 20),
                           const Text(
-                            'CV\'nize uygun işler aranıyor...',
+                            'İlanlar CV\'niz ile karşılaştırılıyor...',
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,

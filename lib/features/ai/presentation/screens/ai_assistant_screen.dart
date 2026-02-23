@@ -123,7 +123,7 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen>
               ),
               const SizedBox(width: 4),
               Text(
-                '(her mesaj 2 jeton)',
+                '(her mesaj 1 jeton)',
                 style: TextStyle(fontSize: 10, color: Colors.grey[500]),
               ),
             ],
