@@ -27,7 +27,35 @@ class CareerScreen extends ConsumerWidget {
         ),
         title: const Text('Kariyer'),
         centerTitle: true,
-        actions: [const SizedBox(width: 12)],
+        actions: [
+          Container(
+            margin: const EdgeInsets.only(right: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppTheme.primaryColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.toll_rounded,
+                  size: 16,
+                  color: AppTheme.primaryColor,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  profil.isPremium ? 'Sınırsız' : '${profil.credits} Jeton',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.primaryColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -694,7 +722,7 @@ class _CvAnalysisCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(8),
             ),
             child: const Text(
-              '5 Kredi',
+              '2 Jeton',
               style: TextStyle(
                 color: Color(0xFF1565C0),
                 fontSize: 11,

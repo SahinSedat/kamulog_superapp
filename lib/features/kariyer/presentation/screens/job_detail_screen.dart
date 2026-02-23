@@ -45,8 +45,23 @@ class JobDetailScreen extends ConsumerWidget {
       return;
     }
 
-    // Profil yüklendiğinden emin olduktan sonra AI Asistanına pasla.
+    // Jeton kontrolü
+    if (!profil.hasEnoughCredits(2)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Bu işlem için yeterli jetonunuz bulunmuyor (2 Jeton gerekli).',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
 
+    // Jetonu düş
+    await ref.read(profilProvider.notifier).decreaseCredits(2);
+
+    // Kullanıcının yüklü CV'sini bul
     final cvDoc = profil.documents.cast<DocumentInfo?>().firstWhere(
       (doc) => doc != null && doc.category.toLowerCase() == 'cv',
       orElse: () => null,
@@ -55,14 +70,21 @@ class JobDetailScreen extends ConsumerWidget {
     String cvTextContent = '';
     if (cvDoc != null && cvDoc.content != null && cvDoc.content!.isNotEmpty) {
       cvTextContent =
-          "\n\nKULLANICININ ORJİNAL CV İÇERİĞİ:\n\${cvDoc.content}\n\nLütfen bu CV içeriğini okuyarak aşağıdaki ilana uygunluğumu analiz et.";
+          '\n\n--- KULLANICININ YÜKLEDİĞİ CV İÇERİĞİ ---\n${cvDoc.content}\n--- CV BİTİŞ ---\n\nYukarıdaki CV içeriğini dikkatlice okuyarak aşağıdaki ilan ile uyumluluk analizi yap.\n';
     } else {
       cvTextContent =
-          "\n\nLütfen sistemde kayıtlı profil verilerime (beceriler, unvan, deneyim vb.) göre şu iş ilanı ile detaylıca karşılaştır.";
+          '\n\nKullanıcının profil verileri: Ad: ${profil.name ?? "Belirtilmedi"}, Kurum: ${profil.effectiveInstitution}, Unvan: ${profil.title ?? "Belirtilmedi"}, Beceriler: ${profil.surveyInterests.join(", ")}\n\nBu profil verilerine göre aşağıdaki ilan ile uyumluluk analizi yap.';
     }
 
-    final prompt =
-        "$cvTextContent\n\nBana uygunluk oranımı, bu ilan için güçlü ve zayıf yönlerimi açıkla.\n\nİlan Başlığı: ${job.title}\nKurum: ${job.company}\nİş Tanımı: ${job.description}";
+    // İlan bilgilerini ayrıntılı biçimde gönder
+    final deadlineStr =
+        job.deadline != null
+            ? '${job.deadline!.day}.${job.deadline!.month}.${job.deadline!.year}'
+            : 'Belirtilmemiş';
+    final jobInfo =
+        '\n\n--- İLAN BİLGİLERİ ---\nİlan No: ${job.code ?? job.id}\nİlan Başlığı: ${job.title}\nKurum/Şirket: ${job.company}\nKonum: ${job.location ?? "Belirtilmemiş"}\nTür: ${job.type == "PUBLIC" ? "Kamu" : "Özel Sektör"}\nİş Tanımı: ${job.description}\nAranan Nitelikler: ${job.requirements ?? "Belirtilmemiş"}\nSon Başvuru: $deadlineStr\n--- İLAN BİTİŞ ---\n\nBana bu ilana uygunluk oranımı yüzdelik olarak ver, güçlü yönlerimi, zayıf yönlerimi ve geliştirmem gereken alanları listele.\n';
+
+    final prompt = '$cvTextContent$jobInfo';
     ref.read(aiChatProvider.notifier).sendMessage(prompt);
 
     // AI Asistan tab'ına yönlendir
@@ -76,287 +98,323 @@ class JobDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_rounded),
-          onPressed: () => context.pop(),
-        ),
-        title: const Text('İlan Detayı'),
-        centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(16),
+    final profil = ref.watch(profilProvider);
+
+    return PopScope(
+      canPop: true,
+      child: Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_rounded),
+            onPressed: () => context.pop(),
+          ),
+          title: const Text('İlan Detayı'),
+          centerTitle: true,
+          actions: [
+            Container(
+              margin: const EdgeInsets.only(right: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.toll_rounded,
+                    size: 16,
+                    color: AppTheme.primaryColor,
                   ),
-                  child: const Center(
-                    child: Icon(
-                      Icons.business_center_rounded,
+                  const SizedBox(width: 4),
+                  Text(
+                    profil.isPremium ? 'Sınırsız' : '${profil.credits} Jeton',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
                       color: AppTheme.primaryColor,
-                      size: 28,
                     ),
                   ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        job.title,
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        job.company,
-                        style: TextStyle(
-                          fontSize: 15,
-                          color: isDark ? Colors.white70 : Colors.black54,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      if (job.location != null) ...[
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.location_on_rounded,
-                              size: 14,
-                              color: Colors.grey[500],
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              job.location!,
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Colors.grey[500],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 24),
-
-            // Badges
-            Row(
-              children: [
-                _buildBadge(
-                  icon: Icons.work_outline_rounded,
-                  label: job.type == 'PUBLIC' ? 'Kamu' : 'Özel Sektör',
-                  color:
-                      job.type == 'PUBLIC'
-                          ? AppTheme.primaryColor
-                          : const Color(0xFF7B1FA2),
-                ),
-                const SizedBox(width: 8),
-                if (job.salary != null)
-                  _buildBadge(
-                    icon: Icons.attach_money_rounded,
-                    label: job.salary!,
-                    color: const Color(0xFF2E7D32),
-                  ),
-              ],
-            ),
-
-            const SizedBox(height: 24),
-            const Divider(),
-            const SizedBox(height: 20),
-
-            // Description
-            const Text(
-              'İş Tanımı',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              job.description,
-              style: TextStyle(
-                fontSize: 14,
-                height: 1.6,
-                color: isDark ? Colors.white70 : Colors.black87,
+                ],
               ),
             ),
+          ],
+        ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: const Center(
+                      child: Icon(
+                        Icons.business_center_rounded,
+                        color: AppTheme.primaryColor,
+                        size: 28,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          job.title,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          job.company,
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: isDark ? Colors.white70 : Colors.black54,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        if (job.location != null) ...[
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.location_on_rounded,
+                                size: 14,
+                                color: Colors.grey[500],
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                job.location!,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.grey[500],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
 
-            const SizedBox(height: 24),
+              const SizedBox(height: 24),
 
-            // Requirements
-            if (job.requirements != null && job.requirements!.isNotEmpty) ...[
+              // Badges
+              Row(
+                children: [
+                  _buildBadge(
+                    icon: Icons.work_outline_rounded,
+                    label: job.type == 'PUBLIC' ? 'Kamu' : 'Özel Sektör',
+                    color:
+                        job.type == 'PUBLIC'
+                            ? AppTheme.primaryColor
+                            : const Color(0xFF7B1FA2),
+                  ),
+                  const SizedBox(width: 8),
+                  if (job.salary != null)
+                    _buildBadge(
+                      icon: Icons.attach_money_rounded,
+                      label: job.salary!,
+                      color: const Color(0xFF2E7D32),
+                    ),
+                ],
+              ),
+
+              const SizedBox(height: 24),
+              const Divider(),
+              const SizedBox(height: 20),
+
+              // Description
               const Text(
-                'Aranan Nitelikler',
+                'İş Tanımı',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: 12),
               Text(
-                job.requirements!,
+                job.description,
                 style: TextStyle(
                   fontSize: 14,
                   height: 1.6,
                   color: isDark ? Colors.white70 : Colors.black87,
                 ),
               ),
-              const SizedBox(height: 24),
-            ],
 
-            // Info block
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color:
-                    isDark
-                        ? Colors.white.withValues(alpha: 0.05)
-                        : Colors.grey[50],
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: isDark ? Colors.white12 : Colors.grey[200]!,
+              const SizedBox(height: 24),
+
+              // Requirements
+              if (job.requirements != null && job.requirements!.isNotEmpty) ...[
+                const Text(
+                  'Aranan Nitelikler',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  job.requirements!,
+                  style: TextStyle(
+                    fontSize: 14,
+                    height: 1.6,
+                    color: isDark ? Colors.white70 : Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 24),
+              ],
+
+              // Info block
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color:
+                      isDark
+                          ? Colors.white.withValues(alpha: 0.05)
+                          : Colors.grey[50],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isDark ? Colors.white12 : Colors.grey[200]!,
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    if (job.deadline != null)
+                      _buildInfoRow(
+                        Icons.event_rounded,
+                        'Son Başvuru',
+                        '${job.deadline!.day}.${job.deadline!.month}.${job.deadline!.year}',
+                        isDark,
+                      ),
+                    if (job.deadline != null && job.employerPhone != null)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 8.0),
+                        child: Divider(),
+                      ),
+                    if (job.employerPhone != null)
+                      _buildInfoRow(
+                        Icons.phone_rounded,
+                        'İletişim',
+                        job.employerPhone!,
+                        isDark,
+                      ),
+                  ],
                 ),
               ),
-              child: Column(
-                children: [
-                  if (job.deadline != null)
-                    _buildInfoRow(
-                      Icons.event_rounded,
-                      'Son Başvuru',
-                      '${job.deadline!.day}.${job.deadline!.month}.${job.deadline!.year}',
-                      isDark,
-                    ),
-                  if (job.deadline != null && job.employerPhone != null)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 8.0),
-                      child: Divider(),
-                    ),
-                  if (job.employerPhone != null)
-                    _buildInfoRow(
-                      Icons.phone_rounded,
-                      'İletişim',
-                      job.employerPhone!,
-                      isDark,
-                    ),
-                ],
-              ),
-            ),
 
-            const SizedBox(height: 100), // padding for bottom button
-          ],
+              const SizedBox(height: 100), // padding for bottom button
+            ],
+          ),
         ),
-      ),
-      bottomSheet: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: isDark ? AppTheme.cardDark : Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, -4),
-            ),
-          ],
-        ),
-        child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    flex: 1,
-                    child: SizedBox(
-                      height: 54,
-                      child: ElevatedButton.icon(
-                        onPressed: () => _analyzeJob(context, ref),
-                        icon: const Icon(
-                          Icons.analytics_rounded,
-                          size: 20,
-                          color: AppTheme.primaryColor,
-                        ),
-                        label: const FittedBox(
-                          child: Text(
-                            'AI Analizi (5 Kredi)',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: AppTheme.primaryColor,
+        bottomSheet: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: isDark ? AppTheme.cardDark : Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, -4),
+              ),
+            ],
+          ),
+          child: SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 1,
+                      child: SizedBox(
+                        height: 54,
+                        child: ElevatedButton.icon(
+                          onPressed: () => _analyzeJob(context, ref),
+                          icon: const Icon(
+                            Icons.analytics_rounded,
+                            size: 20,
+                            color: AppTheme.primaryColor,
+                          ),
+                          label: FittedBox(
+                            child: Text(
+                              profil.isPremium
+                                  ? 'AI Analizi (Sınırsız)'
+                                  : 'AI Analizi (2 Jeton)',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: AppTheme.primaryColor,
+                              ),
+                              maxLines: 1,
                             ),
-                            maxLines: 1,
                           ),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.primaryColor.withValues(
-                            alpha: 0.1,
-                          ),
-                          foregroundColor: AppTheme.primaryColor,
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(horizontal: 4),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            side: BorderSide(
-                              color: AppTheme.primaryColor.withValues(
-                                alpha: 0.2,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.primaryColor.withValues(
+                              alpha: 0.1,
+                            ),
+                            foregroundColor: AppTheme.primaryColor,
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              side: BorderSide(
+                                color: AppTheme.primaryColor.withValues(
+                                  alpha: 0.2,
+                                ),
                               ),
                             ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    flex: 1,
-                    child: SizedBox(
-                      height: 50,
-                      child: ElevatedButton(
-                        onPressed:
-                            () => _launchUrl(
-                              context,
-                              job.applicationUrl ?? job.sourceUrl,
+                    const SizedBox(width: 8),
+                    Expanded(
+                      flex: 1,
+                      child: SizedBox(
+                        height: 50,
+                        child: ElevatedButton(
+                          onPressed:
+                              () => _launchUrl(
+                                context,
+                                job.applicationUrl ?? job.sourceUrl,
+                              ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.primaryColor,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
                             ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.primaryColor,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
+                            elevation: 0,
                           ),
-                          elevation: 0,
-                        ),
-                        child: const FittedBox(
-                          child: Text(
-                            'İlana Başvur',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
+                          child: const FittedBox(
+                            child: Text(
+                              'İlana Başvur',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
+                              maxLines: 1,
                             ),
-                            maxLines: 1,
                           ),
                         ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(
-                height: 8,
-              ), // SafeArea bottom padding için ekstra boşluk
-            ],
+                  ],
+                ),
+                const SizedBox(
+                  height: 8,
+                ), // SafeArea bottom padding için ekstra boşluk
+              ],
+            ),
           ),
         ),
       ),
