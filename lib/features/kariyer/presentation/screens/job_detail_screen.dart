@@ -5,8 +5,6 @@ import 'package:kamulog_superapp/core/theme/app_theme.dart';
 import 'package:kamulog_superapp/features/kariyer/data/models/job_listing_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kamulog_superapp/features/profil/presentation/providers/profil_provider.dart';
-import 'package:kamulog_superapp/features/ai/presentation/providers/ai_provider.dart';
-import 'package:kamulog_superapp/features/ai/data/models/ai_message_model.dart';
 
 class JobDetailScreen extends ConsumerWidget {
   final JobListingModel job;
@@ -61,54 +59,41 @@ class JobDetailScreen extends ConsumerWidget {
     // Jetonu düş
     await ref.read(profilProvider.notifier).decreaseCredits(2);
 
-    // CV içeriğini hazırla
-    final cvDoc = profil.documents.cast<DocumentInfo?>().firstWhere(
-      (doc) => doc != null && doc.category.toLowerCase() == 'cv',
-      orElse: () => null,
-    );
-
-    String cvContent;
-    if (cvDoc != null && cvDoc.content != null && cvDoc.content!.isNotEmpty) {
-      cvContent = cvDoc.content!;
-    } else {
-      cvContent =
-          'Ad: ${profil.name ?? "Belirtilmedi"}, Kurum: ${profil.effectiveInstitution}, Unvan: ${profil.title ?? "Belirtilmedi"}, Beceriler: ${profil.surveyInterests.join(", ")}';
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Tekli ilan analizi özelliği güncelleniyor.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
     }
 
     // Yeni analiz akışını başlat (sayfadan ayrılmadan)
-    ref
-        .read(aiChatProvider.notifier)
-        .startJobAnalysis(
-          jobId: job.id,
-          jobCode: job.code,
-          jobTitle: job.title,
-          jobCompany: job.company,
-          jobDescription: job.description,
-          jobRequirements: job.requirements,
-          cvContent: cvContent,
-        );
+    // ref
+    //     .read(aiChatProvider.notifier)
+    //     .startJobAnalysis(
+    //       jobId: job.id,
+    //       jobCode: job.code,
+    //       jobTitle: job.title,
+    //       jobCompany: job.company,
+    //       jobDescription: job.description,
+    //       jobRequirements: job.requirements,
+    //       cvContent: cvContent,
+    //     );
 
     // Modal bottom sheet ile sonucu göster
-    if (context.mounted) {
-      _showAnalysisModal(context, ref);
-    }
-  }
+    // if (context.mounted) {
+    //   _showAnalysisModal(context, ref);
+    // }
 
-  void _showAnalysisModal(BuildContext context, WidgetRef ref) {
-    final ilanNo = job.code ?? job.id;
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      isDismissible: false,
-      enableDrag: false,
-      backgroundColor: Colors.transparent,
-      builder:
-          (ctx) => _JobAnalysisSheet(
-            ilanNo: ilanNo,
-            jobTitle: job.title,
-            applicationUrl: job.applicationUrl ?? job.sourceUrl,
-          ),
-    );
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Tekli ilan analizi özelliği güncelleniyor.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+    }
   }
 
   @override
@@ -480,426 +465,6 @@ class JobDetailScreen extends ConsumerWidget {
           style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
         ),
       ],
-    );
-  }
-}
-
-/// İlan analizi sonuçlarını gösteren modal bottom sheet
-class _JobAnalysisSheet extends ConsumerWidget {
-  final String ilanNo;
-  final String jobTitle;
-  final String? applicationUrl;
-
-  const _JobAnalysisSheet({
-    required this.ilanNo,
-    required this.jobTitle,
-    this.applicationUrl,
-  });
-
-  /// AI yanıtından uyumluluk skorunu parse et
-  int? _parseScore(String content) {
-    final patterns = [
-      RegExp(r'Uyumluluk Skoru[:\s]*[%]?(\d{1,3})'),
-      RegExp(r'%(\d{1,3})'),
-      RegExp(r'(\d{1,3})%'),
-    ];
-    for (final pattern in patterns) {
-      final match = pattern.firstMatch(content);
-      if (match != null) {
-        final score = int.tryParse(match.group(1)!);
-        if (score != null && score >= 0 && score <= 100) return score;
-      }
-    }
-    return null;
-  }
-
-  /// AI yanıtında UYGUN mu ALTERNATİF mi?
-  bool _isUygun(String content) {
-    final score = _parseScore(content);
-    if (score != null && score >= 60) return true;
-    final lower = content.toLowerCase();
-    if (lower.contains('sonuç: uygun') || lower.contains('sonuç:** uygun')) {
-      return true;
-    }
-    return false;
-  }
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final chatState = ref.watch(aiChatProvider);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    final assistantMessages =
-        chatState.messages.where((m) => m.role == AiRole.assistant).toList();
-    final lastAssistantMsg =
-        assistantMessages.isNotEmpty ? assistantMessages.last : null;
-
-    final score =
-        lastAssistantMsg != null ? _parseScore(lastAssistantMsg.content) : null;
-    final isUygun =
-        lastAssistantMsg != null ? _isUygun(lastAssistantMsg.content) : false;
-
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.85,
-      decoration: BoxDecoration(
-        color: isDark ? AppTheme.cardDark : Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: Column(
-        children: [
-          // Handle
-          Container(
-            margin: const EdgeInsets.only(top: 12),
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Colors.grey[300],
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-
-          // Başlık
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-            child: Row(
-              children: [
-                Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    gradient: AppTheme.aiGradient,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    Icons.analytics_rounded,
-                    color: Colors.white,
-                    size: 22,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'İlan Analizi — $ilanNo',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      Text(
-                        jobTitle,
-                        style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 16),
-          const Divider(height: 1),
-
-          // Analiz sonucu
-          Expanded(
-            child:
-                chatState.isLoading && lastAssistantMsg == null
-                    ? _buildLoadingView()
-                    : lastAssistantMsg != null
-                    ? SingleChildScrollView(
-                      padding: const EdgeInsets.all(20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Uyumluluk skoru gauge
-                          if (score != null && chatState.analysisComplete) ...[
-                            _buildScoreGauge(score, isUygun, isDark),
-                            const SizedBox(height: 20),
-                          ],
-
-                          // Sonuç banner
-                          if (chatState.analysisComplete) ...[
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: (isUygun
-                                        ? const Color(0xFF2E7D32)
-                                        : const Color(0xFFF57C00))
-                                    .withValues(alpha: 0.08),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: (isUygun
-                                          ? const Color(0xFF2E7D32)
-                                          : const Color(0xFFF57C00))
-                                      .withValues(alpha: 0.2),
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    isUygun
-                                        ? Icons.check_circle_rounded
-                                        : Icons.info_rounded,
-                                    color:
-                                        isUygun
-                                            ? const Color(0xFF2E7D32)
-                                            : const Color(0xFFF57C00),
-                                    size: 20,
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Text(
-                                    isUygun
-                                        ? 'Bu ilan size uygun!'
-                                        : 'Alternatif olarak değerlendirin',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w700,
-                                      color:
-                                          isUygun
-                                              ? const Color(0xFF2E7D32)
-                                              : const Color(0xFFF57C00),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                          ],
-
-                          // Mesaj içeriği
-                          SelectableText(
-                            lastAssistantMsg.content,
-                            style: TextStyle(
-                              fontSize: 14,
-                              height: 1.6,
-                              color: isDark ? Colors.white : Colors.black87,
-                            ),
-                          ),
-
-                          // Loading indicator while streaming
-                          if (chatState.isLoading) ...[
-                            const SizedBox(height: 12),
-                            Row(
-                              children: [
-                                SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: AppTheme.primaryColor,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Analiz devam ediyor...',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey[500],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ],
-                      ),
-                    )
-                    : _buildLoadingView(),
-          ),
-
-          // Alt butonlar
-          Container(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
-            decoration: BoxDecoration(
-              border: Border(top: BorderSide(color: Colors.grey.shade200)),
-            ),
-            child: SafeArea(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Başvur / Yine de Başvur
-                  if (chatState.analysisComplete && applicationUrl != null) ...[
-                    SizedBox(
-                      width: double.infinity,
-                      height: 48,
-                      child: ElevatedButton.icon(
-                        onPressed: () => launchUrl(Uri.parse(applicationUrl!)),
-                        icon: Icon(
-                          isUygun
-                              ? Icons.send_rounded
-                              : Icons.open_in_new_rounded,
-                          color: Colors.white,
-                          size: 18,
-                        ),
-                        label: Text(
-                          isUygun ? 'Hemen Başvur' : 'Yine de Başvur',
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              isUygun
-                                  ? const Color(0xFF2E7D32)
-                                  : const Color(0xFFF57C00),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                  ],
-                  // Kapat
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: OutlinedButton.icon(
-                      onPressed:
-                          chatState.isLoading
-                              ? null
-                              : () {
-                                ref
-                                    .read(aiChatProvider.notifier)
-                                    .newConversation();
-                                Navigator.pop(context);
-                              },
-                      icon: Icon(
-                        chatState.analysisComplete
-                            ? Icons.check_rounded
-                            : Icons.close_rounded,
-                      ),
-                      label: Text(
-                        chatState.analysisComplete ? 'Analizi Kapat' : 'Kapat',
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildScoreGauge(int score, bool isUygun, bool isDark) {
-    final color =
-        score >= 70
-            ? const Color(0xFF2E7D32)
-            : score >= 40
-            ? const Color(0xFFF57C00)
-            : AppTheme.errorColor;
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withValues(alpha: 0.15)),
-      ),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 70,
-            height: 70,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                SizedBox(
-                  width: 70,
-                  height: 70,
-                  child: CircularProgressIndicator(
-                    value: score / 100,
-                    strokeWidth: 6,
-                    backgroundColor: color.withValues(alpha: 0.15),
-                    color: color,
-                    strokeCap: StrokeCap.round,
-                  ),
-                ),
-                Text(
-                  '%$score',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
-                    color: color,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Uyumluluk Skoru',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: isDark ? Colors.white : Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  score >= 70
-                      ? 'CV\'niz bu ilan için yüksek uyum gösteriyor'
-                      : score >= 40
-                      ? 'Kısmen uyumlu — bazı eksiklikler var'
-                      : 'Düşük uyumluluk — alternatif değerlendirin',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                    height: 1.3,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLoadingView() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          SizedBox(
-            width: 40,
-            height: 40,
-            child: CircularProgressIndicator(
-              strokeWidth: 3,
-              color: AppTheme.primaryColor,
-            ),
-          ),
-          const SizedBox(height: 20),
-          const Text(
-            'CV uyumluluk analizi yapılıyor...',
-            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'İlan No: $ilanNo',
-            style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-          ),
-        ],
-      ),
     );
   }
 }

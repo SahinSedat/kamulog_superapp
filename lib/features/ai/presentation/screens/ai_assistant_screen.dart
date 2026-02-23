@@ -258,7 +258,9 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen>
                 gradient: AppTheme.primaryGradient,
                 isDark: isDark,
                 onTap:
-                    () => ref.read(aiChatProvider.notifier).startMevzuatChat(),
+                    () => ref
+                        .read(aiChatProvider.notifier)
+                        .sendMessage('Mevzuat hakkında bilgi alabilir miyim?'),
               ),
               const SizedBox(height: AppTheme.spacingMd),
 
@@ -384,7 +386,6 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen>
           message: message,
           showAvatar: showAvatar,
           isDark: isDark,
-          isCvBuilding: chatState.isCvBuilding,
         );
       },
     );

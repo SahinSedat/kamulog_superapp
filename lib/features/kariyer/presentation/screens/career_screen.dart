@@ -4,9 +4,9 @@ import 'package:go_router/go_router.dart';
 import 'package:kamulog_superapp/core/theme/app_theme.dart';
 import 'package:kamulog_superapp/features/profil/presentation/providers/profil_provider.dart';
 import 'package:kamulog_superapp/features/ai/presentation/providers/ai_provider.dart';
-import 'package:kamulog_superapp/core/providers/home_navigation_provider.dart';
 import 'package:kamulog_superapp/features/kariyer/presentation/providers/jobs_provider.dart';
 import 'package:kamulog_superapp/features/kariyer/data/models/job_listing_model.dart';
+
 import 'package:kamulog_superapp/features/ai/data/models/ai_message_model.dart';
 
 /// Kariyer modülü — AI CV oluşturma ve iş analizi
@@ -202,10 +202,8 @@ class CareerScreen extends ConsumerWidget {
       return;
     }
 
-    // AI Asistanına yönlendir ve CV akışını başlat
-    ref.read(aiChatProvider.notifier).startCvBuilding(profil);
-    ref.read(homeNavigationProvider.notifier).setIndex(4);
-    context.pop(); // Geriye (Home'a) dön ki tablar gözüksün
+    // CV akışını başlatmak için yeni sayfaya git
+    context.push('/career/cv-builder');
   }
 
   void _showJobMatching(BuildContext context, WidgetRef ref) {
@@ -369,7 +367,7 @@ class CareerScreen extends ConsumerWidget {
                               final jobsSummary = jobs
                                   .take(10)
                                   .map((j) {
-                                    return '- İLAN#${j.id}: "${j.title}" | ${j.company} | ${(j.description ?? '').length > 150 ? (j.description ?? '').substring(0, 150) : (j.description ?? '')}';
+                                    return '- İLAN#${j.id}: "${j.title}" | ${j.company} | ${j.description.length > 150 ? j.description.substring(0, 150) : j.description}';
                                   })
                                   .join('\n');
 
@@ -895,7 +893,7 @@ class _AnalysisInfoRow extends StatelessWidget {
 
 /// AI İş Eşleştirme sonuçlarını gösteren modal bottom sheet
 class _JobMatchingResultSheet extends ConsumerWidget {
-  final List<JobListing> jobs;
+  final List<JobListingModel> jobs;
   const _JobMatchingResultSheet({required this.jobs});
 
   /// AI yanıtından ilan ID'sine göre uyumluluk yüzdesini parse et
@@ -978,8 +976,10 @@ class _JobMatchingResultSheet extends ConsumerWidget {
                       ),
                       Text(
                         '${jobs.length} ilan CV\'niz ile karşılaştırıldı',
-                        style:
-                            const TextStyle(fontSize: 12, color: Colors.grey),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
                       ),
                     ],
                   ),
@@ -1026,16 +1026,13 @@ class _JobMatchingResultSheet extends ConsumerWidget {
                         children: [
                           // İlan kartları — her ilan için uyumluluk barı
                           ...jobs.take(10).map((job) {
-                            final score =
-                                _parseScoreForJob(aiContent, job.id);
+                            final score = _parseScoreForJob(aiContent, job.id);
                             return Container(
                               margin: const EdgeInsets.only(bottom: 12),
                               padding: const EdgeInsets.all(14),
                               decoration: BoxDecoration(
                                 color:
-                                    isDark
-                                        ? Colors.grey[850]
-                                        : Colors.grey[50],
+                                    isDark ? Colors.grey[850] : Colors.grey[50],
                                 borderRadius: BorderRadius.circular(14),
                                 border: Border.all(
                                   color:
@@ -1068,7 +1065,7 @@ class _JobMatchingResultSheet extends ConsumerWidget {
                                             ),
                                             const SizedBox(height: 2),
                                             Text(
-                                              '${job.company} • ${job.city}',
+                                              '${job.company} • ${(job.location ?? '')}',
                                               style: TextStyle(
                                                 fontSize: 11,
                                                 color: Colors.grey[500],
@@ -1087,8 +1084,9 @@ class _JobMatchingResultSheet extends ConsumerWidget {
                                             color: _scoreColor(
                                               score,
                                             ).withValues(alpha: 0.1),
-                                            borderRadius:
-                                                BorderRadius.circular(8),
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
                                           ),
                                           child: Text(
                                             '%$score',

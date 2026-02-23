@@ -1,23 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kamulog_superapp/core/theme/app_theme.dart';
 import 'package:kamulog_superapp/features/ai/data/models/ai_message_model.dart';
-import 'package:kamulog_superapp/features/ai/presentation/providers/ai_provider.dart';
 import 'package:kamulog_superapp/features/ai/presentation/widgets/ai_typing_indicator.dart';
 
 class AiMessageBubble extends StatelessWidget {
   final AiMessageModel message;
   final bool showAvatar;
   final bool isDark;
-  final bool isCvBuilding;
-
   const AiMessageBubble({
     super.key,
     required this.message,
     required this.showAvatar,
     required this.isDark,
-    this.isCvBuilding = false,
   });
 
   bool get isUser => message.role == AiRole.user;
@@ -131,15 +126,6 @@ class AiMessageBubble extends StatelessWidget {
                               ),
                             ),
 
-                            // PDF Export Buttons — sadece CV oluşturma modunda
-                            if (!isUser &&
-                                isCvBuilding &&
-                                (message.content.contains('PDF') ||
-                                    message.content.contains(
-                                      'oluşturalım mı?',
-                                    )))
-                              _buildPdfActionButtons(context),
-
                             if (message.isStreaming)
                               Padding(
                                 padding: const EdgeInsets.only(top: 4),
@@ -151,8 +137,8 @@ class AiMessageBubble extends StatelessWidget {
                                     color:
                                         isUser
                                             ? Colors.white60
-                                            : AppTheme.primaryColor.withValues(
-                                              alpha: 0.5,
+                                            : AppTheme.primaryColor.withOpacity(
+                                              0.5,
                                             ),
                                   ),
                                 ),
@@ -164,77 +150,6 @@ class AiMessageBubble extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildPdfActionButtons(BuildContext context) {
-    return Consumer(
-      builder: (context, ref, child) {
-        return Padding(
-          padding: const EdgeInsets.only(top: 12),
-          child: Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              ElevatedButton.icon(
-                onPressed: () async {
-                  await ref.read(aiChatProvider.notifier).simulatePdfExport();
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'CV\'niz başarıyla "Belgelerim" bölümüne kaydedildi.',
-                        ),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
-                  }
-                },
-                icon: const Icon(
-                  Icons.picture_as_pdf_rounded,
-                  size: 16,
-                  color: Colors.white,
-                ),
-                label: const Text(
-                  'Evet, PDF Oluştur',
-                  style: TextStyle(fontSize: 12, color: Colors.white),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryColor,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-              ),
-              TextButton(
-                onPressed: () {
-                  // Sohbete devam et
-                  ref
-                      .read(aiChatProvider.notifier)
-                      .sendMessage(
-                        'Şimdi PDF oluşturmak istemiyorum, sohbete devam edelim.',
-                      );
-                },
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                child: const Text(
-                  'Şimdi Değil',
-                  style: TextStyle(fontSize: 12),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
 }
