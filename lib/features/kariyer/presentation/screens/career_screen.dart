@@ -640,7 +640,6 @@ class _JobCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: isDark ? AppTheme.cardDark : Colors.white,
         borderRadius: BorderRadius.circular(14),
@@ -648,82 +647,104 @@ class _JobCard extends StatelessWidget {
           color: isDark ? Colors.white10 : const Color(0xFFEEEEEE),
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(
-                  Icons.business_center_rounded,
-                  color: AppTheme.primaryColor,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => context.push('/job-detail', extra: job),
+          borderRadius: BorderRadius.circular(14),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   children: [
-                    Text(
-                      job.title,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 13,
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(
+                        Icons.business_center_rounded,
+                        color: AppTheme.primaryColor,
+                        size: 20,
                       ),
                     ),
-                    Text(
-                      job.company,
-                      style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            job.title,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 13,
+                            ),
+                          ),
+                          Text(
+                            job.company,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey[500],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF2E7D32).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Text(
+                        'Yeni',
+                        style: TextStyle(
+                          color: Color(0xFF2E7D32),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
                   ],
                 ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF2E7D32).withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(6),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    _JobTag(
+                      label: job.type == 'PUBLIC' ? 'Kamu' : 'Özel Sektör',
+                      color:
+                          job.type == 'PUBLIC'
+                              ? AppTheme.primaryColor
+                              : const Color(0xFF7B1FA2),
+                    ),
+                    const SizedBox(width: 8),
+                    if (job.location != null)
+                      _JobTag(label: job.location!, color: Colors.grey),
+                    const Spacer(),
+                    if (job.deadline != null)
+                      Flexible(
+                        child: Text(
+                          '${job.deadline!.day}.${job.deadline!.month}.${job.deadline!.year}',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.grey[400],
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                  ],
                 ),
-                child: const Text(
-                  'Yeni',
-                  style: TextStyle(
-                    color: Color(0xFF2E7D32),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              _JobTag(
-                label: job.type == 'PUBLIC' ? 'Kamu' : 'Özel Sektör',
-                color:
-                    job.type == 'PUBLIC'
-                        ? AppTheme.primaryColor
-                        : const Color(0xFF7B1FA2),
-              ),
-              const SizedBox(width: 8),
-              if (job.location != null)
-                _JobTag(label: job.location!, color: Colors.grey),
-              const Spacer(),
-              if (job.deadline != null)
-                Text(
-                  '\${job.deadline!.day}.\${job.deadline!.month}.\${job.deadline!.year}',
-                  style: TextStyle(fontSize: 10, color: Colors.grey[400]),
-                ),
-            ],
-          ),
-        ],
+        ),
       ),
     );
   }

@@ -73,10 +73,27 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
     super.dispose();
   }
 
-  /// Start CV Building flow with profile data
-  void startCvBuilding(dynamic profil) {
+  /// Switch to CV building context
+  bool startCvBuilding(ProfilState profil) {
+    if (profil.tcKimlik == null || profil.tcKimlik!.isEmpty) {
+      state = state.copyWith(
+        error:
+            'CV oluşturmak için önce profil bilgilerinizi (TC Kimlik, Adres vs.) tamamlamalısınız.',
+      );
+      return false;
+    }
+
+    if (_ref.read(profilProvider).credits < 1) {
+      state = state.copyWith(
+        error:
+            'Yetersiz kredi. Lütfen profil sayfasından kredi veya abonelik satın alarak devam edin.',
+      );
+      return false;
+    }
+
     newConversation();
-    state = state.copyWith(isCvBuilding: true);
+    state = state.copyWith(isCvBuilding: true, error: null);
+
     final profileContext = '''
 Kullanıcı bir CV oluşturmak istiyor. Mevcut profil bilgileri:
 Ad Soyad: ${profil.name ?? 'Belirtilmedi'}
@@ -96,6 +113,7 @@ STRATEJİ:
       'Merhaba, profil bilgilerime dayanarak bir CV oluşturmaya başlayabilir miyiz?',
       context: profileContext,
     );
+    return true;
   }
 
   /// Simulate saving a PDF to documents
@@ -125,6 +143,30 @@ STRATEJİ:
   /// Send a user message and receive a streamed AI response.
   Future<void> sendMessage(String text, {String? context}) async {
     if (text.trim().isEmpty) return;
+
+    final profilState = _ref.read(profilProvider);
+    final userMessageCount =
+        state.messages.where((m) => m.role == AiRole.user).length;
+
+    if (userMessageCount >= 20) {
+      state = state.copyWith(
+        error:
+            'Sohbet limitine (20 mesaj) ulaşıldı. Lütfen yeni bir sohbet başlatın.',
+      );
+      return;
+    }
+
+    if (profilState.credits < 1) {
+      state = state.copyWith(
+        error:
+            'Yetersiz kredi. Lütfen profil sayfasından kredi veya abonelik satın alarak devam edin.',
+      );
+      return;
+    }
+
+    // Her yapay zeka cevap isteği için 1 kredi kes
+    final success = await _ref.read(profilProvider.notifier).useCredits(1);
+    if (!success) return;
 
     String finalContext = context ?? '';
     if (state.isCvBuilding) {

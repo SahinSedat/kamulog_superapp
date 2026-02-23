@@ -21,8 +21,10 @@ class ProfilState {
   final String? surveyCity;
   final List<String> surveyInterests;
 
-  // Kariyer & Kredi Bilgileri
+  // Kariyer & Abonelik & Kredi Bilgileri
   final int credits;
+  final bool isPremium;
+  final DateTime? subscriptionEndDate;
   final List<String> aiCvUsageDates; // ISO formatında tarihler
 
   final String? error;
@@ -42,6 +44,8 @@ class ProfilState {
     this.surveyCity,
     this.surveyInterests = const [],
     this.credits = 10,
+    this.isPremium = false,
+    this.subscriptionEndDate,
     this.aiCvUsageDates = const [],
     this.error,
   });
@@ -61,6 +65,8 @@ class ProfilState {
     String? surveyCity,
     List<String>? surveyInterests,
     int? credits,
+    bool? isPremium,
+    DateTime? subscriptionEndDate,
     List<String>? aiCvUsageDates,
     String? error,
   }) {
@@ -79,6 +85,8 @@ class ProfilState {
       surveyCity: surveyCity ?? this.surveyCity,
       surveyInterests: surveyInterests ?? this.surveyInterests,
       credits: credits ?? this.credits,
+      isPremium: isPremium ?? this.isPremium,
+      subscriptionEndDate: subscriptionEndDate ?? this.subscriptionEndDate,
       aiCvUsageDates: aiCvUsageDates ?? this.aiCvUsageDates,
       error: error,
     );
@@ -146,6 +154,7 @@ class DocumentInfo {
   final String category; // cv, stk, kimlik, diger
   final String fileType;
   final DateTime uploadDate;
+  final String? content;
 
   const DocumentInfo({
     required this.id,
@@ -153,6 +162,7 @@ class DocumentInfo {
     required this.category,
     required this.fileType,
     required this.uploadDate,
+    this.content,
   });
 
   Map<String, dynamic> toJson() => {
@@ -161,6 +171,7 @@ class DocumentInfo {
     'category': category,
     'fileType': fileType,
     'uploadDate': uploadDate.toIso8601String(),
+    if (content != null) 'content': content,
   };
 
   factory DocumentInfo.fromJson(Map<String, dynamic> json) => DocumentInfo(
@@ -169,6 +180,7 @@ class DocumentInfo {
     category: json['category'],
     fileType: json['fileType'],
     uploadDate: DateTime.parse(json['uploadDate']),
+    content: json['content'] as String?,
   );
 }
 
@@ -228,6 +240,24 @@ class ProfilNotifier extends StateNotifier<ProfilState> {
     state = state.copyWith(credits: newCredits);
     await LocalStorageService.saveCredits(newCredits);
     return true;
+  }
+
+  /// Kredi ekle (Satın alım vs. sonrası için)
+  Future<void> addCredits(int amount) async {
+    final newCredits = state.credits + amount;
+    state = state.copyWith(credits: newCredits);
+    await LocalStorageService.saveCredits(newCredits);
+  }
+
+  /// Premium aboneliği aktifleştir
+  Future<void> activatePremium(DateTime endDate) async {
+    state = state.copyWith(isPremium: true, subscriptionEndDate: endDate);
+    // İleride LocalStorageService'e de kaydedilecek
+  }
+
+  /// Premium aboneliği iptal et
+  void cancelPremium() {
+    state = state.copyWith(isPremium: false, subscriptionEndDate: null);
   }
 
   /// AI CV kullanımını kaydet

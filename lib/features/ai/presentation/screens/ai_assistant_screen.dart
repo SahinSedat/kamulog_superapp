@@ -66,6 +66,17 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen>
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
+    ref.listen(aiChatProvider, (previous, next) {
+      if (next.error != null && previous?.error != next.error) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.error!),
+            backgroundColor: AppTheme.errorColor,
+          ),
+        );
+      }
+    });
+
     // Auto-scroll when messages change
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (chatState.messages.isNotEmpty) _scrollToBottom();
@@ -360,8 +371,8 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen>
                 controller: _controller,
                 focusNode: _focusNode,
                 maxLines: null,
-                textInputAction: TextInputAction.send,
-                onSubmitted: (_) => _send(),
+                textInputAction: TextInputAction.newline,
+                keyboardType: TextInputType.multiline,
                 style: TextStyle(
                   fontSize: 15,
                   color: isDark ? Colors.white : Colors.black87,

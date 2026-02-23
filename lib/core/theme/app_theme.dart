@@ -254,6 +254,12 @@ class AppTheme {
         error: errorColor,
       ),
       scaffoldBackgroundColor: surface,
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.iOS: ZoomPageTransitionsBuilder(),
+          TargetPlatform.android: ZoomPageTransitionsBuilder(),
+        },
+      ),
       cardTheme: CardThemeData(
         color: card,
         elevation: 2,

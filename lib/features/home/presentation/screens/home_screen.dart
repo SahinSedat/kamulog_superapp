@@ -66,16 +66,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     final isDark = theme.brightness == Brightness.dark;
 
     final currentIndex = ref.watch(homeNavigationProvider);
-    return Scaffold(
-      body:
-          currentIndex == 2
-              ? _buildHomeWithHeader(user, theme, isDark)
-              : currentIndex == 4
-              ? _buildAiScreen(theme, isDark)
-              : _buildRegularScreen(user, theme, isDark),
-      bottomNavigationBar: AnimatedBottomNavBar(
-        currentIndex: currentIndex,
-        onTap: _onTabChanged,
+    return PopScope(
+      canPop: currentIndex == 2,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop && currentIndex != 2) {
+          _onTabChanged(2);
+        }
+      },
+      child: Scaffold(
+        body:
+            currentIndex == 2
+                ? _buildHomeWithHeader(user, theme, isDark)
+                : currentIndex == 4
+                ? _buildAiScreen(theme, isDark)
+                : _buildRegularScreen(user, theme, isDark),
+        bottomNavigationBar: AnimatedBottomNavBar(
+          currentIndex: currentIndex,
+          onTap: _onTabChanged,
+        ),
       ),
     );
   }

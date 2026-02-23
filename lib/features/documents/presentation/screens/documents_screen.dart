@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -5,6 +6,7 @@ import 'package:kamulog_superapp/core/theme/app_theme.dart';
 import 'package:kamulog_superapp/core/constants/enums.dart';
 import 'package:kamulog_superapp/features/profil/presentation/providers/profil_provider.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:syncfusion_flutter_pdf/pdf.dart';
 
 /// Belgelerim ekranı — STK belgeleri, CV, kimlik fotokopisi vb.
 class DocumentsScreen extends ConsumerStatefulWidget {
@@ -161,7 +163,7 @@ class _DocumentsScreenState extends ConsumerState<DocumentsScreen>
                 _UploadOption(
                   icon: Icons.description_rounded,
                   title: 'CV Yükle',
-                  subtitle: 'PDF, DOCX formatında',
+                  subtitle: 'PDF, DOCX formatında (AI Analizine Uygun)',
                   color: const Color(0xFF1565C0),
                   onTap: () {
                     Navigator.pop(ctx);
@@ -217,12 +219,34 @@ class _DocumentsScreenState extends ConsumerState<DocumentsScreen>
 
       if (result != null) {
         final platformFile = result.files.first;
+        String? extractedContent;
+
+        if (platformFile.extension?.toLowerCase() == 'pdf') {
+          try {
+            List<int> bytes = [];
+            if (platformFile.bytes != null) {
+              bytes = platformFile.bytes!;
+            } else if (platformFile.path != null) {
+              bytes = await File(platformFile.path!).readAsBytes();
+            }
+
+            if (bytes.isNotEmpty) {
+              final PdfDocument document = PdfDocument(inputBytes: bytes);
+              extractedContent = PdfTextExtractor(document).extractText();
+              document.dispose();
+            }
+          } catch (e) {
+            debugPrint('PDF parse error: \$e');
+          }
+        }
+
         final doc = DocumentInfo(
           id: DateTime.now().millisecondsSinceEpoch.toString(),
           name: platformFile.name,
           category: category.name,
           fileType: platformFile.extension?.toUpperCase() ?? 'PDF',
           uploadDate: DateTime.now(),
+          content: extractedContent,
         );
 
         ref.read(profilProvider.notifier).addDocument(doc);
@@ -411,6 +435,24 @@ class _DocumentsScreenState extends ConsumerState<DocumentsScreen>
   }
 
   void _openPdfViewer(DocumentInfo doc) {
+    final profil = ref.read(profilProvider);
+    final isAiCv =
+        doc.name.contains('Yapay Zeka') ||
+        doc.content == null ||
+        doc.content!.isEmpty;
+
+    final String cvText =
+        !isAiCv && doc.content != null && doc.content!.isNotEmpty
+            ? doc.content!
+            : isAiCv && doc.name.contains('Yapay Zeka')
+            ? "Bu belge Kamulog AI tarafından profilinize istinaden hazırlanmıştır. Gerçek uygulamada burada PDF formatında render edilecektir.\n\n\n"
+                "AD SOYAD: ${profil.name ?? 'Belirtilmedi'}\n"
+                "İLETİŞİM: ${profil.phone ?? 'Belirtilmedi'}\n\n"
+                "GÜNCEL KURUM & UNVAN\n${profil.effectiveInstitution} - ${profil.title ?? 'Belirtilmedi'}\n\n"
+                "YETENEKLER & İLGİ ALANLARI\n${profil.surveyInterests.isNotEmpty ? profil.surveyInterests.join(', ') : 'Belirtilmedi'}\n\n"
+                "KARİYER ÖZETİ\nKamu ve özel sektörde deneyimli, takım çalışmasına yatkın ve sürekli profesyonel gelişime açık uzman."
+            : "Bu bir simülasyon PDF içeriğidir. Gerçek PDF dosyası okunurken metin çıkarılamadı veya boş.";
+
     showGeneralDialog(
       context: context,
       barrierDismissible: false,
@@ -457,14 +499,12 @@ class _DocumentsScreenState extends ConsumerState<DocumentsScreen>
                   style: TextStyle(color: Colors.grey),
                 ),
                 const Padding(padding: EdgeInsets.all(32), child: Divider()),
-                const Expanded(
+                Expanded(
                   child: SingleChildScrollView(
-                    padding: EdgeInsets.all(24),
+                    padding: const EdgeInsets.all(24),
                     child: Text(
-                      'Bu bir simülasyon PDF içeriğidir. Gerçek uygulamada burada belgenin PDF görntüsü yer alacaktır.\n\n'
-                      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.\n\n'
-                      'Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.',
-                      style: TextStyle(height: 1.6, fontSize: 14),
+                      cvText,
+                      style: const TextStyle(height: 1.6, fontSize: 14),
                     ),
                   ),
                 ),

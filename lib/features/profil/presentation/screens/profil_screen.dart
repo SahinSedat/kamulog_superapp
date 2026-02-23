@@ -36,7 +36,7 @@ class ProfilScreen extends ConsumerWidget {
 
             // ── Üyelik Durumu
             _SectionHeader(title: 'Üyelik & Abonelik'),
-            _MembershipCard(isDark: isDark),
+            _MembershipCard(isDark: isDark, profil: profil),
 
             // ── Bilgilerim (Kişisel + Çalışma birleştirildi)
             _SectionHeader(title: 'Bilgilerim'),
@@ -170,10 +170,23 @@ class ProfilScreen extends ConsumerWidget {
                   trailing: 'Yapay zeka ile',
                   onTap: () {
                     final profil = ref.read(profilProvider);
-                    ref.read(aiChatProvider.notifier).startCvBuilding(profil);
-                    ref.read(homeNavigationProvider.notifier).setIndex(4);
-                    // Ana sayfaya dön (AI tabı orada)
-                    context.go('/');
+                    final started = ref
+                        .read(aiChatProvider.notifier)
+                        .startCvBuilding(profil);
+                    if (started) {
+                      ref.read(homeNavigationProvider.notifier).setIndex(4);
+                      context.go('/');
+                    } else {
+                      final errorMsg = ref.read(aiChatProvider).error;
+                      if (errorMsg != null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(errorMsg),
+                            backgroundColor: AppTheme.errorColor,
+                          ),
+                        );
+                      }
+                    }
                   },
                 ),
                 _MenuItem(
@@ -181,6 +194,12 @@ class ProfilScreen extends ConsumerWidget {
                   title: 'İş Analizi',
                   trailing: 'CV eşleştirme',
                   onTap: () => context.push('/career'),
+                ),
+                _MenuItem(
+                  icon: Icons.chat_bubble_outline_rounded,
+                  title: 'Danışman ile Canlı Sohbet',
+                  trailing: 'Anında destek',
+                  onTap: () => context.push('/chat'),
                 ),
               ],
               isDark: isDark,
@@ -441,79 +460,148 @@ class _ProfileCompletionBanner extends StatelessWidget {
   }
 }
 
-// ── Membership Card
+// ── Membership Card (Premium UI Destekli)
 class _MembershipCard extends StatelessWidget {
   final bool isDark;
-  const _MembershipCard({required this.isDark});
+  final ProfilState profil;
+
+  const _MembershipCard({required this.isDark, required this.profil});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: AppTheme.primaryGradient,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: AppTheme.primaryColor.withValues(alpha: 0.3),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(
-              Icons.star_rounded,
-              color: Colors.white,
-              size: 28,
-            ),
-          ),
-          const SizedBox(width: 14),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Temel Plan',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 16,
-                  ),
-                ),
-                SizedBox(height: 2),
-                Text(
-                  'Premium\'a yükselterek tüm özelliklere erişin',
-                  style: TextStyle(color: Colors.white70, fontSize: 12),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: const Text(
-              'Yükselt',
-              style: TextStyle(
-                color: AppTheme.primaryColor,
-                fontWeight: FontWeight.w800,
-                fontSize: 12,
+    final bool isPremium = profil.isPremium;
+
+    return GestureDetector(
+      onTap: () {
+        if (!isPremium) context.push('/upgrade');
+        // İptal yönetimi App Store / Play Store ayarlarına yönlendirmelidir.
+      },
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          // Premium ise altın rengi özel gradyan, değilse klasik primary gradient
+          gradient:
+              isPremium
+                  ? const LinearGradient(
+                    colors: [Color(0xFFD4AF37), Color(0xFFAA771C)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  )
+                  : AppTheme.primaryGradient,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            if (!isPremium)
+              BoxShadow(
+                color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
+              ),
+            if (isPremium)
+              BoxShadow(
+                color: const Color(0xFFD4AF37).withValues(alpha: 0.4),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                isPremium
+                    ? Icons.workspace_premium_rounded
+                    : Icons.star_rounded,
+                color: Colors.white,
+                size: 28,
               ),
             ),
-          ),
-        ],
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isPremium ? 'Premium Üye' : 'Temel Plan',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    isPremium
+                        ? 'Tüm limitler kaldırıldı (Bitiş: \${profil.subscriptionEndDate != null ? "\${profil.subscriptionEndDate!.day}/\${profil.subscriptionEndDate!.month}/\${profil.subscriptionEndDate!.year}" : "Sınırsız"})'
+                        : 'Premium\'a yükselterek tüm özelliklere erişin',
+                    style: TextStyle(
+                      color: isPremium ? Colors.white : Colors.white70,
+                      fontSize: 11,
+                      fontWeight:
+                          isPremium ? FontWeight.w600 : FontWeight.normal,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (!isPremium)
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Text(
+                  'Yükselt',
+                  style: TextStyle(
+                    color: AppTheme.primaryColor,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 12,
+                  ),
+                ),
+              )
+            else
+              GestureDetector(
+                onTap: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Abonelik yönetimi mağaza ayarlarından (App Store/Play Store) yapılmaktadır.',
+                      ),
+                    ),
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.white30),
+                  ),
+                  child: const Text(
+                    'İptal Et',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 11,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

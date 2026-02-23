@@ -3,8 +3,12 @@ import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:kamulog_superapp/core/theme/app_theme.dart';
 import 'package:kamulog_superapp/features/kariyer/data/models/job_listing_model.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:kamulog_superapp/features/profil/presentation/providers/profil_provider.dart';
+import 'package:kamulog_superapp/features/ai/presentation/providers/ai_provider.dart';
+import 'package:kamulog_superapp/core/providers/home_navigation_provider.dart';
 
-class JobDetailScreen extends StatelessWidget {
+class JobDetailScreen extends ConsumerWidget {
   final JobListingModel job;
 
   const JobDetailScreen({super.key, required this.job});
@@ -26,8 +30,62 @@ class JobDetailScreen extends StatelessWidget {
     }
   }
 
+  void _analyzeJob(BuildContext context, WidgetRef ref) async {
+    final profil = ref.read(profilProvider);
+
+    if (!profil.hasCv) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Analiz için önce Belgelerim sayfasından bir CV yüklemelisiniz.',
+          ),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    if (profil.credits < 5) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Yetersiz kredi. İş analizi için 5 kredi gereklidir.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Kredi/limit düş ve AI a soruyu gönder
+    final success = await ref.read(profilProvider.notifier).useCredits(5);
+    if (!success) return;
+
+    final cvDoc = profil.documents.cast<DocumentInfo?>().firstWhere(
+      (doc) => doc != null && doc.category.toLowerCase() == 'cv',
+      orElse: () => null,
+    );
+
+    String cvTextContent = '';
+    if (cvDoc != null && cvDoc.content != null && cvDoc.content!.isNotEmpty) {
+      cvTextContent =
+          "\n\nKULLANICININ ORJİNAL CV İÇERİĞİ:\n\${cvDoc.content}\n\nLütfen bu CV içeriğini okuyarak aşağıdaki ilana uygunluğumu analiz et.";
+    } else {
+      cvTextContent =
+          "\n\nLütfen sistemde kayıtlı profil verilerime (beceriler, unvan, deneyim vb.) göre şu iş ilanı ile detaylıca karşılaştır.";
+    }
+
+    final prompt =
+        "$cvTextContent\n\nBana uygunluk oranımı, bu ilan için güçlü ve zayıf yönlerimi açıkla.\n\nİlan Başlığı: ${job.title}\nKurum: ${job.company}\nİş Tanımı: ${job.description}";
+    ref.read(aiChatProvider.notifier).sendMessage(prompt);
+
+    // AI Asistan tab'ına yönlendir
+    if (context.mounted) {
+      ref.read(homeNavigationProvider.notifier).setIndex(4);
+      context.go('/');
+    }
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -191,7 +249,7 @@ class JobDetailScreen extends StatelessWidget {
                     _buildInfoRow(
                       Icons.event_rounded,
                       'Son Başvuru',
-                      '\${job.deadline!.day}.\${job.deadline!.month}.\${job.deadline!.year}',
+                      '${job.deadline!.day}.${job.deadline!.month}.${job.deadline!.year}',
                       isDark,
                     ),
                   if (job.deadline != null && job.employerPhone != null)
@@ -230,32 +288,86 @@ class JobDetailScreen extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              SizedBox(
-                width: double.infinity,
-                height: 54,
-                child: ElevatedButton(
-                  onPressed:
-                      () => _launchUrl(
-                        context,
-                        job.applicationUrl ?? job.sourceUrl,
+              Row(
+                children: [
+                  Expanded(
+                    flex: 1,
+                    child: SizedBox(
+                      height: 54,
+                      child: ElevatedButton.icon(
+                        onPressed: () => _analyzeJob(context, ref),
+                        icon: const Icon(
+                          Icons.analytics_rounded,
+                          size: 20,
+                          color: AppTheme.primaryColor,
+                        ),
+                        label: const FittedBox(
+                          child: Text(
+                            'AI Analizi (5 Kredi)',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: AppTheme.primaryColor,
+                            ),
+                            maxLines: 1,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryColor.withValues(
+                            alpha: 0.1,
+                          ),
+                          foregroundColor: AppTheme.primaryColor,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            side: BorderSide(
+                              color: AppTheme.primaryColor.withValues(
+                                alpha: 0.2,
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: const Text(
-                    'İlana Başvur',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
                     ),
                   ),
-                ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    flex: 1,
+                    child: SizedBox(
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed:
+                            () => _launchUrl(
+                              context,
+                              job.applicationUrl ?? job.sourceUrl,
+                            ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryColor,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: const FittedBox(
+                          child: Text(
+                            'İlana Başvur',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                            maxLines: 1,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
+              const SizedBox(
+                height: 8,
+              ), // SafeArea bottom padding için ekstra boşluk
             ],
           ),
         ),
