@@ -6,16 +6,27 @@ import 'package:kamulog_superapp/features/kariyer/data/repositories/jobs_reposit
 class JobsState {
   final AsyncValue<List<JobListingModel>> jobs;
   final String filterType; // 'ALL', 'PUBLIC', 'PRIVATE'
+  final String searchQuery;
+  final String selectedCity; // '' = tüm şehirler
 
-  JobsState({required this.jobs, this.filterType = 'ALL'});
+  JobsState({
+    required this.jobs,
+    this.filterType = 'ALL',
+    this.searchQuery = '',
+    this.selectedCity = '',
+  });
 
   JobsState copyWith({
     AsyncValue<List<JobListingModel>>? jobs,
     String? filterType,
+    String? searchQuery,
+    String? selectedCity,
   }) {
     return JobsState(
       jobs: jobs ?? this.jobs,
       filterType: filterType ?? this.filterType,
+      searchQuery: searchQuery ?? this.searchQuery,
+      selectedCity: selectedCity ?? this.selectedCity,
     );
   }
 }
@@ -42,6 +53,14 @@ class JobsNotifier extends StateNotifier<JobsState> {
     if (state.filterType == type) return;
     state = state.copyWith(filterType: type);
     fetchJobs();
+  }
+
+  void setSearchQuery(String query) {
+    state = state.copyWith(searchQuery: query);
+  }
+
+  void setCityFilter(String city) {
+    state = state.copyWith(selectedCity: city);
   }
 }
 

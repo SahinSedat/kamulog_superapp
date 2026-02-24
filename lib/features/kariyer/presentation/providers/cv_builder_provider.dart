@@ -106,31 +106,72 @@ class CvBuilderNotifier extends Notifier<CvBuilderState> {
 
     final profileData = _getProfileData();
 
-    // Profil bilgilerini formatla
-    String existingInfo = '';
+    // Profil bilgilerini doğrudan listeye dönüştür
+    final StringBuffer profilBilgi = StringBuffer();
     if (profileData.isNotEmpty) {
-      existingInfo = profileData.entries
-          .map((e) => '${e.key}: ${e.value}')
-          .join(', ');
+      profilBilgi.writeln(
+        'ZORUNLU KULLAN — aşağıdaki bilgiler PROFİLDEN alındı, bunları CV\'ye DOĞRUDAN YAZ ve TEKRAR SORMA:',
+      );
+      for (final entry in profileData.entries) {
+        profilBilgi.writeln('  ✓ ${entry.key}: ${entry.value}');
+      }
+    }
+
+    // Belgelerim'deki mevcut CV içeriklerini de ekle
+    final cvDocs =
+        profil.documents
+            .where((d) => d.category.toLowerCase() == 'cv')
+            .toList();
+    if (cvDocs.isNotEmpty) {
+      profilBilgi.writeln('\nKULLANICININ MEVCUT CV BELGELERİ:');
+      for (final doc in cvDocs) {
+        if (doc.content != null && doc.content!.isNotEmpty) {
+          profilBilgi.writeln('--- ${doc.name} ---');
+          profilBilgi.writeln(doc.content!);
+        }
+      }
     }
 
     _cachedSystemPrompt =
-        'Sen profesyonel bir İK uzmanısın ve CV yazarısın. SADECE CV hazırlama konusunda çalışırsın. '
-        'Kullanıcının PROFİLDEN alınan mevcut bilgileri: $existingInfo. '
-        'Bu bilgileri CV\'de kullan ve tekrar SORMA. '
-        'ÖNEMLİ KURALLAR: '
-        '1. SADECE CV oluşturma ile ilgili konuşursun. CV dışında herhangi bir konu hakkında soru sorulursa '
-        '"Üzgünüm, benim görevim sadece CV hazırlamaktır. CV\'niz için bilgilere devam edelim." de ve konuyu CV\'ye geri getir. '
-        '2. Kullanıcının cevapladığı bilgileri topla. Eğer kullanıcı bir bilgiyi atladıysa veya eksik bıraktıysa hatırlat. '
-        '3. Kullanıcı "tamam" veya "tamamdır" derse, eksik bir şey yoksa CV\'yi oluştur. '
-        '4. CV hazır olduğunda mesajının EN BAŞINA [CV_HAZIR] etiketini koy ve ardından CV\'nin tam metnini düzenli formatta yaz. '
-        'CV\'nin sonuna "Bu CV Kamulog AI tarafından oluşturulmuştur." ibaresini ekle. '
-        'Ayrıca CV\'nin hemen altına --- ayıracıyla kısa bir profesyonel değerlendirme yaz. '
-        '5. Eğitim bilgilerini sorarken okul adı, bölüm ve mezuniyet durumunu SOR. Mezuniyet yılını AYRI sor. '
-        '6. Kısa, öz ve profesyonel ol. '
-        '7. Kullanıcıdan aldığın bilgilerden profilde eksik olanları (İl, İlçe, Kurum, Unvan, TC gibi) '
-        'CV\'nin sonunda [PROFIL_GUNCELLE] etiketi ile belirt. '
-        'Örnek: [PROFIL_GUNCELLE]city=Ankara,institution=MEB,title=Öğretmen[/PROFIL_GUNCELLE]';
+        'Sen üst düzey profesyonel bir İK uzmanısın ve CV yazarısın. SADECE CV hazırlama konusunda çalışırsın.\n\n'
+        '${profilBilgi.toString()}\n\n'
+        'KRİTİK KURALLAR:\n'
+        '1. Yukarıdaki ✓ ile işaretli bilgileri CV\'de OLDUĞU GİBİ kullan. Bu bilgileri kullanıcıya TEKRAR SORMA.\n'
+        '2. SADECE eksik bilgileri sor (eğitim, deneyim, beceriler gibi).\n'
+        '3. CV dışı konularda "Üzgünüm, görevim sadece CV hazırlamaktır." de.\n'
+        '4. Kullanıcı "tamam" derse CV\'yi oluştur.\n'
+        '5. CV hazır olduğunda mesajının EN BAŞINA [CV_HAZIR] etiketini koy.\n\n'
+        '═══ CV FORMAT TALİMATI ═══\n'
+        'CV\'yi aşağıdaki DÜZENLE yaz (bölüm başlıkları ■ ile işaretli):\n\n'
+        '■ KİŞİSEL BİLGİLER\n'
+        'Ad Soyad: ...\n'
+        'Telefon: ...\n'
+        'E-posta: ...\n'
+        'Adres: ...\n\n'
+        '■ KARİYER HEDEFİ\n'
+        '(2-3 cümle profesyonel hedef özeti)\n\n'
+        '■ EĞİTİM BİLGİLERİ\n'
+        '• Okul — Bölüm (Yıl)\n\n'
+        '■ İŞ DENEYİMİ\n'
+        '• Pozisyon — Şirket (Tarih aralığı)\n'
+        '  Görev ve sorumluluklar\n\n'
+        '■ BECERİLER VE YETKİNLİKLER\n'
+        '• Teknik: ...\n'
+        '• Kişisel: ...\n\n'
+        '■ SERTİFİKA VE KURSLAR\n'
+        '• Sertifika adı (Kurum, Yıl)\n\n'
+        '■ YABANCI DİLLER\n'
+        '• Dil — Seviye\n\n'
+        '■ REFERANSLAR\n'
+        'İstenildiğinde sunulabilir.\n\n'
+        '═══════════════════════\n\n'
+        '--- PROFESYONELLİK DEĞERLENDİRMESİ ---\n'
+        'CV\'nin altına: 🎯 Güçlü Yönler + 💡 Öneriler + ⭐ Puan X/10\n'
+        'Bu CV Kamulog AI tarafından oluşturulmuştur.\n\n'
+        '6. Kullanıcıdan aldığın YENİ bilgileri (profilde olmayanları) '
+        'CV\'nin sonunda [PROFIL_GUNCELLE] etiketi ile belirt.\n'
+        'Tüm alanları dahil et: name, phone, tckimlik, city, district, institution, title\n'
+        'Örnek: [PROFIL_GUNCELLE]city=Ankara,tckimlik=12345678901,name=Ahmet Yılmaz,phone=5551234567[/PROFIL_GUNCELLE]';
 
     // İlk mesajı oluştur
     String firstMessage;
@@ -282,7 +323,7 @@ class CvBuilderNotifier extends Notifier<CvBuilderState> {
 
           // Key=Value pairs parse et
           final pairs = updates.split(',');
-          String? city, district, institution, title, tcKimlik;
+          String? city, district, institution, title, tcKimlik, name, phone;
 
           for (final pair in pairs) {
             final kv = pair.split('=');
@@ -317,10 +358,26 @@ class CvBuilderNotifier extends Notifier<CvBuilderState> {
                     value.isNotEmpty) {
                   tcKimlik = value;
                 }
+              case 'name':
+                if ((profil.name == null || profil.name!.isEmpty) &&
+                    value.isNotEmpty) {
+                  name = value;
+                }
+              case 'phone':
+                if ((profil.phone == null || profil.phone!.isEmpty) &&
+                    value.isNotEmpty) {
+                  phone = value;
+                }
             }
           }
 
-          // İsim ve telefon hariç güncelle
+          // Tüm bilgileri profilde güncelle
+          if (name != null) {
+            notifier.updateName(name);
+          }
+          if (phone != null) {
+            notifier.updatePhone(phone);
+          }
           if (city != null ||
               district != null ||
               institution != null ||

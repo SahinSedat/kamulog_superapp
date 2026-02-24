@@ -77,6 +77,7 @@ dependencies:
   syncfusion_flutter_pdf: ^32.2.5
   in_app_purchase: ^3.2.3
   confetti: ^0.8.0
+  image_cropper: ^11.0.0
 
 dev_dependencies:
   flutter_test:

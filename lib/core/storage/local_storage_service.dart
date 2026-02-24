@@ -182,6 +182,41 @@ class LocalStorageService {
   }
 
   // ════════════════════════════════════════════
+  // ════════════════════════════════════════════
+  // CV PDF YÜKLEME — 1 kez hak
+  // ════════════════════════════════════════════
+
+  static Future<void> saveCvUploaded() async {
+    await _career.put('cvPdfUploaded', true);
+  }
+
+  static bool isCvUploaded() {
+    return _career.get('cvPdfUploaded', defaultValue: false) == true;
+  }
+
+  static Future<void> resetCvUploaded() async {
+    await _career.put('cvPdfUploaded', false);
+  }
+
+  // ════════════════════════════════════════════
+  // İŞ ANALİZİ GEÇMİŞİ — cihazda kalır
+  // ════════════════════════════════════════════
+
+  static Future<void> saveJobAnalysis(Map<String, dynamic> analysis) async {
+    final list = loadJobAnalyses();
+    list.insert(0, analysis); // En yeni başa
+    // Max 50 kayıt tut
+    if (list.length > 50) list.removeLast();
+    await _career.put('jobAnalyses', list);
+  }
+
+  static List<Map<String, dynamic>> loadJobAnalyses() {
+    final raw = _career.get('jobAnalyses');
+    if (raw == null) return [];
+    return (raw as List).map((e) => Map<String, dynamic>.from(e)).toList();
+  }
+
+  // ════════════════════════════════════════════
   // TEMIZLEME
   // ════════════════════════════════════════════
 

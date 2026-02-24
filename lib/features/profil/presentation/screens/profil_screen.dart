@@ -2,8 +2,13 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:kamulog_superapp/core/theme/app_theme.dart';
+import 'package:kamulog_superapp/core/storage/local_storage_service.dart';
+import 'package:kamulog_superapp/core/widgets/app_toast.dart';
+import 'package:kamulog_superapp/core/widgets/profile_avatar.dart';
 import 'package:kamulog_superapp/features/auth/presentation/providers/auth_provider.dart';
 import 'package:kamulog_superapp/features/profil/presentation/providers/profil_provider.dart';
 
@@ -175,8 +180,11 @@ class ProfilScreen extends ConsumerWidget {
                 _MenuItem(
                   icon: Icons.analytics_rounded,
                   title: 'İş Analizi',
-                  trailing: 'CV eşleştirme',
-                  onTap: () => context.push('/career'),
+                  trailing: () {
+                    final count = LocalStorageService.loadJobAnalyses().length;
+                    return count > 0 ? '$count analiz kaydı' : 'CV eşleştirme';
+                  }(),
+                  onTap: () => _showAnalysisHistory(context, isDark),
                 ),
               ],
               isDark: isDark,
@@ -338,6 +346,230 @@ class ProfilScreen extends ConsumerWidget {
           ),
     );
   }
+
+  void _showAnalysisHistory(BuildContext context, bool isDark) {
+    final analyses = LocalStorageService.loadJobAnalyses();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder:
+          (ctx) => Container(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.7,
+            ),
+            decoration: BoxDecoration(
+              color: isDark ? AppTheme.cardDark : Colors.white,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(24),
+              ),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(top: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.analytics_rounded,
+                          color: AppTheme.primaryColor,
+                          size: 22,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        'İş Analizi Geçmişi',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          color: isDark ? Colors.white : Colors.black87,
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        '${analyses.length} kayıt',
+                        style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1),
+                if (analyses.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.all(40),
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.analytics_outlined,
+                          size: 48,
+                          color: Colors.grey[400],
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Henüz iş analizi yapmadınız',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[500],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Kariyer modülünden ilan analizi yapabilirsiniz',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[400],
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  Flexible(
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      padding: const EdgeInsets.all(16),
+                      itemCount: analyses.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 8),
+                      itemBuilder: (_, index) {
+                        final a = analyses[index];
+                        final score = a['score'] as int? ?? 0;
+                        final isUygun = a['isUygun'] as bool? ?? false;
+                        final date = DateTime.tryParse(a['date'] ?? '');
+                        final dateStr =
+                            date != null
+                                ? '${date.day}.${date.month.toString().padLeft(2, '0')}.${date.year}'
+                                : '';
+
+                        Color scoreColor;
+                        if (score >= 70) {
+                          scoreColor = const Color(0xFF2E7D32);
+                        } else if (score >= 40) {
+                          scoreColor = const Color(0xFFF57C00);
+                        } else {
+                          scoreColor = const Color(0xFFD32F2F);
+                        }
+
+                        return Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color:
+                                isDark
+                                    ? Colors.white.withValues(alpha: 0.05)
+                                    : Colors.grey.shade50,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color:
+                                  isDark
+                                      ? Colors.white12
+                                      : Colors.grey.shade200,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 48,
+                                height: 48,
+                                decoration: BoxDecoration(
+                                  color: scoreColor.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    '%$score',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w900,
+                                      color: scoreColor,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      a['jobTitle'] ?? 'İlan',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w700,
+                                        color:
+                                            isDark
+                                                ? Colors.white
+                                                : Colors.black87,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      '${a['company'] ?? ''} • $dateStr',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.grey[500],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color:
+                                      isUygun
+                                          ? const Color(
+                                            0xFF2E7D32,
+                                          ).withValues(alpha: 0.1)
+                                          : const Color(
+                                            0xFFF57C00,
+                                          ).withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  isUygun ? 'Uygun' : 'Alternatif',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    color:
+                                        isUygun
+                                            ? const Color(0xFF2E7D32)
+                                            : const Color(0xFFF57C00),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                const SizedBox(height: 16),
+              ],
+            ),
+          ),
+    );
+  }
 }
 
 // ── Profile Header
@@ -346,11 +578,55 @@ class _ProfileHeader extends ConsumerWidget {
   final bool isDark;
   const _ProfileHeader({required this.user, required this.isDark});
 
-  Future<void> _pickImage(BuildContext context, WidgetRef ref) async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      ref.read(profilProvider.notifier).updateProfileImage(pickedFile.path);
+  Future<void> _pickAndCropImage(BuildContext context, WidgetRef ref) async {
+    try {
+      final picker = ImagePicker();
+      final pickedFile = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
+      if (pickedFile == null) return;
+
+      // Instagram tarzı kırpma
+      final croppedFile = await ImageCropper().cropImage(
+        sourcePath: pickedFile.path,
+        uiSettings: [
+          AndroidUiSettings(
+            toolbarTitle: 'Profil Fotoğrafı',
+            toolbarColor: AppTheme.primaryColor,
+            toolbarWidgetColor: Colors.white,
+            activeControlsWidgetColor: AppTheme.primaryColor,
+            cropStyle: CropStyle.circle,
+            aspectRatioPresets: [CropAspectRatioPreset.square],
+            lockAspectRatio: true,
+            hideBottomControls: false,
+            initAspectRatio: CropAspectRatioPreset.square,
+          ),
+          IOSUiSettings(
+            title: 'Profil Fotoğrafı',
+            cropStyle: CropStyle.circle,
+            aspectRatioLockEnabled: true,
+            resetAspectRatioEnabled: false,
+            aspectRatioPickerButtonHidden: true,
+            rotateButtonsHidden: false,
+            rotateClockwiseButtonHidden: true,
+          ),
+        ],
+      );
+      if (croppedFile == null) return;
+
+      // Kalıcı dizine kaydet
+      final dir = await getApplicationDocumentsDirectory();
+      final savedPath = '${dir.path}/profile_photo.jpg';
+      await File(croppedFile.path).copy(savedPath);
+
+      ref.read(profilProvider.notifier).updateProfileImage(savedPath);
+    } catch (e) {
+      if (context.mounted) {
+        AppToast.error(context, 'Fotoğraf yüklenirken hata oluştu.');
+      }
     }
   }
 
@@ -358,68 +634,17 @@ class _ProfileHeader extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final name = user?.name ?? 'Kullanıcı';
     final phone = user?.phone ?? '';
-    final initial = name.isNotEmpty ? name[0].toUpperCase() : 'K';
-
     final profil = ref.watch(profilProvider);
-    final imagePath = profil.profileImagePath;
 
     return Column(
       children: [
-        GestureDetector(
-          onTap: () => _pickImage(context, ref),
-          child: Stack(
-            children: [
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  gradient: imagePath == null ? AppTheme.primaryGradient : null,
-                  shape: BoxShape.circle,
-                  image:
-                      imagePath != null
-                          ? DecorationImage(
-                            image: FileImage(File(imagePath)),
-                            fit: BoxFit.cover,
-                          )
-                          : null,
-                ),
-                child:
-                    imagePath == null
-                        ? Center(
-                          child: Text(
-                            initial,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 32,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        )
-                        : null,
-              ),
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryColor,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: isDark ? AppTheme.surfaceDark : Colors.white,
-                      width: 2,
-                    ),
-                  ),
-                  child: const Icon(
-                    Icons.camera_alt_rounded,
-                    color: Colors.white,
-                    size: 14,
-                  ),
-                ),
-              ),
-            ],
-          ),
+        ProfileAvatar(
+          radius: 44,
+          showPremiumBadge: true,
+          showCameraButton: true,
+          onTap: () => _pickAndCropImage(context, ref),
         ),
+        const SizedBox(height: 10),
         Text(
           name,
           style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),

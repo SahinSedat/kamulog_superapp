@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kamulog_superapp/core/theme/app_theme.dart';
@@ -28,6 +29,16 @@ class _AiCvBuilderScreenState extends ConsumerState<AiCvBuilderScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      final profil = ref.read(profilProvider);
+      // Her kullanıcı (premium dahil) ayda 1 kez AI CV oluşturabilir
+      if (profil.aiCvCountThisMonth >= 1) {
+        AppToast.warning(
+          context,
+          'Bu ay AI ile CV oluşturma hakkınızı kullandınız. (Aylık 1 hak)',
+        );
+        if (mounted) context.pop();
+        return;
+      }
       ref.read(cvBuilderProvider.notifier).startCvBuilding();
     });
   }
@@ -81,51 +92,129 @@ class _AiCvBuilderScreenState extends ConsumerState<AiCvBuilderScreen> {
     }
 
     try {
+      // Roboto font yükle (Türkçe karakter desteği)
+      final fontData = await rootBundle.load('assets/fonts/Roboto-Regular.ttf');
+      final fontBytes = fontData.buffer.asUint8List();
+
       // Syncfusion PDF oluştur
       final PdfDocument document = PdfDocument();
       final PdfPage page = document.pages.add();
+      final pageWidth = page.getClientSize().width;
 
-      final PdfFont headingFont = PdfStandardFont(
-        PdfFontFamily.helvetica,
-        18,
+      final PdfFont headingFont = PdfTrueTypeFont(
+        fontBytes,
+        20,
         style: PdfFontStyle.bold,
       );
-      final PdfFont bodyFont = PdfStandardFont(PdfFontFamily.helvetica, 11);
-      final PdfFont footerFont = PdfStandardFont(
-        PdfFontFamily.helvetica,
-        9,
-        style: PdfFontStyle.italic,
+      final PdfFont sectionFont = PdfTrueTypeFont(
+        fontBytes,
+        13,
+        style: PdfFontStyle.bold,
       );
+      final PdfFont bodyFont = PdfTrueTypeFont(fontBytes, 10);
+      final PdfFont smallFont = PdfTrueTypeFont(fontBytes, 8);
 
-      // Başlık
+      final PdfColor primaryColor = PdfColor(21, 101, 192); // Mavi
+      final PdfColor darkGray = PdfColor(50, 50, 50);
+
+      double yPos = 0;
+
+      // ── Renkli header bar
+      page.graphics.drawRectangle(
+        brush: PdfSolidBrush(primaryColor),
+        bounds: Rect.fromLTWH(0, 0, pageWidth, 50),
+      );
       page.graphics.drawString(
-        'CV - ${profil.name ?? 'Belge'}',
+        (profil.name ?? 'CV').toUpperCase(),
         headingFont,
-        bounds: Rect.fromLTWH(0, 0, page.getClientSize().width, 30),
+        brush: PdfSolidBrush(PdfColor(255, 255, 255)),
+        bounds: Rect.fromLTWH(16, 12, pageWidth - 32, 30),
       );
+      yPos = 60;
 
-      // CV içeriği
-      final PdfTextElement textElement = PdfTextElement(
-        text: cvContent,
-        font: bodyFont,
-      );
-      final result = textElement.draw(
-        page: page,
-        bounds: Rect.fromLTWH(
-          0,
-          40,
-          page.getClientSize().width,
-          page.getClientSize().height - 80,
-        ),
-      );
+      // ── İçerik bölümlerini parse et ve çiz
+      final lines = cvContent.split('\n');
+      for (final line in lines) {
+        final trimmed = line.trim();
+        if (trimmed.isEmpty) {
+          yPos += 6;
+          continue;
+        }
 
-      // Alt bilgi — Kamulog AI ibaresi
-      final footerY =
-          (result?.bounds.bottom ?? page.getClientSize().height - 40) + 20;
+        // Sayfa taşma kontrolü
+        if (yPos > page.getClientSize().height - 60) {
+          final remaining = lines.sublist(lines.indexOf(line)).join('\n');
+          final PdfTextElement textEl = PdfTextElement(
+            text: remaining,
+            font: bodyFont,
+          );
+          textEl.draw(
+            page: document.pages.add(),
+            bounds: Rect.fromLTWH(
+              10,
+              20,
+              pageWidth - 20,
+              page.getClientSize().height - 40,
+            ),
+          );
+          break;
+        }
+
+        // Bölüm başlığı (■ ile işaretli)
+        if (trimmed.startsWith('■')) {
+          yPos += 4;
+          // Bölüm başlığı arka planı
+          page.graphics.drawRectangle(
+            brush: PdfSolidBrush(PdfColor(230, 240, 255)),
+            bounds: Rect.fromLTWH(0, yPos, pageWidth, 20),
+          );
+          // Sol kenar çizgisi
+          page.graphics.drawRectangle(
+            brush: PdfSolidBrush(primaryColor),
+            bounds: Rect.fromLTWH(0, yPos, 3, 20),
+          );
+          page.graphics.drawString(
+            trimmed.replaceAll('■', '').trim(),
+            sectionFont,
+            brush: PdfSolidBrush(primaryColor),
+            bounds: Rect.fromLTWH(10, yPos + 3, pageWidth - 20, 16),
+          );
+          yPos += 26;
+        }
+        // Alt çizgi separator
+        else if (trimmed.startsWith('═') || trimmed.startsWith('---')) {
+          page.graphics.drawLine(
+            PdfPen(PdfColor(200, 200, 200), width: 0.5),
+            Offset(0, yPos + 4),
+            Offset(pageWidth, yPos + 4),
+          );
+          yPos += 12;
+        }
+        // Normal metin
+        else {
+          page.graphics.drawString(
+            trimmed,
+            bodyFont,
+            brush: PdfSolidBrush(darkGray),
+            bounds: Rect.fromLTWH(10, yPos, pageWidth - 20, 14),
+          );
+          yPos += 14;
+        }
+      }
+
+      // ── Alt bilgi — Kamulog AI ibaresi
+      yPos += 20;
+      page.graphics.drawLine(
+        PdfPen(primaryColor, width: 1),
+        Offset(0, yPos),
+        Offset(pageWidth, yPos),
+      );
+      yPos += 8;
       page.graphics.drawString(
         'Bu CV Kamulog AI tarafından oluşturulmuştur. © ${DateTime.now().year}',
-        footerFont,
-        bounds: Rect.fromLTWH(0, footerY, page.getClientSize().width, 20),
+        smallFont,
+        brush: PdfSolidBrush(PdfColor(120, 120, 120)),
+        bounds: Rect.fromLTWH(0, yPos, pageWidth, 14),
         format: PdfStringFormat(alignment: PdfTextAlignment.center),
       );
 
@@ -146,6 +235,7 @@ class _AiCvBuilderScreenState extends ConsumerState<AiCvBuilderScreen> {
         fileType: 'pdf',
         uploadDate: DateTime.now(),
         content: cvContent,
+        filePath: file.path,
       );
 
       await ref.read(profilProvider.notifier).addDocument(docInfo);
@@ -378,8 +468,8 @@ class _AiCvBuilderScreenState extends ConsumerState<AiCvBuilderScreen> {
                 focusNode: _focusNode,
                 maxLines: 4,
                 minLines: 1,
-                textInputAction: TextInputAction.send,
-                onSubmitted: (_) => _sendMessage(),
+                keyboardType: TextInputType.multiline,
+                textInputAction: TextInputAction.newline,
                 decoration: InputDecoration(
                   hintText: 'Bir mesaj yazın...',
                   hintStyle: TextStyle(

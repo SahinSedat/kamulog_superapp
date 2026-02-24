@@ -10,12 +10,14 @@ class JobMatchingState {
   final bool isLoading;
   final String aiContent;
   final bool isMatchingStarted;
+  final String searchQuery;
 
   const JobMatchingState({
     required this.conversationId,
     this.isLoading = false,
     this.aiContent = '',
     this.isMatchingStarted = false,
+    this.searchQuery = '',
   });
 
   JobMatchingState copyWith({
@@ -23,12 +25,14 @@ class JobMatchingState {
     bool? isLoading,
     String? aiContent,
     bool? isMatchingStarted,
+    String? searchQuery,
   }) {
     return JobMatchingState(
       conversationId: conversationId ?? this.conversationId,
       isLoading: isLoading ?? this.isLoading,
       aiContent: aiContent ?? this.aiContent,
       isMatchingStarted: isMatchingStarted ?? this.isMatchingStarted,
+      searchQuery: searchQuery ?? this.searchQuery,
     );
   }
 }
@@ -51,6 +55,10 @@ class JobMatchingNotifier extends Notifier<JobMatchingState> {
     state = JobMatchingState(conversationId: const Uuid().v4());
   }
 
+  void setSearchQuery(String query) {
+    state = state.copyWith(searchQuery: query);
+  }
+
   Future<void> startJobMatching(String prompt) async {
     newConversation();
 
@@ -64,8 +72,52 @@ class JobMatchingNotifier extends Notifier<JobMatchingState> {
       _streamSub = _repository
           .sendMessage(
             conversationId: state.conversationId,
-            message: 'Sistemdeki mevcut ilanları CV\'mle karşılaştır.',
-            context: prompt,
+            message: prompt,
+            context: '',
+            history: [],
+          )
+          .listen(
+            (chunk) {
+              state = state.copyWith(aiContent: '${state.aiContent}$chunk');
+            },
+            onDone: () {
+              state = state.copyWith(isLoading: false);
+            },
+            onError: (error) {
+              state = state.copyWith(
+                isLoading: false,
+                aiContent:
+                    '${state.aiContent}\n\n[Hata oluştu: Sunucu yanıt veremiyor]',
+              );
+            },
+          );
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        aiContent: '${state.aiContent}\n\n[Beklenmeyen bir hata oluştu]',
+      );
+    }
+  }
+
+  /// İş eşleştirme — context ve message ayrı olarak gönderilir
+  Future<void> startJobMatchingWithContext(
+    String message,
+    String dataContext,
+  ) async {
+    newConversation();
+
+    state = state.copyWith(
+      isLoading: true,
+      aiContent: '',
+      isMatchingStarted: true,
+    );
+
+    try {
+      _streamSub = _repository
+          .sendMessage(
+            conversationId: state.conversationId,
+            message: message,
+            context: dataContext,
             history: [],
           )
           .listen(

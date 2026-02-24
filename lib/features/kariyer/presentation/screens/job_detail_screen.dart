@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:confetti/confetti.dart';
 import 'package:kamulog_superapp/core/theme/app_theme.dart';
 import 'package:kamulog_superapp/core/widgets/app_toast.dart';
+import 'package:kamulog_superapp/core/storage/local_storage_service.dart';
 import 'package:kamulog_superapp/features/kariyer/data/models/job_listing_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kamulog_superapp/features/profil/presentation/providers/profil_provider.dart';
@@ -57,19 +58,38 @@ class JobDetailScreen extends ConsumerWidget {
     // Jetonu düş
     await ref.read(profilProvider.notifier).decreaseCredits(2);
 
-    // CV içeriğini hazırla
-    final cvDoc = profil.documents.cast<DocumentInfo?>().firstWhere(
-      (doc) => doc != null && doc.category.toLowerCase() == 'cv',
-      orElse: () => null,
-    );
+    // CV içeriğini hazırla — TÜM kayıtlı CV belgelerini topla
+    final cvDocs =
+        profil.documents
+            .where((doc) => doc.category.toLowerCase() == 'cv')
+            .toList();
 
-    String cvContent;
-    if (cvDoc != null && cvDoc.content != null && cvDoc.content!.isNotEmpty) {
-      cvContent = cvDoc.content!;
-    } else {
-      cvContent =
-          'Ad: ${profil.name ?? "Belirtilmedi"}, Kurum: ${profil.institution}, Unvan: ${profil.title ?? "Belirtilmedi"}, Beceriler: ${profil.surveyInterests.join(", ")}';
+    final StringBuffer cvBuffer = StringBuffer();
+    for (final doc in cvDocs) {
+      if (doc.content != null && doc.content!.isNotEmpty) {
+        cvBuffer.writeln('--- ${doc.name} ---');
+        cvBuffer.writeln(doc.content!);
+        cvBuffer.writeln();
+      }
     }
+
+    // Profil bilgilerini de ekle
+    cvBuffer.writeln('--- PROFİL BİLGİLERİ ---');
+    if (profil.name != null) cvBuffer.writeln('Ad Soyad: ${profil.name}');
+    if (profil.institution != null && profil.institution!.isNotEmpty) {
+      cvBuffer.writeln('Kurum: ${profil.institution}');
+    }
+    if (profil.title != null && profil.title!.isNotEmpty) {
+      cvBuffer.writeln('Unvan: ${profil.title}');
+    }
+    if (profil.city != null && profil.city!.isNotEmpty) {
+      cvBuffer.writeln('Şehir: ${profil.city}');
+    }
+    if (profil.surveyInterests.isNotEmpty) {
+      cvBuffer.writeln('Beceriler: ${profil.surveyInterests.join(", ")}');
+    }
+
+    final cvContent = cvBuffer.toString().trim();
 
     if (!context.mounted) return;
 
@@ -540,6 +560,7 @@ UYUM:%[skor]
                 _isLoading = false;
               });
               _checkConfetti();
+              _saveAnalysisToHistory();
             }
           },
           onError: (error) {
@@ -583,18 +604,33 @@ UYUM:%[skor]
   bool get _isUygun => _parseScore('GENEL') >= 60;
 
   void _applyToJob() async {
-    final url = widget.job.applicationUrl;
+    // Önce applicationUrl, sonra sourceUrl, yoksa ilan detayına yönlendir
+    final url = widget.job.applicationUrl ?? widget.job.sourceUrl;
     if (url != null && url.isNotEmpty) {
       final uri = Uri.parse(url);
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
+        return;
       }
-    } else if (mounted) {
-      AppToast.info(
-        context,
-        'Başvuru bağlantısı bulunamadı. İlanı inceleyerek başvurabilirsiniz.',
-      );
     }
+    // Fallback: kamulogkariyer.com/jobs'ı aç
+    if (mounted) {
+      final fallbackUri = Uri.parse('https://kamulogkariyer.com/jobs');
+      await launchUrl(fallbackUri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  void _saveAnalysisToHistory() {
+    final genelScore = _parseScore('GENEL');
+    final rationale = _parseRationale();
+    LocalStorageService.saveJobAnalysis({
+      'jobTitle': widget.job.title,
+      'company': widget.job.company,
+      'score': genelScore,
+      'rationale': rationale,
+      'date': DateTime.now().toIso8601String(),
+      'isUygun': _isUygun,
+    });
   }
 
   Widget _bar(String label, int score, Color color, bool isDark) {
@@ -1012,4 +1048,3 @@ UYUM:%[skor]
     );
   }
 }
-

@@ -1,9 +1,12 @@
 import 'dart:io';
+import 'package:path_provider/path_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kamulog_superapp/core/theme/app_theme.dart';
 import 'package:kamulog_superapp/core/constants/enums.dart';
+import 'package:kamulog_superapp/core/storage/local_storage_service.dart';
+import 'package:kamulog_superapp/core/widgets/app_toast.dart';
 import 'package:kamulog_superapp/features/profil/presentation/providers/profil_provider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart';
@@ -125,13 +128,162 @@ class _DocumentsScreenState extends ConsumerState<DocumentsScreen>
       itemCount: filtered.length,
       separatorBuilder: (_, __) => const SizedBox(height: 10),
       itemBuilder: (context, index) {
-        return _DocumentCard(
-          document: filtered[index],
-          onTap: () => _showDocumentDetail(filtered[index]),
-          onDelete: () => _deleteDocument(filtered[index]),
+        final doc = filtered[index];
+        return Dismissible(
+          key: Key(doc.id),
+          direction: DismissDirection.horizontal,
+          // Sola kaydırınca SİL
+          background: Container(
+            alignment: Alignment.centerLeft,
+            padding: const EdgeInsets.only(left: 20),
+            margin: const EdgeInsets.only(bottom: 10),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1565C0),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.download_rounded, color: Colors.white, size: 28),
+                SizedBox(width: 8),
+                Text(
+                  'İndir',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          secondaryBackground: Container(
+            alignment: Alignment.centerRight,
+            padding: const EdgeInsets.only(right: 20),
+            margin: const EdgeInsets.only(bottom: 10),
+            decoration: BoxDecoration(
+              color: AppTheme.errorColor,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(
+              Icons.delete_rounded,
+              color: Colors.white,
+              size: 28,
+            ),
+          ),
+          confirmDismiss: (direction) async {
+            if (direction == DismissDirection.endToStart) {
+              // Sola kaydır = Sil
+              return await showDialog<bool>(
+                    context: context,
+                    builder:
+                        (ctx) => AlertDialog(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          title: const Text('Belgeyi Sil'),
+                          content: Text(
+                            '"${doc.name}" belgesini silmek istediğinize emin misiniz?',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx, false),
+                              child: const Text('İptal'),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx, true),
+                              child: const Text(
+                                'Sil',
+                                style: TextStyle(
+                                  color: AppTheme.errorColor,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                  ) ??
+                  false;
+            } else {
+              // Sağa kaydır = İndir
+              await _downloadDocument(doc);
+              return false; // Dismiss etme, sadece indir
+            }
+          },
+          onDismissed: (_) async {
+            ref.read(profilProvider.notifier).removeDocument(doc.id);
+            // CV siliniyorsa yükleme hakkını sıfırla
+            if (doc.category.toLowerCase() == 'cv') {
+              await LocalStorageService.resetCvUploaded();
+            }
+            if (context.mounted) {
+              AppToast.success(context, 'Belge silindi');
+            }
+          },
+          child: _DocumentCard(
+            document: doc,
+            onTap: () => _showDocumentDetail(doc),
+          ),
         );
       },
     );
+  }
+
+  Future<void> _downloadDocument(DocumentInfo doc) async {
+    try {
+      File? sourceFile;
+
+      // Önce filePath kontrol et
+      if (doc.filePath != null && doc.filePath!.isNotEmpty) {
+        final f = File(doc.filePath!);
+        if (await f.exists()) sourceFile = f;
+      }
+
+      // filePath yoksa veya dosya bulunamazsa, app documents'ta CV ara
+      if (sourceFile == null) {
+        final dir = await getApplicationDocumentsDirectory();
+        final files =
+            dir
+                .listSync()
+                .whereType<File>()
+                .where((f) => f.path.endsWith('.pdf') && f.path.contains('cv_'))
+                .toList();
+        if (files.isNotEmpty) {
+          // En son oluşturulanı al
+          files.sort(
+            (a, b) => b.statSync().modified.compareTo(a.statSync().modified),
+          );
+          sourceFile = files.first;
+        }
+      }
+
+      if (sourceFile == null || !await sourceFile.exists()) {
+        if (mounted) {
+          AppToast.warning(context, 'Dosya bulunamadı');
+        }
+        return;
+      }
+
+      // Android: /storage/emulated/0/Download/
+      final downloadDir = Directory('/storage/emulated/0/Download');
+      if (!await downloadDir.exists()) {
+        await downloadDir.create(recursive: true);
+      }
+
+      final fileName = '${doc.name.replaceAll(RegExp(r'[^\w\s-]'), '_')}.pdf';
+      final destFile = File('${downloadDir.path}/$fileName');
+      await sourceFile.copy(destFile.path);
+
+      if (mounted) {
+        AppToast.success(
+          context,
+          '✅ "${doc.name}" İndirilenler klasörüne kaydedildi',
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        AppToast.error(context, 'İndirme hatası: $e');
+      }
+    }
   }
 
   void _showUploadOptions() {
@@ -163,10 +315,41 @@ class _DocumentsScreenState extends ConsumerState<DocumentsScreen>
                 _UploadOption(
                   icon: Icons.description_rounded,
                   title: 'CV Yükle',
-                  subtitle: 'PDF, DOCX formatında (AI Analizine Uygun)',
-                  color: const Color(0xFF1565C0),
+                  subtitle: () {
+                    final cvCount =
+                        ref
+                            .read(profilProvider)
+                            .documents
+                            .where((d) => d.category.toLowerCase() == 'cv')
+                            .length;
+                    return cvCount >= 2
+                        ? 'Maksimum 2 CV hakkınız doldu ($cvCount/2)'
+                        : 'PDF, DOCX formatında (AI Analizine Uygun) ($cvCount/2)';
+                  }(),
+                  color: () {
+                    final cvCount =
+                        ref
+                            .read(profilProvider)
+                            .documents
+                            .where((d) => d.category.toLowerCase() == 'cv')
+                            .length;
+                    return cvCount >= 2 ? Colors.grey : const Color(0xFF1565C0);
+                  }(),
                   onTap: () {
                     Navigator.pop(ctx);
+                    final cvCount =
+                        ref
+                            .read(profilProvider)
+                            .documents
+                            .where((d) => d.category.toLowerCase() == 'cv')
+                            .length;
+                    if (cvCount >= 2) {
+                      AppToast.warning(
+                        context,
+                        'Maksimum 2 CV hakkınız doldu. Mevcut CV\'nizi silip tekrar yükleyebilirsiniz.',
+                      );
+                      return;
+                    }
                     _pickAndUpload(DocumentCategory.cv, 'CV Belgesi');
                   },
                 ),
@@ -251,6 +434,11 @@ class _DocumentsScreenState extends ConsumerState<DocumentsScreen>
 
         ref.read(profilProvider.notifier).addDocument(doc);
 
+        // CV kategorisiyse yükleme hakkını işaretle
+        if (category == DocumentCategory.cv) {
+          await LocalStorageService.saveCvUploaded();
+        }
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -270,44 +458,6 @@ class _DocumentsScreenState extends ConsumerState<DocumentsScreen>
         );
       }
     }
-  }
-
-  void _deleteDocument(DocumentInfo doc) {
-    showDialog(
-      context: context,
-      builder:
-          (ctx) => AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            title: const Text('Belgeyi Sil'),
-            content: Text(
-              '"${doc.name}" belgesini silmek istediğinize emin misiniz?',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('İptal'),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(ctx);
-                  ref.read(profilProvider.notifier).removeDocument(doc.id);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Belge silindi')),
-                  );
-                },
-                child: const Text(
-                  'Sil',
-                  style: TextStyle(
-                    color: AppTheme.errorColor,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ],
-          ),
-    );
   }
 
   void _showDocumentDetail(DocumentInfo doc) {
@@ -555,13 +705,8 @@ class _DocumentsScreenState extends ConsumerState<DocumentsScreen>
 class _DocumentCard extends StatelessWidget {
   final DocumentInfo document;
   final VoidCallback onTap;
-  final VoidCallback onDelete;
 
-  const _DocumentCard({
-    required this.document,
-    required this.onTap,
-    required this.onDelete,
-  });
+  const _DocumentCard({required this.document, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -570,8 +715,9 @@ class _DocumentCard extends StatelessWidget {
       orElse: () => DocumentCategory.diger,
     );
     final color = _colorFor(category);
-    return GestureDetector(
+    return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
@@ -629,20 +775,6 @@ class _DocumentCard extends StatelessWidget {
                     ],
                   ),
                 ],
-              ),
-            ),
-            PopupMenuButton<String>(
-              onSelected: (v) {
-                if (v == 'delete') onDelete();
-              },
-              itemBuilder:
-                  (_) => [
-                    const PopupMenuItem(value: 'delete', child: Text('Sil')),
-                  ],
-              child: Icon(
-                Icons.more_vert_rounded,
-                size: 20,
-                color: Colors.grey[400],
               ),
             ),
           ],

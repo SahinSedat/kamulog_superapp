@@ -18,6 +18,22 @@ class JobMatchingScreen extends ConsumerWidget {
     return const Color(0xFFD32F2F);
   }
 
+  List<JobListingModel> _filteredJobs(
+    List<JobListingModel> jobs,
+    String query,
+  ) {
+    if (query.isEmpty) return jobs;
+    final q = query.toLowerCase();
+    return jobs
+        .where(
+          (j) =>
+              j.title.toLowerCase().contains(q) ||
+              j.description.toLowerCase().contains(q) ||
+              j.company.toLowerCase().contains(q),
+        )
+        .toList();
+  }
+
   void _startMatching(
     BuildContext context,
     WidgetRef ref,
@@ -42,54 +58,110 @@ class JobMatchingScreen extends ConsumerWidget {
     // Jetonu düş
     await pNotifier.decreaseCredits(2);
 
-    // CV içeriğini hazırla
-    final cvDoc = profil.documents.cast<DocumentInfo?>().firstWhere(
-      (doc) => doc != null && doc.category.toLowerCase() == 'cv',
-      orElse: () => null,
-    );
+    // CV içeriğini hazırla — TÜM kayıtlı CV belgelerini topla
+    final cvDocs =
+        profil.documents
+            .where((doc) => doc.category.toLowerCase() == 'cv')
+            .toList();
 
-    String cvContent;
-    if (cvDoc != null && cvDoc.content != null && cvDoc.content!.isNotEmpty) {
-      cvContent = cvDoc.content!;
-    } else {
-      cvContent =
-          'Ad: ${profil.name ?? "Belirtilmedi"}, Kurum: ${profil.institution}, Unvan: ${profil.title ?? "Belirtilmedi"}, Beceriler: ${profil.surveyInterests.join(", ")}';
+    final StringBuffer cvBuffer = StringBuffer();
+
+    // Kayıtlı CV belge içeriklerini ekle
+    for (final doc in cvDocs) {
+      if (doc.content != null && doc.content!.isNotEmpty) {
+        cvBuffer.writeln('--- ${doc.name} ---');
+        cvBuffer.writeln(doc.content!);
+        cvBuffer.writeln();
+      }
     }
 
-    // Mevcut ilanların özetini hazırla
+    // Profil bilgilerini ekle (CV'de olmayan bilgiler için)
+    cvBuffer.writeln('--- PROFİL BİLGİLERİ ---');
+    if (profil.name != null) cvBuffer.writeln('Ad Soyad: ${profil.name}');
+    if (profil.institution != null && profil.institution!.isNotEmpty) {
+      cvBuffer.writeln('Kurum: ${profil.institution}');
+    }
+    if (profil.title != null && profil.title!.isNotEmpty) {
+      cvBuffer.writeln('Unvan: ${profil.title}');
+    }
+    if (profil.city != null && profil.city!.isNotEmpty) {
+      cvBuffer.writeln('Şehir: ${profil.city}');
+    }
+    if (profil.employmentType != null) {
+      cvBuffer.writeln('Çalışma Durumu: ${profil.employmentType!.name}');
+    }
+    if (profil.surveyInterests.isNotEmpty) {
+      cvBuffer.writeln(
+        'İlgi Alanları/Beceriler: ${profil.surveyInterests.join(", ")}',
+      );
+    }
+
+    final cvContent = cvBuffer.toString().trim();
+
+    if (cvContent.isEmpty || cvDocs.isEmpty) {
+      if (context.mounted) {
+        AppToast.warning(
+          context,
+          'Lütfen önce CV yükleyin veya AI ile CV oluşturun.',
+        );
+      }
+      return;
+    }
+
+    // Mevcut ilanların özetini hazırla — TÜM ilanlar
     final jobsSummary = jobs
-        .take(10)
         .map((j) {
-          return '- İLAN#${j.id}: "${j.title}" | ${j.company} | ${j.description.length > 150 ? j.description.substring(0, 150) : j.description}';
+          final desc =
+              j.description.length > 300
+                  ? j.description.substring(0, 300)
+                  : j.description;
+          final reqs = j.requirements ?? 'Belirtilmedi';
+          return '- İLAN#${j.id}: "${j.title}" | ${j.company} | Gereksinimler: $reqs | Açıklama: $desc';
         })
         .join('\n');
 
-    // AI prompt — 7 uygun + 3 alternatif, detaylı puanlama
-    final matchingPrompt = '''
-SEN BİR KARİYER DANIŞMANISIN. Aşağıdaki CV ile SİSTEMDEKİ mevcut iş ilanlarını detaylı karşılaştır.
+    // Kullanıcının şehri
+    final userCity = profil.city ?? profil.surveyCity ?? '';
 
+    // Veriyi (CV + İlanlar) context olarak gönder (system prompt'a eklenir)
+    final dataContext = '''
 KULLANICININ CV BİLGİLERİ:
 $cvContent
 
-SİSTEMDEKİ MEVCUT İLANLAR:
+KULLANICININ YAŞADIĞI ŞEHİR: ${userCity.isNotEmpty ? userCity : 'Belirtilmedi'}
+
+SİSTEMDEMİZDEKİ İLANLAR:
 $jobsSummary
-
-GÖREVİN:
-Her ilan için şu formatta DETAYLI analiz yap (başka bir şey yazma):
-
-İLAN#[kod] %[genel_skor] [UYGUN veya ALTERNATİF]
-EĞİTİM:%[skor] DENEYİM:%[skor] BECERİ:%[skor] UYUM:%[skor]
-
-KURALLAR:
-- En uyumlu 7 ilana UYGUN etiketi ver
-- Geri kalan 3 ilana ALTERNATİF etiketi ver
-- Genel skor 0-100 arası olmalı
-- Alt kategoriler: EĞİTİM, DENEYİM, BECERİ, UYUM (her biri 0-100)
-- Sadece bu formatı kullan, yorum veya açıklama EKLEME
-- CV ile gerçekten uyumlu olanları UYGUN olarak işaretle
 ''';
 
-    ref.read(jobMatchingProvider.notifier).startJobMatching(matchingPrompt);
+    // Analiz talimatlarını message olarak gönder
+    final matchingMessage = '''
+SEN UZMAN BİR KARİYER DANIŞMANISIN. Yukarıdaki CV bilgileri ve ilanları analiz et.
+
+KRİTİK EŞLEME KURALLARI:
+1. SADECE kullanıcının eğitimi, unvanı, mesleği ve gerçek yetkinlikleriyle ÖRTÜŞEN ilanları UYGUN işaretle.
+2. Kullanıcının meslek alanıyla ALAKASIZ ilanları KESİNLİKLE önerme:
+   - Güvenlikçiye mühendislik ilanı ÖNERME
+   - Öğretmene şoförlük ilanı ÖNERME
+   - Muhasebeciye hemşirelik ilanı ÖNERME
+3. Eğitim seviyesi ve alanı EN ÖNEMLİ kriter (%35 ağırlık).
+4. Liyakat öncelikli — kullanıcının gerçekten yapabileceği işleri öner.
+5. Alternatif ilanlar bile kullanıcının sektörüyle YAKIN olmalı.
+6. ŞEHİR KURALI: Özel sektör ilanlarında kullanıcının yaşadığı şehirdeki ilanlara +5 puan bonusu ver. KAMU ilanlarında şehir önemli DEĞİL, kamu ilanları tüm Türkiye için geçerlidir.
+
+PUANLAMA: EĞİTİM %35, DENEYİM %25, BECERİ %20, UYUM %20
+- %60+ = UYGUN (max 7)
+- %40-59 = ALTERNATİF (sadece yakın alan)
+- %40 altı = LİSTELEME
+
+ÇIKTI FORMATI (SADECE bu format, başka hiçbir şey yazma):
+İLAN#[id] %[genel_skor] [UYGUN veya ALTERNATİF]
+EĞİTİM:%[skor] DENEYİM:%[skor] BECERİ:%[skor] UYUM:%[skor]
+''';
+
+    ref
+        .read(jobMatchingProvider.notifier)
+        .startJobMatchingWithContext(matchingMessage, dataContext);
   }
 
   @override
@@ -268,7 +340,37 @@ KURALLAR:
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ...jobs.take(10).map((job) {
+                  // Arama alanı
+                  TextField(
+                    onChanged:
+                        (val) => ref
+                            .read(jobMatchingProvider.notifier)
+                            .setSearchQuery(val),
+                    decoration: InputDecoration(
+                      hintText: 'İlan ara (başlık veya içerik)...',
+                      hintStyle: TextStyle(
+                        color: Colors.grey.shade400,
+                        fontSize: 14,
+                      ),
+                      prefixIcon: Icon(
+                        Icons.search_rounded,
+                        color: Colors.grey.shade400,
+                        size: 20,
+                      ),
+                      filled: true,
+                      fillColor: isDark ? Colors.white10 : Colors.grey.shade100,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ..._filteredJobs(jobs, state.searchQuery).map((job) {
                     final score = ref
                         .read(jobMatchingProvider.notifier)
                         .parseScoreForJob(job.id);
@@ -279,7 +381,8 @@ KURALLAR:
                         .read(jobMatchingProvider.notifier)
                         .parseSubScoresForJob(job.id);
 
-                    if (score == null && state.isLoading) {
+                    // Analiz bittiyse ve skor yoksa bu ilanı gösterme
+                    if (score == null) {
                       return const SizedBox.shrink();
                     }
 
@@ -380,40 +483,36 @@ KURALLAR:
                                   ],
                                 ),
                               ),
-                              if (score != null) ...[
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 6,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: _scoreColor(
-                                      score,
-                                    ).withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: Text(
-                                    '%$score',
-                                    style: TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w800,
-                                      color: _scoreColor(score),
-                                    ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: _scoreColor(
+                                    score,
+                                  ).withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Text(
+                                  '%$score',
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w800,
+                                    color: _scoreColor(score),
                                   ),
                                 ),
-                              ],
+                              ),
                             ],
                           ),
 
                           // Genel uyumluluk bar
-                          if (score != null) ...[
-                            const SizedBox(height: 14),
-                            _buildScoreBar(
-                              label: 'Genel Uyumluluk',
-                              score: score,
-                              isDark: isDark,
-                            ),
-                          ],
+                          const SizedBox(height: 14),
+                          _buildScoreBar(
+                            label: 'Genel Uyumluluk',
+                            score: score,
+                            isDark: isDark,
+                          ),
 
                           // Alt kategori grafikleri
                           if (subScores != null) ...[
@@ -488,9 +587,10 @@ KURALLAR:
                               Expanded(
                                 child: SizedBox(
                                   height: 40,
-                                  child: ElevatedButton.icon(
+                                  child: ElevatedButton(
                                     onPressed: () async {
-                                      final url = job.applicationUrl;
+                                      final url =
+                                          job.applicationUrl ?? job.sourceUrl;
                                       if (url != null && url.isNotEmpty) {
                                         final uri = Uri.parse(url);
                                         if (await canLaunchUrl(uri)) {
@@ -499,31 +599,20 @@ KURALLAR:
                                             mode:
                                                 LaunchMode.externalApplication,
                                           );
-                                        }
-                                      } else {
-                                        if (context.mounted) {
-                                          AppToast.info(
-                                            context,
-                                            'Başvuru bağlantısı bulunamadı. İlanı inceleyerek başvurabilirsiniz.',
-                                          );
+                                          return;
                                         }
                                       }
+                                      // Fallback: kamulogkariyer.com/jobs
+                                      if (context.mounted) {
+                                        final fallbackUri = Uri.parse(
+                                          'https://kamulogkariyer.com/jobs',
+                                        );
+                                        await launchUrl(
+                                          fallbackUri,
+                                          mode: LaunchMode.externalApplication,
+                                        );
+                                      }
                                     },
-                                    icon: Icon(
-                                      isUygun
-                                          ? Icons.check_circle_rounded
-                                          : Icons.open_in_new_rounded,
-                                      color: Colors.white,
-                                      size: 18,
-                                    ),
-                                    label: Text(
-                                      isUygun ? 'Başvur' : 'Yine de Başvur',
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w700,
-                                        color: Colors.white,
-                                      ),
-                                    ),
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor:
                                           isUygun
@@ -533,6 +622,22 @@ KURALLAR:
                                         borderRadius: BorderRadius.circular(10),
                                       ),
                                       elevation: 1,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                      ),
+                                    ),
+                                    child: FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      child: Text(
+                                        isUygun
+                                            ? '✅ Başvur'
+                                            : '📋 Yine de Başvur',
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w700,
+                                          color: Colors.white,
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ),

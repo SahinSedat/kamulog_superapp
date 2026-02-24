@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kamulog_superapp/core/theme/app_theme.dart';
 import 'package:kamulog_superapp/core/widgets/app_toast.dart';
+import 'package:kamulog_superapp/core/data/turkey_locations.dart';
 import 'package:kamulog_superapp/features/profil/presentation/providers/profil_provider.dart';
 import 'package:kamulog_superapp/features/kariyer/presentation/providers/jobs_provider.dart';
 import 'package:kamulog_superapp/features/kariyer/data/models/job_listing_model.dart';
@@ -17,6 +18,16 @@ class CareerScreen extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final profil = ref.watch(profilProvider);
     final jobsState = ref.watch(jobsProvider);
+
+    // İlk açılışta kullanıcının şehrini varsayılan filtre yap
+    if (jobsState.selectedCity.isEmpty &&
+        (profil.city ?? profil.surveyCity ?? '').isNotEmpty) {
+      Future.microtask(() {
+        ref
+            .read(jobsProvider.notifier)
+            .setCityFilter(profil.city ?? profil.surveyCity ?? '');
+      });
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -56,131 +67,352 @@ class CareerScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ── AI CV Oluşturucu Banner
-            _AiCvBanner(isDark: isDark, remaining: profil.remainingAiCvCount),
-            const SizedBox(height: 20),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          ref.invalidate(jobsProvider);
+          await Future.delayed(const Duration(milliseconds: 500));
+        },
+        color: AppTheme.primaryColor,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── AI CV Oluşturucu Banner
+              _AiCvBanner(isDark: isDark, remaining: profil.remainingAiCvCount),
+              const SizedBox(height: 20),
 
-            // ── CV Analizi
-            _CvAnalysisCard(isDark: isDark, hasCv: profil.hasCv),
-            const SizedBox(height: 20),
+              // ── CV Analizi
+              _CvAnalysisCard(isDark: isDark, hasCv: profil.hasCv),
+              const SizedBox(height: 20),
 
-            // ── Hızlı Eylemler
-            const Row(
-              children: [
-                Icon(
-                  Icons.flash_on_rounded,
-                  size: 18,
-                  color: AppTheme.primaryColor,
-                ),
-                SizedBox(width: 6),
-                Text(
-                  'Hızlı Eylemler',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Opacity(
-              opacity: profil.remainingAiCvCount > 0 ? 1.0 : 0.5,
-              child: _QuickActionCard(
-                icon: Icons.auto_awesome_rounded,
-                title: 'AI ile CV Oluştur',
-                subtitle:
-                    profil.remainingAiCvCount > 0
-                        ? 'Aylık 1 hak — ${profil.remainingAiCvCount} kullanım kaldı'
-                        : 'Bu ayki hakkınız doldu • PDF yükleyebilirsiniz',
-                color: const Color(0xFF1565C0),
-                onTap: () => _showAiCvBuilder(context, ref),
+              // ── Hızlı Eylemler
+              const Row(
+                children: [
+                  Icon(
+                    Icons.flash_on_rounded,
+                    size: 18,
+                    color: AppTheme.primaryColor,
+                  ),
+                  SizedBox(width: 6),
+                  Text(
+                    'Hızlı Eylemler',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(height: 10),
-            _QuickActionCard(
-              icon: Icons.upload_file_rounded,
-              title: 'Mevcut CV Yükle',
-              subtitle: 'PDF veya DOCX formatında CV yükleyin',
-              color: const Color(0xFF7B1FA2),
-              onTap: () => context.push('/documents'),
-            ),
-            const SizedBox(height: 10),
-            _QuickActionCard(
-              icon: Icons.hub_rounded,
-              title: 'AI İş Eşleştirme',
-              subtitle: '7 Uygun + 3 Alternatif İlan Önerisi',
-              color: const Color(0xFFF57C00),
-              onTap: () => _showJobMatching(context, ref),
-            ),
-            const SizedBox(height: 10),
-            _QuickActionCard(
-              icon: Icons.school_rounded,
-              title: 'KPSS Hazırlık',
-              subtitle: 'Sınav takvimi ve hazırlık kaynakları',
-              color: const Color(0xFFE65100),
-              onTap: () {
-                AppToast.info(context, 'KPSS modülü yakında aktif olacak');
-              },
-            ),
-
-            const SizedBox(height: 24),
-            // ── Güncel İş İlanları
-            const Row(
-              children: [
-                Icon(
-                  Icons.work_rounded,
-                  size: 18,
-                  color: AppTheme.primaryColor,
+              const SizedBox(height: 12),
+              Opacity(
+                opacity: profil.remainingAiCvCount > 0 ? 1.0 : 0.5,
+                child: _QuickActionCard(
+                  icon: Icons.auto_awesome_rounded,
+                  title: 'AI ile CV Oluştur',
+                  subtitle:
+                      profil.remainingAiCvCount > 0
+                          ? 'Aylık 1 hak — ${profil.remainingAiCvCount} kullanım kaldı'
+                          : 'Bu ayki hakkınız doldu • PDF yükleyebilirsiniz',
+                  color: const Color(0xFF1565C0),
+                  onTap: () => _showAiCvBuilder(context, ref),
                 ),
-                SizedBox(width: 6),
-                Text(
-                  'Güncel İş İlanları',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            jobsState.jobs.when(
-              data: (jobs) {
-                if (jobs.isEmpty) {
-                  return const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(20.0),
-                      child: Text('Şu an güncel ilan bulunmuyor.'),
+              ),
+              const SizedBox(height: 10),
+              Builder(
+                builder: (context) {
+                  // Sistemdeki CV sayısını kontrol et (max 2)
+                  final cvCount =
+                      profil.documents
+                          .where((d) => d.category.toLowerCase() == 'cv')
+                          .length;
+                  final cvFull = cvCount >= 2;
+                  return Opacity(
+                    opacity: cvFull ? 0.5 : 1.0,
+                    child: _QuickActionCard(
+                      icon:
+                          cvFull
+                              ? Icons.check_circle_rounded
+                              : Icons.upload_file_rounded,
+                      title:
+                          cvFull
+                              ? 'CV Hakkınız Doldu (2/2)'
+                              : 'Mevcut CV Yükle ($cvCount/2)',
+                      subtitle:
+                          cvFull
+                              ? 'Maksimum 2 CV hakkınız kullanıldı • Silip yeniden yükleyebilirsiniz'
+                              : 'PDF veya DOCX formatında CV yükleyin',
+                      color: cvFull ? Colors.grey : const Color(0xFF7B1FA2),
+                      onTap: cvFull ? null : () => context.push('/documents'),
                     ),
                   );
-                }
-                return Column(
-                  children:
-                      jobs
-                          .map(
-                            (job) => Padding(
-                              padding: const EdgeInsets.only(bottom: 10),
-                              child: _JobCard(job: job, isDark: isDark),
-                            ),
-                          )
-                          .toList(),
-                );
-              },
-              loading:
-                  () => const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(20.0),
-                      child: CircularProgressIndicator(),
+                },
+              ),
+              const SizedBox(height: 10),
+              _QuickActionCard(
+                icon: Icons.hub_rounded,
+                title: 'AI İş Eşleştirme',
+                subtitle: '7 Uygun + 3 Alternatif İlan Önerisi',
+                color: const Color(0xFFF57C00),
+                onTap: () => _showJobMatching(context, ref),
+              ),
+              const SizedBox(height: 10),
+              _QuickActionCard(
+                icon: Icons.school_rounded,
+                title: 'KPSS Hazırlık',
+                subtitle: 'Sınav takvimi ve hazırlık kaynakları',
+                color: const Color(0xFFE65100),
+                onTap: () {
+                  AppToast.info(context, 'KPSS modülü yakında aktif olacak');
+                },
+              ),
+
+              const SizedBox(height: 24),
+              // ── Güncel İş İlanları
+              const Row(
+                children: [
+                  Icon(
+                    Icons.work_rounded,
+                    size: 18,
+                    color: AppTheme.primaryColor,
+                  ),
+                  SizedBox(width: 6),
+                  Text(
+                    'Güncel İş İlanları',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              // ── Filtre Chips
+              SizedBox(
+                height: 40,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  children: [
+                    _FilterChip(
+                      label: 'Tümü',
+                      value: 'ALL',
+                      selected: jobsState.filterType == 'ALL',
+                      onSelected:
+                          () => ref
+                              .read(jobsProvider.notifier)
+                              .setFilterType('ALL'),
+                    ),
+                    const SizedBox(width: 8),
+                    _FilterChip(
+                      label: 'Kamu',
+                      value: 'PUBLIC',
+                      selected: jobsState.filterType == 'PUBLIC',
+                      onSelected:
+                          () => ref
+                              .read(jobsProvider.notifier)
+                              .setFilterType('PUBLIC'),
+                    ),
+                    const SizedBox(width: 8),
+                    _FilterChip(
+                      label: 'Özel',
+                      value: 'PRIVATE',
+                      selected: jobsState.filterType == 'PRIVATE',
+                      onSelected:
+                          () => ref
+                              .read(jobsProvider.notifier)
+                              .setFilterType('PRIVATE'),
+                    ),
+                    const SizedBox(width: 8),
+                    _FilterChip(
+                      label: 'Sözleşmeli',
+                      value: 'CONTRACT',
+                      selected: jobsState.filterType == 'CONTRACT',
+                      onSelected:
+                          () => ref
+                              .read(jobsProvider.notifier)
+                              .setFilterType('CONTRACT'),
+                    ),
+                    const SizedBox(width: 8),
+                    _FilterChip(
+                      label: 'İşçi',
+                      value: 'WORKER',
+                      selected: jobsState.filterType == 'WORKER',
+                      onSelected:
+                          () => ref
+                              .read(jobsProvider.notifier)
+                              .setFilterType('WORKER'),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              // ── Şehir Filtresi
+              GestureDetector(
+                onTap:
+                    () => _showCityPicker(context, ref, jobsState.selectedCity),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color:
+                        jobsState.selectedCity.isNotEmpty
+                            ? AppTheme.primaryColor.withValues(alpha: 0.1)
+                            : (isDark ? Colors.white10 : Colors.grey.shade100),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color:
+                          jobsState.selectedCity.isNotEmpty
+                              ? AppTheme.primaryColor
+                              : Colors.grey.shade300,
+                      width: 1,
                     ),
                   ),
-              error:
-                  (err, stack) => Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Text('İlanlar yüklenirken hata oluştu: \$err'),
-                    ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.location_on_rounded,
+                        size: 16,
+                        color:
+                            jobsState.selectedCity.isNotEmpty
+                                ? AppTheme.primaryColor
+                                : Colors.grey,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        jobsState.selectedCity.isNotEmpty
+                            ? jobsState.selectedCity
+                            : 'Tüm Şehirler',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color:
+                              jobsState.selectedCity.isNotEmpty
+                                  ? AppTheme.primaryColor
+                                  : Colors.grey.shade600,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      if (jobsState.selectedCity.isNotEmpty)
+                        GestureDetector(
+                          onTap:
+                              () => ref
+                                  .read(jobsProvider.notifier)
+                                  .setCityFilter(''),
+                          child: Icon(
+                            Icons.close,
+                            size: 16,
+                            color: AppTheme.primaryColor,
+                          ),
+                        )
+                      else
+                        Icon(
+                          Icons.arrow_drop_down,
+                          size: 18,
+                          color: Colors.grey.shade600,
+                        ),
+                    ],
                   ),
-            ),
-            const SizedBox(height: 20),
-          ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              // ── Arama alanı
+              TextField(
+                onChanged:
+                    (val) =>
+                        ref.read(jobsProvider.notifier).setSearchQuery(val),
+                decoration: InputDecoration(
+                  hintText: 'İlan ara (başlık, şirket veya içerik)...',
+                  hintStyle: TextStyle(
+                    color: Colors.grey.shade400,
+                    fontSize: 14,
+                  ),
+                  prefixIcon: Icon(
+                    Icons.search_rounded,
+                    color: Colors.grey.shade400,
+                    size: 20,
+                  ),
+                  filled: true,
+                  fillColor: isDark ? Colors.white10 : Colors.grey.shade100,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              jobsState.jobs.when(
+                data: (jobs) {
+                  // Şehir filtreleme
+                  final cityFilter = jobsState.selectedCity.toLowerCase();
+
+                  // Arama filtreleme
+                  final q = jobsState.searchQuery.toLowerCase();
+                  var filteredJobs = jobs.toList();
+
+                  // Şehir bazlı filtreleme
+                  if (cityFilter.isNotEmpty) {
+                    filteredJobs =
+                        filteredJobs
+                            .where(
+                              (j) => (j.location ?? '').toLowerCase().contains(
+                                cityFilter,
+                              ),
+                            )
+                            .toList();
+                  }
+
+                  // Kelime araması
+                  if (q.isNotEmpty) {
+                    filteredJobs =
+                        filteredJobs
+                            .where(
+                              (j) =>
+                                  j.title.toLowerCase().contains(q) ||
+                                  j.description.toLowerCase().contains(q) ||
+                                  j.company.toLowerCase().contains(q),
+                            )
+                            .toList();
+                  }
+                  if (filteredJobs.isEmpty) {
+                    return const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(20.0),
+                        child: Text('Şu an güncel ilan bulunmuyor.'),
+                      ),
+                    );
+                  }
+                  return Column(
+                    children:
+                        filteredJobs
+                            .map(
+                              (job) => Padding(
+                                padding: const EdgeInsets.only(bottom: 10),
+                                child: _JobCard(job: job, isDark: isDark),
+                              ),
+                            )
+                            .toList(),
+                  );
+                },
+                loading:
+                    () => const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(20.0),
+                        child: CircularProgressIndicator(),
+                      ),
+                    ),
+                error:
+                    (err, stack) => Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(20.0),
+                        child: Text('İlanlar yüklenirken hata oluştu: \$err'),
+                      ),
+                    ),
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
         ),
       ),
     );
@@ -198,6 +430,129 @@ class CareerScreen extends ConsumerWidget {
     }
 
     context.push('/career/cv-builder');
+  }
+
+  void _showCityPicker(BuildContext context, WidgetRef ref, String current) {
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        String search = '';
+        return StatefulBuilder(
+          builder: (ctx, setState) {
+            final allCities = TurkeyLocations.cities;
+            final filtered =
+                search.isEmpty
+                    ? allCities
+                    : allCities
+                        .where(
+                          (c) => c.toLowerCase().contains(search.toLowerCase()),
+                        )
+                        .toList();
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              title: const Text('Şehir Seçin'),
+              content: SizedBox(
+                width: double.maxFinite,
+                height: 400,
+                child: Column(
+                  children: [
+                    TextField(
+                      autofocus: true,
+                      decoration: InputDecoration(
+                        hintText: 'Şehir ara...',
+                        prefixIcon: const Icon(Icons.search, size: 20),
+                        filled: true,
+                        fillColor: Colors.grey.shade100,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                      onChanged: (v) => setState(() => search = v),
+                    ),
+                    const SizedBox(height: 10),
+                    // Tümü seçeneği
+                    ListTile(
+                      dense: true,
+                      leading: const Icon(Icons.public, size: 18),
+                      title: const Text(
+                        'Tüm Şehirler',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      trailing:
+                          current.isEmpty
+                              ? const Icon(
+                                Icons.check_circle,
+                                color: Colors.green,
+                                size: 20,
+                              )
+                              : null,
+                      onTap: () {
+                        ref.read(jobsProvider.notifier).setCityFilter('');
+                        Navigator.pop(ctx);
+                      },
+                    ),
+                    const Divider(height: 1),
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: filtered.length,
+                        itemBuilder: (_, i) {
+                          final city = filtered[i];
+                          final isSelected =
+                              city.toLowerCase() == current.toLowerCase();
+                          return ListTile(
+                            dense: true,
+                            leading: Icon(
+                              Icons.location_on_outlined,
+                              size: 18,
+                              color:
+                                  isSelected
+                                      ? AppTheme.primaryColor
+                                      : Colors.grey,
+                            ),
+                            title: Text(
+                              city,
+                              style: TextStyle(
+                                fontWeight:
+                                    isSelected
+                                        ? FontWeight.w700
+                                        : FontWeight.w500,
+                                color:
+                                    isSelected ? AppTheme.primaryColor : null,
+                              ),
+                            ),
+                            trailing:
+                                isSelected
+                                    ? const Icon(
+                                      Icons.check_circle,
+                                      color: Colors.green,
+                                      size: 20,
+                                    )
+                                    : null,
+                            onTap: () {
+                              ref
+                                  .read(jobsProvider.notifier)
+                                  .setCityFilter(city);
+                              Navigator.pop(ctx);
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   void _showJobMatching(BuildContext context, WidgetRef ref) {
@@ -398,7 +753,7 @@ class _QuickActionCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final Color color;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   const _QuickActionCard({
     required this.icon,
@@ -603,6 +958,60 @@ class _JobTag extends StatelessWidget {
           fontSize: 10,
           fontWeight: FontWeight.w600,
           color: color,
+        ),
+      ),
+    );
+  }
+}
+
+// ── Filter Chip
+class _FilterChip extends StatelessWidget {
+  final String label;
+  final String value;
+  final bool selected;
+  final VoidCallback onSelected;
+
+  const _FilterChip({
+    required this.label,
+    required this.value,
+    required this.selected,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return GestureDetector(
+      onTap: onSelected,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color:
+              selected
+                  ? AppTheme.primaryColor
+                  : (isDark
+                      ? Colors.white.withValues(alpha: 0.08)
+                      : Colors.grey.shade100),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color:
+                selected
+                    ? AppTheme.primaryColor
+                    : (isDark ? Colors.white24 : Colors.grey.shade300),
+            width: 1.2,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+            color:
+                selected
+                    ? Colors.white
+                    : (isDark ? Colors.white70 : Colors.grey.shade700),
+          ),
         ),
       ),
     );

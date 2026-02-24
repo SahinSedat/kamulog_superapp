@@ -74,7 +74,13 @@ CV OLUŞTURMA ÖZEL KURALLARI:
     // System message with context
     String systemMsg = _systemPrompt;
     if (context != null && context.isNotEmpty) {
-      systemMsg += '\n\nMevcut bağlam: Kullanıcı "$context" bölümünde.';
+      if (context.length > 200) {
+        // Uzun context = detaylı analiz verisi, olduğu gibi ekle
+        systemMsg += '\n\n$context';
+      } else {
+        // Kısa context = navigasyon bağlamı
+        systemMsg += '\n\nMevcut bağlam: Kullanıcı "$context" bölümünde.';
+      }
     }
     messages.add({'role': 'system', 'content': systemMsg});
 
@@ -99,7 +105,7 @@ CV OLUŞTURMA ÖZEL KURALLARI:
           'model': EnvConfig.openAiModel,
           'messages': messages,
           'stream': true,
-          'max_tokens': 1024,
+          'max_tokens': 2048,
           'temperature': 0.7,
         },
         options: Options(

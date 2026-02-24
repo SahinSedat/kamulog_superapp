@@ -45,6 +45,20 @@ class _ProfilEditScreenState extends ConsumerState<ProfilEditScreen> {
     _selectedCity = profil.city;
     _selectedDistrict = profil.district;
     _selectedInstitution = profil.institution;
+
+    // Dropdown değerlerini doğrula — listede yoksa null yap (crash önler)
+    if (_selectedCity != null &&
+        !TurkeyLocations.cities.contains(_selectedCity)) {
+      _selectedCity = null;
+    }
+    if (_selectedDistrict != null && _selectedCity != null) {
+      final districts = TurkeyLocations.getDistricts(_selectedCity!);
+      if (!districts.contains(_selectedDistrict)) {
+        _selectedDistrict = null;
+      }
+    } else if (_selectedDistrict != null && _selectedCity == null) {
+      _selectedDistrict = null;
+    }
   }
 
   @override

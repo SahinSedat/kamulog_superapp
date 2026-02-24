@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kamulog_superapp/core/theme/app_theme.dart';
 import 'package:kamulog_superapp/core/widgets/animated_bottom_nav.dart';
+import 'package:kamulog_superapp/core/widgets/profile_avatar.dart';
 import 'package:kamulog_superapp/features/auth/presentation/providers/auth_provider.dart';
 import 'package:kamulog_superapp/features/stk/presentation/screens/stk_screen.dart';
 import 'package:kamulog_superapp/features/becayis/presentation/screens/becayis_screen.dart';
@@ -155,30 +156,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                       ),
                       const SizedBox(width: 8),
                       // Profile
-                      GestureDetector(
+                      ProfileAvatar(
+                        radius: 18,
+                        showPremiumBadge: true,
                         onTap: () => context.push('/profile'),
-                        child: Container(
-                          width: 36,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.3),
-                              width: 1.5,
-                            ),
-                          ),
-                          child: Center(
-                            child: Text(
-                              (user?.name ?? 'K').substring(0, 1).toUpperCase(),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ),
-                        ),
                       ),
                     ],
                   ),
@@ -363,26 +344,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           ),
           Padding(
             padding: const EdgeInsets.only(right: 8),
-            child: GestureDetector(
+            child: ProfileAvatar(
+              radius: 17,
+              showPremiumBadge: true,
               onTap: () => context.push('/profile'),
-              child: Container(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(
-                  gradient: AppTheme.primaryGradient,
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Text(
-                    (user?.name ?? 'K').substring(0, 1).toUpperCase(),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-              ),
             ),
           ),
         ],

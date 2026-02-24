@@ -128,9 +128,9 @@ class ProfilState {
     }).length;
   }
 
-  /// Kalan AI CV hakkı (Ayda 1 kez, Premium iseniz sınırsız)
+  /// Kalan AI CV hakkı (Tüm kullanıcılar ayda 1 kez)
   int get remainingAiCvCount {
-    if (isPremium) return 999;
+    // Tüm kullanıcılar (premium dahil) ayda 1 CV hakkı
     return (1 - aiCvCountThisMonth).clamp(0, 1);
   }
 
@@ -160,7 +160,6 @@ class ProfilState {
   }
 }
 
-/// Belge bilgisi
 class DocumentInfo {
   final String id;
   final String name;
@@ -168,6 +167,7 @@ class DocumentInfo {
   final String fileType;
   final DateTime uploadDate;
   final String? content;
+  final String? filePath;
 
   const DocumentInfo({
     required this.id,
@@ -176,6 +176,7 @@ class DocumentInfo {
     required this.fileType,
     required this.uploadDate,
     this.content,
+    this.filePath,
   });
 
   Map<String, dynamic> toJson() => {
@@ -185,6 +186,7 @@ class DocumentInfo {
     'fileType': fileType,
     'uploadDate': uploadDate.toIso8601String(),
     if (content != null) 'content': content,
+    if (filePath != null) 'filePath': filePath,
   };
 
   factory DocumentInfo.fromJson(Map<String, dynamic> json) => DocumentInfo(
@@ -194,6 +196,7 @@ class DocumentInfo {
     fileType: json['fileType'],
     uploadDate: DateTime.parse(json['uploadDate']),
     content: json['content'] as String?,
+    filePath: json['filePath'] as String?,
   );
 }
 
