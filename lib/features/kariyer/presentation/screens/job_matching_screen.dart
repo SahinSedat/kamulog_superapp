@@ -62,9 +62,9 @@ class JobMatchingScreen extends ConsumerWidget {
         })
         .join('\n');
 
-    // AI'ya prompt: sadece puan ve kategori, yorum yok
+    // AI prompt — 7 uygun + 3 alternatif, detaylı puanlama
     final matchingPrompt = '''
-SEN BİR KARİYER DANIŞMANISIN. Aşağıdaki CV ile SİSTEMDEKİ mevcut iş ilanlarını karşılaştır.
+SEN BİR KARİYER DANIŞMANISIN. Aşağıdaki CV ile SİSTEMDEKİ mevcut iş ilanlarını detaylı karşılaştır.
 
 KULLANICININ CV BİLGİLERİ:
 $cvContent
@@ -73,12 +73,18 @@ SİSTEMDEKİ MEVCUT İLANLAR:
 $jobsSummary
 
 GÖREVİN:
-Her ilan için SADECE aşağıdaki formatta tek satır yaz. Yorum veya açıklama EKLEME:
+Her ilan için şu formatta DETAYLI analiz yap (başka bir şey yazma):
 
-İLAN#[kod] %[skor] [UYGUN veya ALTERNATİF]
+İLAN#[kod] %[genel_skor] [UYGUN veya ALTERNATİF]
+EĞİTİM:%[skor] DENEYİM:%[skor] BECERİ:%[skor] UYUM:%[skor]
 
-En uygun 5 ilana UYGUN, geri kalan 2'sine ALTERNATİF etiketini ver.
-Skor 0-100 arası olmalı. Başka hiçbir şey yazma.
+KURALLAR:
+- En uyumlu 7 ilana UYGUN etiketi ver
+- Geri kalan 3 ilana ALTERNATİF etiketi ver
+- Genel skor 0-100 arası olmalı
+- Alt kategoriler: EĞİTİM, DENEYİM, BECERİ, UYUM (her biri 0-100)
+- Sadece bu formatı kullan, yorum veya açıklama EKLEME
+- CV ile gerçekten uyumlu olanları UYGUN olarak işaretle
 ''';
 
     ref.read(jobMatchingProvider.notifier).startJobMatching(matchingPrompt);
@@ -175,15 +181,16 @@ Skor 0-100 arası olmalı. Başka hiçbir şey yazma.
           ),
           _AnalysisInfoRow(
             icon: Icons.bar_chart_rounded,
-            title: '5 Uygun + 2 Alternatif',
+            title: '7 Uygun + 3 Alternatif',
             subtitle:
-                'En uygun 5 ilan ve 2 alternatif ilan grafikleriyle gösterilecek',
+                'En uyumlu 7 ilan ve 3 alternatif ilan detaylı grafiklerle gösterilecek',
             isDark: isDark,
           ),
           _AnalysisInfoRow(
             icon: Icons.touch_app_rounded,
-            title: 'Detay ve Başvuru',
-            subtitle: 'Her ilanı inceleyip detaylı analiz yapabileceksiniz',
+            title: 'Detaylı Grafikler',
+            subtitle:
+                'Eğitim, deneyim, beceri ve uyum puanları ayrı ayrı gösterilecek',
             isDark: isDark,
           ),
           const SizedBox(height: 48),
@@ -266,10 +273,15 @@ Skor 0-100 arası olmalı. Başka hiçbir şey yazma.
                     final type = ref
                         .read(jobMatchingProvider.notifier)
                         .parseTypeForJob(job.id);
+                    final subScores = ref
+                        .read(jobMatchingProvider.notifier)
+                        .parseSubScoresForJob(job.id);
 
                     if (score == null && state.isLoading) {
                       return const SizedBox.shrink();
                     }
+
+                    final isUygun = type == 'UYGUN';
 
                     return Container(
                       margin: const EdgeInsets.only(bottom: 16),
@@ -279,17 +291,23 @@ Skor 0-100 arası olmalı. Başka hiçbir şey yazma.
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
                           color:
-                              score != null && score >= 70
+                              isUygun
                                   ? const Color(
                                     0xFF2E7D32,
-                                  ).withValues(alpha: 0.3)
+                                  ).withValues(alpha: 0.4)
                                   : (isDark
                                       ? Colors.white12
                                       : Colors.grey.shade200),
+                          width: isUygun ? 1.5 : 1,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.03),
+                            color:
+                                isUygun
+                                    ? const Color(
+                                      0xFF2E7D32,
+                                    ).withValues(alpha: 0.08)
+                                    : Colors.black.withValues(alpha: 0.03),
                             blurRadius: 10,
                             offset: const Offset(0, 2),
                           ),
@@ -298,70 +316,58 @@ Skor 0-100 arası olmalı. Başka hiçbir şey yazma.
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // Başlık + Etiket + Skor
                           Row(
                             children: [
+                              if (type != null) ...[
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 3,
+                                  ),
+                                  margin: const EdgeInsets.only(right: 8),
+                                  decoration: BoxDecoration(
+                                    color:
+                                        isUygun
+                                            ? const Color(
+                                              0xFF2E7D32,
+                                            ).withValues(alpha: 0.12)
+                                            : const Color(
+                                              0xFFF57C00,
+                                            ).withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    type,
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                      color:
+                                          isUygun
+                                              ? const Color(0xFF2E7D32)
+                                              : const Color(0xFFF57C00),
+                                    ),
+                                  ),
+                                ),
+                              ],
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Row(
-                                      children: [
-                                        if (type != null) ...[
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 8,
-                                              vertical: 3,
-                                            ),
-                                            margin: const EdgeInsets.only(
-                                              right: 8,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color:
-                                                  type == 'UYGUN'
-                                                      ? const Color(
-                                                        0xFF2E7D32,
-                                                      ).withValues(alpha: 0.1)
-                                                      : const Color(
-                                                        0xFFF57C00,
-                                                      ).withValues(alpha: 0.1),
-                                              borderRadius:
-                                                  BorderRadius.circular(6),
-                                            ),
-                                            child: Text(
-                                              type,
-                                              style: TextStyle(
-                                                fontSize: 10,
-                                                fontWeight: FontWeight.w700,
-                                                color:
-                                                    type == 'UYGUN'
-                                                        ? const Color(
-                                                          0xFF2E7D32,
-                                                        )
-                                                        : const Color(
-                                                          0xFFF57C00,
-                                                        ),
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                        Expanded(
-                                          child: Text(
-                                            job.title,
-                                            style: TextStyle(
-                                              fontSize: 15,
-                                              fontWeight: FontWeight.w700,
-                                              color:
-                                                  isDark
-                                                      ? Colors.white
-                                                      : Colors.black87,
-                                            ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ),
-                                      ],
+                                    Text(
+                                      job.title,
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w700,
+                                        color:
+                                            isDark
+                                                ? Colors.white
+                                                : Colors.black87,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
-                                    const SizedBox(height: 4),
+                                    const SizedBox(height: 2),
                                     Text(
                                       '${job.company} • ${(job.location ?? '')}',
                                       style: TextStyle(
@@ -396,24 +402,50 @@ Skor 0-100 arası olmalı. Başka hiçbir şey yazma.
                               ],
                             ],
                           ),
+
+                          // Genel uyumluluk bar
                           if (score != null) ...[
-                            const SizedBox(height: 16),
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: LinearProgressIndicator(
-                                value: score / 100,
-                                minHeight: 8,
-                                backgroundColor:
-                                    isDark
-                                        ? Colors.grey[800]
-                                        : Colors.grey[200],
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  _scoreColor(score),
-                                ),
-                              ),
+                            const SizedBox(height: 14),
+                            _buildScoreBar(
+                              label: 'Genel Uyumluluk',
+                              score: score,
+                              isDark: isDark,
                             ),
                           ],
-                          const SizedBox(height: 16),
+
+                          // Alt kategori grafikleri
+                          if (subScores != null) ...[
+                            const SizedBox(height: 8),
+                            _buildScoreBar(
+                              label: 'Eğitim',
+                              score: subScores['egitim'] ?? 0,
+                              isDark: isDark,
+                              color: const Color(0xFF1565C0),
+                            ),
+                            const SizedBox(height: 4),
+                            _buildScoreBar(
+                              label: 'Deneyim',
+                              score: subScores['deneyim'] ?? 0,
+                              isDark: isDark,
+                              color: const Color(0xFF7B1FA2),
+                            ),
+                            const SizedBox(height: 4),
+                            _buildScoreBar(
+                              label: 'Beceri',
+                              score: subScores['beceri'] ?? 0,
+                              isDark: isDark,
+                              color: const Color(0xFFF57C00),
+                            ),
+                            const SizedBox(height: 4),
+                            _buildScoreBar(
+                              label: 'Uyum',
+                              score: subScores['uyum'] ?? 0,
+                              isDark: isDark,
+                              color: const Color(0xFF2E7D32),
+                            ),
+                          ],
+
+                          const SizedBox(height: 14),
                           SizedBox(
                             width: double.infinity,
                             height: 40,
@@ -482,6 +514,55 @@ Skor 0-100 arası olmalı. Başka hiçbir şey yazma.
             ),
           ),
         ],
+      ],
+    );
+  }
+
+  /// Detaylı skor bar widget
+  Widget _buildScoreBar({
+    required String label,
+    required int score,
+    required bool isDark,
+    Color? color,
+  }) {
+    final barColor = color ?? _scoreColor(score);
+    return Row(
+      children: [
+        SizedBox(
+          width: 70,
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: isDark ? Colors.grey[400] : Colors.grey[600],
+            ),
+          ),
+        ),
+        Expanded(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: score / 100,
+              minHeight: 6,
+              backgroundColor: isDark ? Colors.grey[800] : Colors.grey[200],
+              valueColor: AlwaysStoppedAnimation<Color>(barColor),
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        SizedBox(
+          width: 32,
+          child: Text(
+            '%$score',
+            textAlign: TextAlign.right,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: barColor,
+            ),
+          ),
+        ),
       ],
     );
   }

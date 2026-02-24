@@ -106,7 +106,7 @@ class CareerScreen extends ConsumerWidget {
             _QuickActionCard(
               icon: Icons.hub_rounded,
               title: 'AI İş Eşleştirme',
-              subtitle: '4 Uygun + 2 Alternatif İlan Önerisi',
+              subtitle: '7 Uygun + 3 Alternatif İlan Önerisi',
               color: const Color(0xFFF57C00),
               onTap: () => _showJobMatching(context, ref),
             ),

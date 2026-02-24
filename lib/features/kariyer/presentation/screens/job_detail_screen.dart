@@ -461,7 +461,7 @@ class JobDetailScreen extends ConsumerWidget {
   }
 }
 
-/// Tekli ilan AI analizi bottom sheet
+/// Tekli ilan AI analizi bottom sheet — detaylı grafiklerle
 class _AnalysisBottomSheet extends ConsumerStatefulWidget {
   final JobListingModel job;
   final String cvContent;
@@ -495,7 +495,7 @@ class _AnalysisBottomSheetState extends ConsumerState<_AnalysisBottomSheet> {
     final conversationId = const Uuid().v4();
 
     final prompt = '''
-SEN BİR İK UZMANSIN. Aşağıdaki iş ilanını kullanıcının CV'si ile karşılaştır.
+SEN BİR İK UZMANSIN. Aşağıdaki iş ilanını kullanıcının CV'si ile DETAYLI karşılaştır.
 
 İLAN BİLGİLERİ:
 Başlık: ${widget.job.title}
@@ -507,16 +507,21 @@ KULLANICININ CV'Sİ:
 ${widget.cvContent}
 
 GÖREVİN:
-1. Uyumluluk puanı ver (0-100 arası, %XX formatında)
-2. 3 madde güçlü yönler
-3. 3 madde geliştirilmesi gereken yönler
-Kısa ve öz yaz. Türkçe yanıtla.
+Aşağıdaki FORMATTA yanıt ver (başka bir şey yazma):
+
+GENEL:%[skor]
+EĞİTİM:%[skor]
+DENEYİM:%[skor]
+BECERİ:%[skor]
+UYUM:%[skor]
+---
+[2-3 cümle çok kısa gerekçe ve ilan hakkında bilgi. Güçlü ve zayıf yönleri tek satırda belirt.]
 ''';
 
     _sub = repository
         .sendMessage(
           conversationId: conversationId,
-          message: 'Bu ilan için CV analizi yap.',
+          message: 'Bu ilan için detaylı CV analizi yap.',
           context: prompt,
           history: [],
         )
@@ -546,13 +551,86 @@ Kısa ve öz yaz. Türkçe yanıtla.
         );
   }
 
+  /// Skorları parse et
+  int _parseScore(String label) {
+    final match = RegExp('$label:%?(\\d+)').firstMatch(_analysisResult);
+    if (match != null) return int.tryParse(match.group(1)!) ?? 0;
+    return 0;
+  }
+
+  /// Gerekçeyi parse et (--- sonrası)
+  String _parseRationale() {
+    final parts = _analysisResult.split('---');
+    if (parts.length > 1) return parts.sublist(1).join('---').trim();
+    return '';
+  }
+
+  Color _scoreColor(int score) {
+    if (score >= 70) return const Color(0xFF2E7D32);
+    if (score >= 40) return const Color(0xFFF57C00);
+    return const Color(0xFFD32F2F);
+  }
+
+  Widget _buildScoreBar(String label, int score, Color color, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 80,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
+              ),
+            ),
+          ),
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: score / 100,
+                minHeight: 8,
+                backgroundColor: isDark ? Colors.grey[800] : Colors.grey[200],
+                valueColor: AlwaysStoppedAnimation<Color>(color),
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          SizedBox(
+            width: 36,
+            child: Text(
+              '%$score',
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+                color: color,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    final genelScore = _parseScore('GENEL');
+    final egitimScore = _parseScore('EĞİTİM');
+    final deneyimScore = _parseScore('DENEYİM');
+    final beceriScore = _parseScore('BECERİ');
+    final uyumScore = _parseScore('UYUM');
+    final rationale = _parseRationale();
+    final hasScores = genelScore > 0;
+
     return Container(
       constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.75,
+        maxHeight: MediaQuery.of(context).size.height * 0.8,
       ),
       decoration: BoxDecoration(
         color: isDark ? AppTheme.cardDark : Colors.white,
@@ -609,6 +687,25 @@ Kısa ve öz yaz. Türkçe yanıtla.
                     ],
                   ),
                 ),
+                if (hasScores)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _scoreColor(genelScore).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '%$genelScore',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                        color: _scoreColor(genelScore),
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -620,7 +717,110 @@ Kısa ve öz yaz. Türkçe yanıtla.
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (_analysisResult.isNotEmpty)
+                  // Detaylı grafikler
+                  if (hasScores) ...[
+                    Text(
+                      'Uyumluluk Grafikleri',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildScoreBar(
+                      'Genel',
+                      genelScore,
+                      _scoreColor(genelScore),
+                      isDark,
+                    ),
+                    _buildScoreBar(
+                      'Eğitim',
+                      egitimScore,
+                      const Color(0xFF1565C0),
+                      isDark,
+                    ),
+                    _buildScoreBar(
+                      'Deneyim',
+                      deneyimScore,
+                      const Color(0xFF7B1FA2),
+                      isDark,
+                    ),
+                    _buildScoreBar(
+                      'Beceri',
+                      beceriScore,
+                      const Color(0xFFF57C00),
+                      isDark,
+                    ),
+                    _buildScoreBar(
+                      'Uyum',
+                      uyumScore,
+                      const Color(0xFF2E7D32),
+                      isDark,
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+
+                  // Kısa gerekçe
+                  if (rationale.isNotEmpty) ...[
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color:
+                            isDark
+                                ? Colors.white.withValues(alpha: 0.05)
+                                : Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: isDark ? Colors.white12 : Colors.grey.shade200,
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.lightbulb_outline_rounded,
+                                size: 16,
+                                color:
+                                    isDark
+                                        ? Colors.amber[300]
+                                        : Colors.amber[700],
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Değerlendirme',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color:
+                                      isDark
+                                          ? Colors.amber[300]
+                                          : Colors.amber[700],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          SelectableText(
+                            rationale,
+                            style: TextStyle(
+                              fontSize: 13,
+                              height: 1.5,
+                              color: isDark ? Colors.white70 : Colors.black87,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+
+                  // Yükleme durumları
+                  if (!hasScores &&
+                      _analysisResult.isNotEmpty &&
+                      !_isLoading) ...[
                     SelectableText(
                       _analysisResult,
                       style: TextStyle(
@@ -629,6 +829,8 @@ Kısa ve öz yaz. Türkçe yanıtla.
                         color: isDark ? Colors.white70 : Colors.black87,
                       ),
                     ),
+                  ],
+
                   if (_isLoading) ...[
                     const SizedBox(height: 16),
                     Row(

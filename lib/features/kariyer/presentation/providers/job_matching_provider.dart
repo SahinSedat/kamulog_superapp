@@ -91,12 +91,13 @@ class JobMatchingNotifier extends Notifier<JobMatchingState> {
     }
   }
 
-  /// İlan ID'sine göre uyumluluk puanını parse et
+  /// İlan ID'sine göre genel uyumluluk puanını parse et
   int? parseScoreForJob(String jobId) {
     if (state.aiContent.isEmpty) return null;
     final lines = state.aiContent.split('\n');
     for (final line in lines) {
       if (line.contains('İLAN#$jobId') || line.contains(jobId)) {
+        // Genel skor: ilk %XX değeri
         final match = RegExp(r'%(\d+)').firstMatch(line);
         if (match != null) return int.tryParse(match.group(1)!);
       }
@@ -112,6 +113,40 @@ class JobMatchingNotifier extends Notifier<JobMatchingState> {
       if (line.contains('İLAN#$jobId') || line.contains(jobId)) {
         if (line.contains('ALTERNATİF')) return 'ALTERNATİF';
         if (line.contains('UYGUN')) return 'UYGUN';
+      }
+    }
+    return null;
+  }
+
+  /// Alt kategori puanlarını parse et (EĞİTİM, DENEYİM, BECERİ, UYUM)
+  Map<String, int>? parseSubScoresForJob(String jobId) {
+    if (state.aiContent.isEmpty) return null;
+    final lines = state.aiContent.split('\n');
+
+    // İlan ID'sini içeren satırın bir sonraki satırında alt skorlar
+    for (int i = 0; i < lines.length; i++) {
+      if (lines[i].contains('İLAN#$jobId') || lines[i].contains(jobId)) {
+        // Aynı satırda veya bir sonraki satırda alt skorları ara
+        final searchLines = [lines[i], if (i + 1 < lines.length) lines[i + 1]];
+
+        for (final line in searchLines) {
+          final egitimMatch = RegExp(r'EĞİTİM:%(\d+)').firstMatch(line);
+          final deneyimMatch = RegExp(r'DENEYİM:%(\d+)').firstMatch(line);
+          final beceriMatch = RegExp(r'BECERİ:%(\d+)').firstMatch(line);
+          final uyumMatch = RegExp(r'UYUM:%(\d+)').firstMatch(line);
+
+          if (egitimMatch != null ||
+              deneyimMatch != null ||
+              beceriMatch != null ||
+              uyumMatch != null) {
+            return {
+              'egitim': int.tryParse(egitimMatch?.group(1) ?? '0') ?? 0,
+              'deneyim': int.tryParse(deneyimMatch?.group(1) ?? '0') ?? 0,
+              'beceri': int.tryParse(beceriMatch?.group(1) ?? '0') ?? 0,
+              'uyum': int.tryParse(uyumMatch?.group(1) ?? '0') ?? 0,
+            };
+          }
+        }
       }
     }
     return null;

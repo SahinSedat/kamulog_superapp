@@ -187,7 +187,10 @@ class _AiCvBuilderScreenState extends ConsumerState<AiCvBuilderScreen> {
             color: isDark ? Colors.white : AppTheme.primaryColor,
             size: 20,
           ),
-          onPressed: () => context.pop(),
+          onPressed: () {
+            // Geri giderken state'i silme — kullanıcı döndüğünde devam eder
+            context.pop();
+          },
         ),
         title: Row(
           children: [
@@ -230,7 +233,7 @@ class _AiCvBuilderScreenState extends ConsumerState<AiCvBuilderScreen> {
               color: isDark ? Colors.white70 : Colors.black54,
             ),
             onPressed: () {
-              ref.read(cvBuilderProvider.notifier).startCvBuilding();
+              ref.read(cvBuilderProvider.notifier).restartCvBuilding();
             },
             tooltip: 'Yeniden Başlat',
           ),
