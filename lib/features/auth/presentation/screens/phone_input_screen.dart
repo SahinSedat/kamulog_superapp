@@ -17,7 +17,6 @@ class PhoneInputScreen extends ConsumerStatefulWidget {
 class _PhoneInputScreenState extends ConsumerState<PhoneInputScreen>
     with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _phoneMask = MaskTextInputFormatter(
     mask: '### ### ## ##',
@@ -50,7 +49,6 @@ class _PhoneInputScreenState extends ConsumerState<PhoneInputScreen>
 
   @override
   void dispose() {
-    _nameController.dispose();
     _phoneController.dispose();
     _animController.dispose();
     super.dispose();
@@ -61,8 +59,7 @@ class _PhoneInputScreenState extends ConsumerState<PhoneInputScreen>
 
     final phone = _phoneMask.getUnmaskedText();
     final formattedPhone = Formatters.formatPhoneForApi(phone);
-    final name = _nameController.text.trim();
-    ref.read(authProvider.notifier).sendOtp(formattedPhone, displayName: name);
+    ref.read(authProvider.notifier).sendOtp(formattedPhone);
   }
 
   @override
@@ -148,45 +145,6 @@ class _PhoneInputScreenState extends ConsumerState<PhoneInputScreen>
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 48),
-
-                      // Name field label
-                      Text(
-                        'Ad Soyad',
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-
-                      // Name field
-                      TextFormField(
-                        controller: _nameController,
-                        keyboardType: TextInputType.name,
-                        textCapitalization: TextCapitalization.words,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        validator: (v) {
-                          if (v == null || v.trim().isEmpty) {
-                            return 'Ad soyad zorunludur';
-                          }
-                          if (v.trim().length < 3) {
-                            return 'En az 3 karakter olmalıdır';
-                          }
-                          return null;
-                        },
-                        decoration: InputDecoration(
-                          hintText: 'Adınız ve soyadınız',
-                          prefixIcon: Icon(
-                            Icons.person_outline_rounded,
-                            color: theme.colorScheme.primary,
-                            size: 22,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
 
                       // Phone field label
                       Text(

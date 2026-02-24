@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kamulog_superapp/features/auth/presentation/providers/auth_provider.dart';
+import 'package:kamulog_superapp/features/auth/data/datasources/user_remote_datasource.dart';
 import 'package:kamulog_superapp/core/constants/enums.dart';
 import 'package:kamulog_superapp/core/storage/local_storage_service.dart';
 
@@ -240,7 +242,11 @@ class DocumentInfo {
 }
 
 class ProfilNotifier extends StateNotifier<ProfilState> {
-  ProfilNotifier() : super(const ProfilState()) {
+  final UserRemoteDataSource? _userRemoteDataSource;
+
+  ProfilNotifier({UserRemoteDataSource? userRemoteDataSource})
+    : _userRemoteDataSource = userRemoteDataSource,
+      super(const ProfilState()) {
     _init();
   }
 
@@ -396,6 +402,53 @@ class ProfilNotifier extends StateNotifier<ProfilState> {
       institution: institution,
       title: title,
     );
+
+    // Backend'e de kaydet (arka planda)
+    _syncProfileToBackend();
+  }
+
+  /// Backend'den profil verilerini çek ve lokal cache'i güncelle
+  Future<void> syncFromBackend() async {
+    if (_userRemoteDataSource == null) return;
+    try {
+      final backendUser = await _userRemoteDataSource.fetchUserProfile();
+      if (backendUser != null) {
+        // Backend'den gelen profil verilerini lokal state'e merge et
+        state = state.copyWith(
+          name: backendUser.name ?? state.name,
+          email: backendUser.email ?? state.email,
+          title: backendUser.title ?? state.title,
+          credits:
+              backendUser.credits > 0 ? backendUser.credits : state.credits,
+        );
+      }
+    } catch (e) {
+      debugPrint('⚠️ Profil backend sync hatası: $e');
+    }
+  }
+
+  /// Mevcut profil verilerini backend'e kaydet
+  Future<void> _syncProfileToBackend() async {
+    if (_userRemoteDataSource == null) return;
+    try {
+      await _userRemoteDataSource.syncUserProfile({
+        if (state.name != null) 'name': state.name,
+        if (state.email != null) 'email': state.email,
+        if (state.tcKimlik != null) 'tcKimlik': state.tcKimlik,
+        if (state.city != null) 'city': state.city,
+        if (state.district != null) 'district': state.district,
+        if (state.addressLine != null) 'addressLine': state.addressLine,
+        if (state.postalCode != null) 'postalCode': state.postalCode,
+        if (state.employmentType != null)
+          'employmentType': state.employmentType!.name,
+        if (state.yearsWorking != null) 'yearsWorking': state.yearsWorking,
+        if (state.institution != null) 'institution': state.institution,
+        if (state.title != null) 'title': state.title,
+        'credits': state.credits,
+      });
+    } catch (e) {
+      debugPrint('⚠️ Profil backend kaydetme hatası: $e');
+    }
   }
 
   /// Belge ekle
@@ -434,7 +487,8 @@ class ProfilNotifier extends StateNotifier<ProfilState> {
 final profilProvider = StateNotifierProvider<ProfilNotifier, ProfilState>((
   ref,
 ) {
-  final notifier = ProfilNotifier();
+  final userRemoteDS = ref.watch(userRemoteDataSourceProvider);
+  final notifier = ProfilNotifier(userRemoteDataSource: userRemoteDS);
   final user = ref.watch(currentUserProvider);
   notifier.loadFromAuth(user);
   return notifier;

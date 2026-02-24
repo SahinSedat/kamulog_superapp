@@ -10,6 +10,7 @@ import 'package:kamulog_superapp/features/kariyer/data/models/job_listing_model.
 import 'package:kamulog_superapp/features/kariyer/presentation/providers/job_matching_provider.dart';
 import 'package:kamulog_superapp/features/kariyer/presentation/providers/jobs_provider.dart';
 import 'package:kamulog_superapp/features/profil/presentation/providers/profil_provider.dart';
+import 'package:kamulog_superapp/core/providers/core_providers.dart';
 
 class JobMatchingScreen extends ConsumerWidget {
   const JobMatchingScreen({super.key});
@@ -41,6 +42,20 @@ class JobMatchingScreen extends ConsumerWidget {
     WidgetRef ref,
     List<JobListingModel> jobs,
   ) async {
+    // İnternet bağlantısı kontrolü
+    final connectivity = ref.read(connectivityProvider);
+    if (!connectivity.isConnected) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'İnternet bağlantınız yok. Lütfen bağlantınızı kontrol edin.',
+          ),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
     final profil = ref.read(profilProvider);
     final pNotifier = ref.read(profilProvider.notifier);
     final hasCredits = profil.hasEnoughCredits(2);

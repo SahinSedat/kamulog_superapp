@@ -289,105 +289,129 @@ class _DocumentsScreenState extends ConsumerState<DocumentsScreen>
   void _showUploadOptions() {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder:
-          (ctx) => Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(2),
-                  ),
+          (ctx) => SafeArea(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(ctx).size.height * 0.6,
+              ),
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(
+                  20,
+                  20,
+                  20,
+                  20 + MediaQuery.of(ctx).viewInsets.bottom,
                 ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Belge Yükle',
-                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Belge Yükle',
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    _UploadOption(
+                      icon: Icons.description_rounded,
+                      title: 'CV Yükle',
+                      subtitle: () {
+                        final cvCount =
+                            ref
+                                .read(profilProvider)
+                                .documents
+                                .where((d) => d.category.toLowerCase() == 'cv')
+                                .length;
+                        return cvCount >= 2
+                            ? 'Maksimum 2 CV hakkınız doldu ($cvCount/2)'
+                            : 'PDF, DOCX formatında (AI Analizine Uygun) ($cvCount/2)';
+                      }(),
+                      color: () {
+                        final cvCount =
+                            ref
+                                .read(profilProvider)
+                                .documents
+                                .where((d) => d.category.toLowerCase() == 'cv')
+                                .length;
+                        return cvCount >= 2
+                            ? Colors.grey
+                            : const Color(0xFF1565C0);
+                      }(),
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        final cvCount =
+                            ref
+                                .read(profilProvider)
+                                .documents
+                                .where((d) => d.category.toLowerCase() == 'cv')
+                                .length;
+                        if (cvCount >= 2) {
+                          AppToast.warning(
+                            context,
+                            'Maksimum 2 CV hakkınız doldu. Mevcut CV\'nizi silip tekrar yükleyebilirsiniz.',
+                          );
+                          return;
+                        }
+                        _pickAndUpload(DocumentCategory.cv, 'CV Belgesi');
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                    _UploadOption(
+                      icon: Icons.groups_rounded,
+                      title: 'STK Belgesi',
+                      subtitle: 'Üyelik belgesi, yetki belgesi vb.',
+                      color: const Color(0xFF7B1FA2),
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        _pickAndUpload(
+                          DocumentCategory.stk,
+                          'STK Üyelik Belgesi',
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                    _UploadOption(
+                      icon: Icons.badge_rounded,
+                      title: 'Kimlik Belgesi',
+                      subtitle: 'Nüfus cüzdanı, ehliyet, pasaport',
+                      color: const Color(0xFFE65100),
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        _pickAndUpload(
+                          DocumentCategory.kimlik,
+                          'Kimlik Belgesi',
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                    _UploadOption(
+                      icon: Icons.folder_rounded,
+                      title: 'Diğer Belge',
+                      subtitle: 'Diploma, sertifika, referans mektubu',
+                      color: const Color(0xFF2E7D32),
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        _pickAndUpload(DocumentCategory.diger, 'Diğer Belge');
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                  ],
                 ),
-                const SizedBox(height: 20),
-                _UploadOption(
-                  icon: Icons.description_rounded,
-                  title: 'CV Yükle',
-                  subtitle: () {
-                    final cvCount =
-                        ref
-                            .read(profilProvider)
-                            .documents
-                            .where((d) => d.category.toLowerCase() == 'cv')
-                            .length;
-                    return cvCount >= 2
-                        ? 'Maksimum 2 CV hakkınız doldu ($cvCount/2)'
-                        : 'PDF, DOCX formatında (AI Analizine Uygun) ($cvCount/2)';
-                  }(),
-                  color: () {
-                    final cvCount =
-                        ref
-                            .read(profilProvider)
-                            .documents
-                            .where((d) => d.category.toLowerCase() == 'cv')
-                            .length;
-                    return cvCount >= 2 ? Colors.grey : const Color(0xFF1565C0);
-                  }(),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    final cvCount =
-                        ref
-                            .read(profilProvider)
-                            .documents
-                            .where((d) => d.category.toLowerCase() == 'cv')
-                            .length;
-                    if (cvCount >= 2) {
-                      AppToast.warning(
-                        context,
-                        'Maksimum 2 CV hakkınız doldu. Mevcut CV\'nizi silip tekrar yükleyebilirsiniz.',
-                      );
-                      return;
-                    }
-                    _pickAndUpload(DocumentCategory.cv, 'CV Belgesi');
-                  },
-                ),
-                const SizedBox(height: 10),
-                _UploadOption(
-                  icon: Icons.groups_rounded,
-                  title: 'STK Belgesi',
-                  subtitle: 'Üyelik belgesi, yetki belgesi vb.',
-                  color: const Color(0xFF7B1FA2),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    _pickAndUpload(DocumentCategory.stk, 'STK Üyelik Belgesi');
-                  },
-                ),
-                const SizedBox(height: 10),
-                _UploadOption(
-                  icon: Icons.badge_rounded,
-                  title: 'Kimlik Belgesi',
-                  subtitle: 'Nüfus cüzdanı, ehliyet, pasaport',
-                  color: const Color(0xFFE65100),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    _pickAndUpload(DocumentCategory.kimlik, 'Kimlik Belgesi');
-                  },
-                ),
-                const SizedBox(height: 10),
-                _UploadOption(
-                  icon: Icons.folder_rounded,
-                  title: 'Diğer Belge',
-                  subtitle: 'Diploma, sertifika, referans mektubu',
-                  color: const Color(0xFF2E7D32),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    _pickAndUpload(DocumentCategory.diger, 'Diğer Belge');
-                  },
-                ),
-                const SizedBox(height: 20),
-              ],
+              ),
             ),
           ),
     );

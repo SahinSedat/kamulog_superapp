@@ -4,6 +4,7 @@ import 'package:kamulog_superapp/core/providers/core_providers.dart';
 import 'package:kamulog_superapp/core/usecase/usecase.dart';
 import 'package:kamulog_superapp/features/auth/data/datasources/auth_local_datasource.dart';
 import 'package:kamulog_superapp/features/auth/data/datasources/auth_remote_datasource.dart';
+import 'package:kamulog_superapp/features/auth/data/datasources/user_remote_datasource.dart';
 import 'package:kamulog_superapp/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:kamulog_superapp/features/auth/domain/entities/user.dart';
 import 'package:kamulog_superapp/features/auth/domain/repositories/auth_repository.dart';
@@ -25,11 +26,16 @@ final authLocalDataSourceProvider = Provider<AuthLocalDataSource>((ref) {
   );
 });
 
+final userRemoteDataSourceProvider = Provider<UserRemoteDataSource>((ref) {
+  return UserRemoteDataSourceImpl(apiClient: ref.watch(apiClientProvider));
+});
+
 // ── Repository ──
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepositoryImpl(
     remoteDataSource: ref.watch(authRemoteDataSourceProvider),
     localDataSource: ref.watch(authLocalDataSourceProvider),
+    userRemoteDataSource: ref.watch(userRemoteDataSourceProvider),
     connectivityService: ref.watch(connectivityProvider),
   );
 });

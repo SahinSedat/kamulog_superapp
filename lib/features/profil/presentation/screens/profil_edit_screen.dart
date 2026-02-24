@@ -10,6 +10,7 @@ import 'package:kamulog_superapp/core/data/turkey_locations.dart';
 import 'package:kamulog_superapp/core/data/public_institutions.dart';
 import 'package:kamulog_superapp/features/auth/presentation/providers/auth_provider.dart';
 import 'package:kamulog_superapp/features/profil/presentation/providers/profil_provider.dart';
+import 'package:kamulog_superapp/core/providers/core_providers.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import 'package:pinput/pinput.dart';
 
@@ -394,6 +395,20 @@ class _ProfilEditScreenState extends ConsumerState<ProfilEditScreen> {
             'Bu işlem için yeterli jetonunuz bulunmuyor (6 Jeton gerekli).',
           ),
           backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // İnternet kontrolü
+    final connectivity = ref.read(connectivityProvider);
+    if (!connectivity.isConnected) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'İnternet bağlantınız yok. Bu işlem için internet gerekli.',
+          ),
+          backgroundColor: Colors.orange,
         ),
       );
       return;

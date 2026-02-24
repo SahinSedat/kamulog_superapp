@@ -37,7 +37,7 @@ class ProfilScreen extends ConsumerWidget {
             const SizedBox(height: 24),
 
             // ── Profil Tamamlama Uyarısı
-            if (_isProfileIncomplete(user))
+            if (_isProfileIncomplete(user, profil))
               _ProfileCompletionBanner(
                 onTap: () => context.push('/profile/edit'),
               ),
@@ -357,9 +357,15 @@ class ProfilScreen extends ConsumerWidget {
     );
   }
 
-  bool _isProfileIncomplete(dynamic user) {
+  bool _isProfileIncomplete(dynamic user, ProfilState profil) {
     if (user == null) return true;
-    return user.name == null || user.name!.isEmpty;
+    // İsim, şehir veya çalışma durumu boşsa profil eksik sayılır
+    final nameEmpty =
+        (user.name == null || user.name!.isEmpty) &&
+        (profil.name == null || profil.name!.isEmpty);
+    final cityEmpty = profil.city == null || profil.city!.isEmpty;
+    final employmentEmpty = profil.employmentType == null;
+    return nameEmpty || cityEmpty || employmentEmpty;
   }
 
   void _showLogoutDialog(BuildContext context, WidgetRef ref) {
@@ -937,7 +943,7 @@ class _ProfileCompletionBanner extends StatelessWidget {
                   ),
                   SizedBox(height: 2),
                   Text(
-                    'TC Kimlik ve adres bilgileriniz olmadan becayiş, STK ve CV özelliklerini kullanamazsınız.',
+                    'Adres ve çalışma bilgileriniz olmadan becayış, STK ve CV özelliklerini kullanamazsınız.',
                     style: TextStyle(fontSize: 11, color: Colors.grey),
                   ),
                 ],

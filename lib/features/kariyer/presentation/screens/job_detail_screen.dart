@@ -9,6 +9,7 @@ import 'package:kamulog_superapp/core/storage/local_storage_service.dart';
 import 'package:kamulog_superapp/features/kariyer/data/models/job_listing_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kamulog_superapp/features/profil/presentation/providers/profil_provider.dart';
+import 'package:kamulog_superapp/core/providers/core_providers.dart';
 
 import 'package:kamulog_superapp/features/ai/presentation/providers/ai_provider.dart';
 import 'package:uuid/uuid.dart';
@@ -36,6 +37,16 @@ class JobDetailScreen extends ConsumerWidget {
   }
 
   void _analyzeJob(BuildContext context, WidgetRef ref) async {
+    // İnternet bağlantısı kontrolü
+    final connectivity = ref.read(connectivityProvider);
+    if (!connectivity.isConnected) {
+      AppToast.warning(
+        context,
+        'İnternet bağlantınız yok. Lütfen bağlantınızı kontrol edin.',
+      );
+      return;
+    }
+
     final profil = ref.read(profilProvider);
 
     if (!profil.hasCv) {
