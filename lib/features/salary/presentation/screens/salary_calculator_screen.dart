@@ -29,7 +29,7 @@ class _SalaryCalculatorScreenState
     final theme = Theme.of(context);
     final user = ref.watch(currentUserProvider);
     final salaryState = ref.watch(salaryProvider);
-    final isWorker = user?.employmentType == EmploymentType.isci;
+    final isWorker = user?.employmentType == EmploymentType.kamuIsci;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Maaş Hesaplama')),

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:kamulog_superapp/core/theme/app_theme.dart';
 import 'package:kamulog_superapp/core/storage/local_storage_service.dart';
@@ -65,7 +66,6 @@ class ProfilScreen extends ConsumerWidget {
                           ? '••• ••• ${profil.tcKimlik!.substring(profil.tcKimlik!.length > 4 ? profil.tcKimlik!.length - 4 : 0)}'
                           : 'Girilmedi',
                   onTap: () => context.push('/profile/edit'),
-                  showWarning: profil.tcKimlik == null,
                 ),
                 _MenuItem(
                   icon: Icons.email_outlined,
@@ -630,10 +630,141 @@ class _ProfileHeader extends ConsumerWidget {
   const _ProfileHeader({required this.user, required this.isDark});
 
   Future<void> _pickAndCropImage(BuildContext context, WidgetRef ref) async {
+    // Kaynak seçimi: Kamera veya Galeri
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder:
+          (ctx) => SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Profil Fotoğrafı',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 16),
+                  ListTile(
+                    leading: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.camera_alt_rounded,
+                        color: Colors.blue,
+                      ),
+                    ),
+                    title: const Text(
+                      'Kamera',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    subtitle: const Text('Fotoğraf çek'),
+                    onTap: () => Navigator.pop(ctx, ImageSource.camera),
+                  ),
+                  ListTile(
+                    leading: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.photo_library_rounded,
+                        color: Colors.green,
+                      ),
+                    ),
+                    title: const Text(
+                      'Galeri',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    subtitle: const Text('Galeriden seç'),
+                    onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+                  ),
+                ],
+              ),
+            ),
+          ),
+    );
+    if (source == null) return;
+
+    // İzin kontrolü — hem kamera hem galeri için
+    Permission permission;
+    String permissionLabel;
+
+    if (source == ImageSource.camera) {
+      permission = Permission.camera;
+      permissionLabel = 'Kamera';
+    } else {
+      // Galeri izni: Android 13+ için photos, eski için storage
+      permission = Permission.photos;
+      permissionLabel = 'Galeri';
+    }
+
+    var status = await permission.status;
+    if (status.isDenied) {
+      status = await permission.request();
+    }
+
+    // Android eski sürüml erde Permission.photos çalışmayabilir, storage dene
+    if (!status.isGranted && source == ImageSource.gallery) {
+      final storageStatus = await Permission.storage.request();
+      if (storageStatus.isGranted) {
+        status = storageStatus;
+      }
+    }
+
+    if (status.isPermanentlyDenied) {
+      if (context.mounted) {
+        showDialog(
+          context: context,
+          builder:
+              (ctx) => AlertDialog(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                title: Text('$permissionLabel İzni Gerekli'),
+                content: Text(
+                  '$permissionLabel erişim izni gereklidir. Lütfen uygulama ayarlarından izin verin.',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: const Text('İptal'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      openAppSettings();
+                    },
+                    child: const Text('Ayarları Aç'),
+                  ),
+                ],
+              ),
+        );
+      }
+      return;
+    }
+    if (!status.isGranted && source == ImageSource.camera) return;
+
     try {
       final picker = ImagePicker();
       final pickedFile = await picker.pickImage(
-        source: ImageSource.gallery,
+        source: source,
         maxWidth: 1024,
         maxHeight: 1024,
         imageQuality: 85,
@@ -674,6 +805,15 @@ class _ProfileHeader extends ConsumerWidget {
       await File(croppedFile.path).copy(savedPath);
 
       ref.read(profilProvider.notifier).updateProfileImage(savedPath);
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Profil fotoğrafı güncellendi ✓'),
+            backgroundColor: Color(0xFF2E7D32),
+          ),
+        );
+      }
     } catch (e) {
       if (context.mounted) {
         AppToast.error(context, 'Fotoğraf yüklenirken hata oluştu.');

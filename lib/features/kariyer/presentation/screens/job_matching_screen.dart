@@ -1,6 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:syncfusion_flutter_pdf/pdf.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:kamulog_superapp/core/theme/app_theme.dart';
 import 'package:kamulog_superapp/core/widgets/app_toast.dart';
@@ -66,12 +68,30 @@ class JobMatchingScreen extends ConsumerWidget {
 
     final StringBuffer cvBuffer = StringBuffer();
 
-    // Kayıtlı CV belge içeriklerini ekle
+    // Kayıtlı CV belge içeriklerini ekle — PDF dosyasından da oku
     for (final doc in cvDocs) {
       if (doc.content != null && doc.content!.isNotEmpty) {
         cvBuffer.writeln('--- ${doc.name} ---');
         cvBuffer.writeln(doc.content!);
         cvBuffer.writeln();
+      } else if (doc.filePath != null && doc.filePath!.isNotEmpty) {
+        // PDF dosyasından metin çıkar
+        try {
+          final file = File(doc.filePath!);
+          if (await file.exists()) {
+            final bytes = await file.readAsBytes();
+            final pdfDoc = PdfDocument(inputBytes: bytes);
+            final text = PdfTextExtractor(pdfDoc).extractText();
+            pdfDoc.dispose();
+            if (text.isNotEmpty) {
+              cvBuffer.writeln('--- ${doc.name} (PDF) ---');
+              cvBuffer.writeln(text);
+              cvBuffer.writeln();
+            }
+          }
+        } catch (e) {
+          debugPrint('PDF okuma hatası: \$e');
+        }
       }
     }
 
@@ -88,7 +108,10 @@ class JobMatchingScreen extends ConsumerWidget {
       cvBuffer.writeln('Şehir: ${profil.city}');
     }
     if (profil.employmentType != null) {
-      cvBuffer.writeln('Çalışma Durumu: ${profil.employmentType!.name}');
+      cvBuffer.writeln('Çalışma Durumu: ${profil.employmentText}');
+    }
+    if (profil.yearsWorking != null) {
+      cvBuffer.writeln('Deneyim: ${profil.yearsWorking} yıl');
     }
     if (profil.surveyInterests.isNotEmpty) {
       cvBuffer.writeln(
@@ -107,23 +130,11 @@ class JobMatchingScreen extends ConsumerWidget {
       }
       return;
     }
-    // Kullanıcının şehri
+
     final userCity = profil.city ?? profil.surveyCity ?? '';
 
-    // Şehir bazlı filtreleme: Özel sektör ilanlarını şehre göre filtrele, kamu ilanları hepsini dahil et
-    final filteredForAi =
-        userCity.isNotEmpty
-            ? jobs.where((j) {
-              final loc = (j.location ?? '').toLowerCase();
-              final isPublic =
-                  j.type.toLowerCase().contains('public') ||
-                  j.type.toLowerCase().contains('kamu');
-              return isPublic || loc.contains(userCity.toLowerCase());
-            }).toList()
-            : jobs;
-
-    // İlanların özetini hazırla
-    final jobsSummary = filteredForAi
+    // TÜM ilanları AI'ya gönder — hem kamu hem özel sektör
+    final jobsSummary = jobs
         .map((j) {
           final desc =
               j.description.length > 300
@@ -131,40 +142,51 @@ class JobMatchingScreen extends ConsumerWidget {
                   : j.description;
           final reqs = j.requirements ?? 'Belirtilmedi';
           final loc = j.location ?? 'Belirtilmedi';
-          return '- İLAN#${j.id}: "${j.title}" | ${j.company} | Şehir: $loc | Gereksinimler: $reqs | Açıklama: $desc';
+          final sector =
+              j.type.toLowerCase().contains('public') ||
+                      j.type.toLowerCase().contains('kamu')
+                  ? 'KAMU'
+                  : 'ÖZEL';
+          return '- İLAN#${j.id}: "${j.title}" | ${j.company} | Sektör: $sector | Şehir: $loc | Gereksinimler: $reqs | Açıklama: $desc';
         })
         .join('\n');
 
-    // Veriyi (CV + İlanlar) context olarak gönder (system prompt'a eklenir)
+    // Veriyi (CV + İlanlar) context olarak gönder
     final dataContext = '''
 KULLANICININ CV BİLGİLERİ:
 $cvContent
 
 KULLANICININ YAŞADIĞI ŞEHİR: ${userCity.isNotEmpty ? userCity : 'Belirtilmedi'}
 
-SİSTEMDEMİZDEKİ İLANLAR:
+SİSTEMDEMİZDEKİ TÜM İLANLAR (KAMU + ÖZEL SEKTÖR):
 $jobsSummary
 ''';
 
     // Analiz talimatlarını message olarak gönder
     final matchingMessage = '''
-SEN UZMAN BİR KARİYER DANIŞMANISIN. Yukarıdaki CV bilgileri ve ilanları analiz et.
+SEN UZMAN BİR KARİYER DANIŞMANISIN. Yukarıdaki CV bilgileri ve TÜM ilanları (hem KAMU hem ÖZEL SEKTÖR) analiz et.
 
 KRİTİK EŞLEME KURALLARI:
-1. SADECE kullanıcının eğitimi, unvanı, mesleği ve gerçek yetkinlikleriyle ÖRTÜŞEN ilanları UYGUN işaretle.
-2. Kullanıcının meslek alanıyla ALAKASIZ ilanları KESİNLİKLE önerme:
-   - Güvenlikçiye mühendislik ilanı ÖNERME
+1. CV İÇERİĞİNİ DİKKATLİCE OKU — kullanıcının eğitim seviyesini, iş deneyimini, becerilerini ve meslek alanını belirle.
+2. SADECE kullanıcının eğitimi, deneyimi ve gerçek yetkinlikleriyle ÖRTÜŞEN ilanları UYGUN işaretle.
+3. Kullanıcının meslek alanıyla ALAKASIZ ilanları KESİNLİKLE önerme:
+   - Lise mezununa mühendislik ilanı ÖNERME
+   - Güvenlikçiye doktor ilanı ÖNERME
    - Öğretmene şoförlük ilanı ÖNERME
-   - Muhasebeciye hemşirelik ilanı ÖNERME
-3. Eğitim seviyesi ve alanı EN ÖNEMLİ kriter (%35 ağırlık).
-4. Liyakat öncelikli — kullanıcının gerçekten yapabileceği işleri öner.
-5. Alternatif ilanlar bile kullanıcının sektörüyle YAKIN olmalı.
-6. ŞEHİR KURALI: Özel sektör ilanlarında kullanıcının yaşadığı şehirdeki ilanlara +5 puan bonusu ver. KAMU ilanlarında şehir önemli DEĞİL, kamu ilanları tüm Türkiye için geçerlidir.
+4. EĞİTİM SEVİYESİ EN ÖNEMLİ kriter — lise mezunu üniversite gerektiren ilana UYGUN DEĞİLDİR.
+5. Liyakat öncelikli — kullanıcının gerçekten yapabileceği işleri öner.
+6. Alternatif ilanlar bile kullanıcının sektörüyle YAKIN ve eğitim seviyesiyle UYUMLU olmalı.
+7. HEM KAMU HEM ÖZEL SEKTÖR ilanlarını analiz et, her iki sektörden de uygun olanları listele.
+8. ŞEHİR KURALI: Özel sektör ilanlarında kullanıcının yaşadığı şehirdeki ilanlara bonus ver. KAMU ilanlarında şehir önemli değildir.
+9. SAYI SINIRI YOK — %40 ve üzeri puan alan TÜM ilanları listele. Hiçbir uygun ilanı atlama. 9 uygun ilan varsa 9'unu da yaz, 15 varsa 15'ini de yaz.
+10. %40 altında kalan ilanları LİSTELEME, onları tamamen atla.
 
 PUANLAMA: EĞİTİM %35, DENEYİM %25, BECERİ %20, UYUM %20
-- %60+ = UYGUN (max 7)
-- %40-59 = ALTERNATİF (sadece yakın alan)
-- %40 altı = LİSTELEME
+- %60+ = UYGUN
+- %40-59 = ALTERNATİF (sadece yakın alan ve uygun eğitim seviyesi)
+- %40 altı = LİSTELEME (bu ilanları çıktıya YAZMA)
+
+ÖNEMLİ: Uygun ve alternatif olan TÜM ilanları eksiksiz listele. Sayı sınırı yok.
 
 ÇIKTI FORMATI (SADECE bu format, başka hiçbir şey yazma):
 İLAN#[id] %[genel_skor] [UYGUN veya ALTERNATİF] [KAMU veya ÖZEL]
@@ -267,9 +289,9 @@ EĞİTİM:%[skor] DENEYİM:%[skor] BECERİ:%[skor] UYUM:%[skor]
           ),
           _AnalysisInfoRow(
             icon: Icons.bar_chart_rounded,
-            title: '7 Uygun + 3 Alternatif',
+            title: 'Profilinize Uygun İlanlar',
             subtitle:
-                'En uyumlu 7 ilan ve 3 alternatif ilan detaylı grafiklerle gösterilecek',
+                'CV\'nize en uyumlu ilanlar detaylı grafiklerle sıralanır',
             isDark: isDark,
           ),
           _AnalysisInfoRow(
@@ -719,6 +741,40 @@ EĞİTİM:%[skor] DENEYİM:%[skor] BECERİ:%[skor] UYUM:%[skor]
                             ),
                           ),
                         ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+
+                  // Yeniden Eşleştir butonu
+                  if (!state.isLoading) ...[
+                    const SizedBox(height: 16),
+                    const Divider(),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          ref
+                              .read(jobMatchingProvider.notifier)
+                              .newConversation();
+                        },
+                        icon: const Icon(Icons.refresh_rounded, size: 20),
+                        label: const Text(
+                          'Kapat ve Yeniden Eşleştir',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFFF57C00),
+                          side: const BorderSide(color: Color(0xFFF57C00)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 24),

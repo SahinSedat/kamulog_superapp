@@ -1,9 +1,13 @@
 // ── Kullanıcı Türü
 enum EmploymentType {
-  memur, // 4A/4B/4C → Mavi Tema (#1565C0)
-  isci, // 4D → Turuncu Tema (#E65100)
-  sozlesmeli, // 4B → Sözleşmeli
-  ozelSektor, // Özel Sektör
+  kamuMemur, // 657 Memur / Sözleşmeli → Mavi Tema
+  kamuIsci, // 4D Kamu İşçisi → Turuncu Tema
+  ozelSektor, // Özel Sektör → Yeşil Tema
+  isArayan, // İş Arıyorum → Gri Tema
+  // Eski değerler — geriye uyumluluk için
+  memur, // → kamuMemur olarak kullanılır
+  isci, // → kamuIsci olarak kullanılır
+  sozlesmeli, // → kamuMemur olarak kullanılır
 }
 
 // ── Uygulama Tema Modu

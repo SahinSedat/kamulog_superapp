@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:kamulog_superapp/features/ai/presentation/providers/ai_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kamulog_superapp/core/theme/app_theme.dart';
@@ -26,8 +27,11 @@ class _ProfilEditScreenState extends ConsumerState<ProfilEditScreen> {
   final _titleController = TextEditingController();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
+  final _addressLineController = TextEditingController();
+  final _postalCodeController = TextEditingController();
   bool _obscureTC = true;
   EmploymentType? _selectedType;
+  final _yearsWorkingController = TextEditingController();
   String? _selectedCity;
   String? _selectedDistrict;
   String? _selectedInstitution;
@@ -38,7 +42,10 @@ class _ProfilEditScreenState extends ConsumerState<ProfilEditScreen> {
     final user = ref.read(currentUserProvider);
     final profil = ref.read(profilProvider);
     if (user != null) {
-      _selectedType = profil.employmentType ?? user.employmentType;
+      _selectedType = ProfilState.normalizeEmploymentType(
+        profil.employmentType ?? user.employmentType,
+      );
+      _yearsWorkingController.text = profil.yearsWorking?.toString() ?? '';
       _titleController.text = profil.title ?? user.title ?? '';
       _nameController.text = user.name ?? profil.name ?? '';
     }
@@ -47,6 +54,8 @@ class _ProfilEditScreenState extends ConsumerState<ProfilEditScreen> {
     _selectedCity = profil.city;
     _selectedDistrict = profil.district;
     _emailController.text = profil.email ?? '';
+    _addressLineController.text = profil.addressLine ?? '';
+    _postalCodeController.text = profil.postalCode ?? '';
     _selectedInstitution = profil.institution;
 
     // Dropdown değerlerini doğrula — listede yoksa null yap (crash önler)
@@ -70,6 +79,8 @@ class _ProfilEditScreenState extends ConsumerState<ProfilEditScreen> {
     _titleController.dispose();
     _nameController.dispose();
     _emailController.dispose();
+    _addressLineController.dispose();
+    _postalCodeController.dispose();
     super.dispose();
   }
 
@@ -100,7 +111,7 @@ class _ProfilEditScreenState extends ConsumerState<ProfilEditScreen> {
                 child: Column(
                   children: [
                     TextField(
-                      autofocus: true,
+                      autofocus: false,
                       decoration: InputDecoration(
                         hintText: 'İl ara...',
                         prefixIcon: const Icon(Icons.search, size: 20),
@@ -273,6 +284,189 @@ class _ProfilEditScreenState extends ConsumerState<ProfilEditScreen> {
     );
   }
 
+  void _showEmailVerificationDialog() {
+    final email = _emailController.text.trim();
+    if (email.isEmpty || !email.contains('@')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Önce geçerli bir e-posta adresi girin')),
+      );
+      return;
+    }
+
+    // Simulated verification code (ileride backend entegrasyonu yapılacak)
+    final code =
+        (100000 + (DateTime.now().millisecondsSinceEpoch % 900000)).toString();
+    debugPrint('📧 Email verification code for $email: $code');
+
+    final codeController = TextEditingController();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$email adresine doğrulama kodu gönderildi'),
+        backgroundColor: Colors.blue,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        String? errorText;
+        return StatefulBuilder(
+          builder: (ctx, setDialogState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              title: const Text('E-posta Doğrulama'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '$email adresine gönderilen 6 haneli kodu girin.',
+                    style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: codeController,
+                    keyboardType: TextInputType.number,
+                    maxLength: 6,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 8,
+                    ),
+                    decoration: InputDecoration(
+                      counterText: '',
+                      hintText: '------',
+                      errorText: errorText,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('İptal'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    if (codeController.text.trim() == code) {
+                      ref.read(profilProvider.notifier).setEmailVerified(true);
+                      Navigator.pop(ctx);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('E-posta doğrulandı ✓'),
+                          backgroundColor: Color(0xFF2E7D32),
+                        ),
+                      );
+                    } else {
+                      setDialogState(
+                        () => errorText = 'Hatalı kod, tekrar deneyin',
+                      );
+                    }
+                  },
+                  child: const Text('Doğrula'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  /// Çalışma durumu değiştirme — 6 jeton
+  void _showEmploymentChangeDialog(BuildContext context, WidgetRef ref) {
+    final aiChat = ref.read(aiChatProvider.notifier);
+    final hasCredits = aiChat.hasEnoughAiCredits(6);
+
+    if (!hasCredits) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Bu işlem için yeterli jetonunuz bulunmuyor (6 Jeton gerekli).',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder:
+          (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: const Row(
+              children: [
+                Icon(Icons.warning_amber_rounded, color: Colors.orange),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Çalışma Durumu Değiştir',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                ),
+              ],
+            ),
+            content: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.orange.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Text(
+                'Bu işlem için hesabınızdan 6 Jeton düşürülecektir.\nDevam etmek istiyor musunuz?',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Vazgeç'),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  Navigator.pop(ctx);
+                  ref.read(aiChatProvider.notifier).decreaseAiCredits(6);
+                  await ref
+                      .read(profilProvider.notifier)
+                      .updatePersonalInfo(
+                        employmentType: EmploymentType.isArayan,
+                      );
+                  setState(() {
+                    _selectedType = EmploymentType.isArayan;
+                  });
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(this.context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Çalışma durumu kilidi açıldı. Yeni seçiminizi yapabilirsiniz. ✓',
+                      ),
+                      backgroundColor: Color(0xFF2E7D32),
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryColor,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Onayla (6 Jeton)'),
+              ),
+            ],
+          ),
+    );
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -301,8 +495,11 @@ class _ProfilEditScreenState extends ConsumerState<ProfilEditScreen> {
             tcKimlik: _tcController.text.trim(),
             city: _selectedCity,
             district: _selectedDistrict,
+            addressLine: _addressLineController.text.trim(),
+            postalCode: _postalCodeController.text.trim(),
             email: _emailController.text.trim(),
             employmentType: _selectedType,
+            yearsWorking: int.tryParse(_yearsWorkingController.text.trim()),
             institution: _selectedInstitution,
             title: _titleController.text.trim(),
           );
@@ -415,12 +612,23 @@ class _ProfilEditScreenState extends ConsumerState<ProfilEditScreen> {
               TextFormField(
                 controller: _tcController,
                 keyboardType: TextInputType.number,
+                obscureText: _obscureTC,
                 maxLength: 11,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'TC Kimlik No',
-                  prefixIcon: Icon(Icons.badge_outlined, size: 20),
+                  prefixIcon: const Icon(Icons.badge_outlined, size: 20),
                   counterText: '',
                   hintText: '11 haneli TC Kimlik numaranız',
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscureTC
+                          ? Icons.visibility_off_rounded
+                          : Icons.visibility_rounded,
+                      size: 20,
+                      color: Colors.grey,
+                    ),
+                    onPressed: () => setState(() => _obscureTC = !_obscureTC),
+                  ),
                 ),
                 validator: (v) {
                   if (v == null || v.isEmpty) return null; // Opsiyonel
@@ -487,14 +695,65 @@ class _ProfilEditScreenState extends ConsumerState<ProfilEditScreen> {
               ),
 
               const SizedBox(height: 14),
+              // Detaylı adres
+              TextFormField(
+                controller: _addressLineController,
+                maxLines: 2,
+                decoration: const InputDecoration(
+                  labelText: 'Açık Adres',
+                  hintText: 'Mahalle, sokak, bina no, daire',
+                  prefixIcon: Icon(Icons.home_outlined, size: 20),
+                  alignLabelWithHint: true,
+                ),
+              ),
+              const SizedBox(height: 14),
+              // Posta kodu
+              TextFormField(
+                controller: _postalCodeController,
+                keyboardType: TextInputType.number,
+                maxLength: 5,
+                decoration: const InputDecoration(
+                  labelText: 'Posta Kodu',
+                  hintText: 'Örn: 06100',
+                  prefixIcon: Icon(Icons.markunread_mailbox_outlined, size: 20),
+                  counterText: '',
+                ),
+              ),
+
+              const SizedBox(height: 14),
               // E-posta
               TextFormField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'E-posta Adresi',
                   hintText: 'örnek@mail.com',
-                  prefixIcon: Icon(Icons.email_outlined, size: 20),
+                  prefixIcon: const Icon(Icons.email_outlined, size: 20),
+                  suffixIcon: Builder(
+                    builder: (context) {
+                      final profil = ref.watch(profilProvider);
+                      if (profil.emailVerified) {
+                        return const Padding(
+                          padding: EdgeInsets.only(right: 8),
+                          child: Icon(
+                            Icons.verified_rounded,
+                            color: Colors.green,
+                            size: 20,
+                          ),
+                        );
+                      }
+                      if (profil.email != null && profil.email!.isNotEmpty) {
+                        return TextButton(
+                          onPressed: () => _showEmailVerificationDialog(),
+                          child: const Text(
+                            'Doğrula',
+                            style: TextStyle(fontSize: 12),
+                          ),
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    },
+                  ),
                 ),
                 validator: (v) {
                   if (v != null && v.isNotEmpty && !v.contains('@')) {
@@ -516,14 +775,16 @@ class _ProfilEditScreenState extends ConsumerState<ProfilEditScreen> {
               Builder(
                 builder: (context) {
                   final profil = ref.watch(profilProvider);
-                  final isLocked = profil.employmentType != null;
+                  final isLocked =
+                      profil.employmentType != null &&
+                      profil.employmentType != EmploymentType.isArayan;
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         children: [
                           Text(
-                            'Çalışma Durumu',
+                            'Çalışma Bilgileri',
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
@@ -552,12 +813,17 @@ class _ProfilEditScreenState extends ConsumerState<ProfilEditScreen> {
                       if (isLocked)
                         Padding(
                           padding: const EdgeInsets.only(top: 4, bottom: 8),
-                          child: Text(
-                            'Değiştirmek için yöneticiye ulaşın.',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: Colors.grey[500],
-                              fontStyle: FontStyle.italic,
+                          child: GestureDetector(
+                            onTap:
+                                () => _showEmploymentChangeDialog(context, ref),
+                            child: Text(
+                              'Değiştirmek için dokunun (6 Jeton)',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: AppTheme.primaryColor,
+                                fontWeight: FontWeight.w600,
+                                decoration: TextDecoration.underline,
+                              ),
                             ),
                           ),
                         ),
@@ -567,40 +833,31 @@ class _ProfilEditScreenState extends ConsumerState<ProfilEditScreen> {
                         runSpacing: 8,
                         children: [
                           _TypeChip(
-                            label: 'Memur',
-                            isSelected: _selectedType == EmploymentType.memur,
+                            label: '657 Memur / Sözleşmeli',
+                            isSelected:
+                                _selectedType == EmploymentType.kamuMemur,
                             color: const Color(0xFF1565C0),
                             onTap:
                                 isLocked
                                     ? null
                                     : () => setState(
                                       () =>
-                                          _selectedType = EmploymentType.memur,
+                                          _selectedType =
+                                              EmploymentType.kamuMemur,
                                     ),
                           ),
                           _TypeChip(
-                            label: 'Kamu İşçisi',
-                            isSelected: _selectedType == EmploymentType.isci,
-                            color: const Color(0xFFE65100),
-                            onTap:
-                                isLocked
-                                    ? null
-                                    : () => setState(
-                                      () => _selectedType = EmploymentType.isci,
-                                    ),
-                          ),
-                          _TypeChip(
-                            label: 'Sözleşmeli',
+                            label: '4D Kamu İşçisi',
                             isSelected:
-                                _selectedType == EmploymentType.sozlesmeli,
-                            color: const Color(0xFF7B1FA2),
+                                _selectedType == EmploymentType.kamuIsci,
+                            color: const Color(0xFFE65100),
                             onTap:
                                 isLocked
                                     ? null
                                     : () => setState(
                                       () =>
                                           _selectedType =
-                                              EmploymentType.sozlesmeli,
+                                              EmploymentType.kamuIsci,
                                     ),
                           ),
                           _TypeChip(
@@ -617,8 +874,47 @@ class _ProfilEditScreenState extends ConsumerState<ProfilEditScreen> {
                                               EmploymentType.ozelSektor,
                                     ),
                           ),
+                          _TypeChip(
+                            label: 'İş Arıyorum',
+                            isSelected:
+                                _selectedType == EmploymentType.isArayan,
+                            color: const Color(0xFF757575),
+                            onTap:
+                                isLocked
+                                    ? null
+                                    : () => setState(
+                                      () =>
+                                          _selectedType =
+                                              EmploymentType.isArayan,
+                                    ),
+                          ),
                         ],
                       ),
+
+                      // Kaç yıldır çalışıyorsun
+                      if (_selectedType != null &&
+                          _selectedType != EmploymentType.isArayan) ...[
+                        const SizedBox(height: 14),
+                        TextFormField(
+                          controller: _yearsWorkingController,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            labelText: 'Kaç yıldır çalışıyorsunuz?',
+                            hintText: 'Örn: 5',
+                            prefixIcon: const Icon(
+                              Icons.timer_outlined,
+                              size: 20,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 12,
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
                   );
                 },
@@ -709,7 +1005,7 @@ class _ProfilEditScreenState extends ConsumerState<ProfilEditScreen> {
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        'TC Kimlik, kurum ve adres bilgileriniz STK üyeliği, CV oluşturma ve Becayiş ilanı için kullanılır (opsiyonel).',
+                        'Kurum ve adres bilgileriniz STK üyeliği, CV oluşturma ve Becayiş ilanı için kullanılır (opsiyonel).',
                         style: TextStyle(
                           fontSize: 11,
                           color: AppTheme.infoColor.withValues(alpha: 0.8),
@@ -1226,22 +1522,24 @@ class _TypeChip extends StatelessWidget {
   final String label;
   final bool isSelected;
   final Color color;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   const _TypeChip({
     required this.label,
     required this.isSelected,
     required this.color,
-    required this.onTap,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
+    final isDisabled = onTap == null;
+    return GestureDetector(
+      onTap: onTap,
+      child: Opacity(
+        opacity: isDisabled && !isSelected ? 0.4 : 1.0,
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 10),
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
           decoration: BoxDecoration(
             color: isSelected ? color.withValues(alpha: 0.12) : null,
             borderRadius: BorderRadius.circular(10),

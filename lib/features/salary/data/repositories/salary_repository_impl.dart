@@ -47,7 +47,7 @@ class SalaryRepositoryImpl implements SalaryRepository {
     final gross = totalIndicator * _coefficient;
 
     // İşçi için farklı taban (TİS)
-    if (type == EmploymentType.isci) {
+    if (type == EmploymentType.kamuIsci) {
       return gross * 1.15; // TİS farkı
     }
     return gross;

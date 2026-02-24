@@ -11,8 +11,12 @@ class ProfilState {
   final String? tcKimlik;
   final String? city;
   final String? district;
+  final String? addressLine;
+  final String? postalCode;
   final String? email;
+  final bool emailVerified;
   final EmploymentType? employmentType;
+  final int? yearsWorking; // Kaç yıldır çalışıyor
   final String? institution;
   final String? title;
   final List<DocumentInfo> documents;
@@ -38,8 +42,12 @@ class ProfilState {
     this.tcKimlik,
     this.city,
     this.district,
+    this.addressLine,
+    this.postalCode,
     this.email,
+    this.emailVerified = false,
     this.employmentType,
+    this.yearsWorking,
     this.institution,
     this.title,
     this.documents = const [],
@@ -61,8 +69,12 @@ class ProfilState {
     String? tcKimlik,
     String? city,
     String? district,
+    String? addressLine,
+    String? postalCode,
     String? email,
+    bool? emailVerified,
     EmploymentType? employmentType,
+    int? yearsWorking,
     String? institution,
     String? title,
     List<DocumentInfo>? documents,
@@ -83,8 +95,12 @@ class ProfilState {
       tcKimlik: tcKimlik ?? this.tcKimlik,
       city: city ?? this.city,
       district: district ?? this.district,
+      addressLine: addressLine ?? this.addressLine,
+      postalCode: postalCode ?? this.postalCode,
       email: email ?? this.email,
+      emailVerified: emailVerified ?? this.emailVerified,
       employmentType: employmentType ?? this.employmentType,
+      yearsWorking: yearsWorking ?? this.yearsWorking,
       institution: institution ?? this.institution,
       title: title ?? this.title,
       documents: documents ?? this.documents,
@@ -150,18 +166,35 @@ class ProfilState {
   String get effectiveInstitution =>
       institution ?? surveyInstitution ?? 'Belirtilmedi';
 
+  /// Eski enum değerini yeniye dönüştür
+  static EmploymentType? normalizeEmploymentType(EmploymentType? type) {
+    if (type == null) return null;
+    switch (type) {
+      case EmploymentType.memur:
+      case EmploymentType.sozlesmeli:
+        return EmploymentType.kamuMemur;
+      case EmploymentType.isci:
+        return EmploymentType.kamuIsci;
+      default:
+        return type;
+    }
+  }
+
   /// Formatlanmış çalışma durumu
   String get employmentText {
     if (employmentType == null) return 'Belirtilmedi';
-    switch (employmentType!) {
-      case EmploymentType.memur:
-        return 'Devlet Memuru';
-      case EmploymentType.isci:
-        return 'Kamu İşçisi';
-      case EmploymentType.sozlesmeli:
-        return 'Sözleşmeli';
+    final normalized = normalizeEmploymentType(employmentType);
+    switch (normalized!) {
+      case EmploymentType.kamuMemur:
+        return '657 Memur / Sözleşmeli';
+      case EmploymentType.kamuIsci:
+        return '4D Kamu İşçisi';
       case EmploymentType.ozelSektor:
         return 'Özel Sektör';
+      case EmploymentType.isArayan:
+        return 'İş Arıyorum';
+      default:
+        return 'Belirtilmedi';
     }
   }
 }
@@ -226,13 +259,22 @@ class ProfilNotifier extends StateNotifier<ProfilState> {
       tcKimlik: profileData['tcKimlik'],
       city: profileData['city'],
       district: profileData['district'],
+      addressLine: profileData['addressLine'],
+      postalCode: profileData['postalCode'],
       email: profileData['email'],
+      emailVerified: profileData['emailVerified'] == true,
       employmentType:
           profileData['employmentType'] != null
-              ? EmploymentType.values.firstWhere(
-                (e) => e.name == profileData['employmentType'],
-                orElse: () => EmploymentType.memur,
+              ? ProfilState.normalizeEmploymentType(
+                EmploymentType.values.firstWhere(
+                  (e) => e.name == profileData['employmentType'],
+                  orElse: () => EmploymentType.kamuMemur,
+                ),
               )
+              : null,
+      yearsWorking:
+          profileData['yearsWorking'] != null
+              ? (profileData['yearsWorking'] as num).toInt()
               : null,
       institution: profileData['institution'],
       title: profileData['title'],
@@ -309,13 +351,22 @@ class ProfilNotifier extends StateNotifier<ProfilState> {
     return true;
   }
 
+  /// Email doğrulama durumunu güncelle
+  Future<void> setEmailVerified(bool verified) async {
+    state = state.copyWith(emailVerified: verified);
+    await LocalStorageService.saveProfile(emailVerified: verified);
+  }
+
   /// Bilgilerim bölümünü güncelle
   Future<void> updatePersonalInfo({
     String? tcKimlik,
     String? city,
     String? district,
+    String? addressLine,
+    String? postalCode,
     String? email,
     EmploymentType? employmentType,
+    int? yearsWorking,
     String? institution,
     String? title,
   }) async {
@@ -323,8 +374,11 @@ class ProfilNotifier extends StateNotifier<ProfilState> {
       tcKimlik: tcKimlik,
       city: city,
       district: district,
+      addressLine: addressLine,
+      postalCode: postalCode,
       email: email,
       employmentType: employmentType,
+      yearsWorking: yearsWorking,
       institution: institution,
       title: title,
     );
@@ -334,8 +388,11 @@ class ProfilNotifier extends StateNotifier<ProfilState> {
       tcKimlik: tcKimlik,
       city: city,
       district: district,
+      addressLine: addressLine,
+      postalCode: postalCode,
       email: email,
       employmentType: employmentType?.name,
+      yearsWorking: yearsWorking,
       institution: institution,
       title: title,
     );

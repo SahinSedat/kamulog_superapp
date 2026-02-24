@@ -82,6 +82,12 @@ class CvBuilderNotifier extends Notifier<CvBuilderState> {
     if (profil.district != null && profil.district!.isNotEmpty) {
       data['İlçe'] = profil.district!;
     }
+    if (profil.addressLine != null && profil.addressLine!.isNotEmpty) {
+      data['Açık Adres'] = profil.addressLine!;
+    }
+    if (profil.postalCode != null && profil.postalCode!.isNotEmpty) {
+      data['Posta Kodu'] = profil.postalCode!;
+    }
     if (profil.institution != null && profil.institution!.isNotEmpty) {
       data['Kurum'] = profil.institution!;
     }

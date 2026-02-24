@@ -81,19 +81,29 @@ class LocalStorageService {
     String? tcKimlik,
     String? city,
     String? district,
+    String? addressLine,
+    String? postalCode,
     String? email,
+    bool? emailVerified,
     String? employmentType,
+    int? yearsWorking,
     String? institution,
     String? title,
   }) async {
     if (tcKimlik != null) await _profile.put('tcKimlik', tcKimlik);
     if (city != null) await _profile.put('city', city);
     if (district != null) await _profile.put('district', district);
+    if (addressLine != null) await _profile.put('addressLine', addressLine);
+    if (postalCode != null) await _profile.put('postalCode', postalCode);
     if (email != null) await _profile.put('email', email);
+    if (emailVerified != null) {
+      await _profile.put('emailVerified', emailVerified);
+    }
     if (employmentType != null) {
       await _profile.put('employmentType', employmentType);
     }
     if (institution != null) await _profile.put('institution', institution);
+    if (yearsWorking != null) await _profile.put('yearsWorking', yearsWorking);
     if (title != null) await _profile.put('title', title);
   }
 
@@ -102,8 +112,12 @@ class LocalStorageService {
       'tcKimlik': _profile.get('tcKimlik'),
       'city': _profile.get('city'),
       'district': _profile.get('district'),
+      'addressLine': _profile.get('addressLine'),
+      'postalCode': _profile.get('postalCode'),
       'email': _profile.get('email'),
+      'emailVerified': _profile.get('emailVerified'),
       'employmentType': _profile.get('employmentType'),
+      'yearsWorking': _profile.get('yearsWorking'),
       'institution': _profile.get('institution'),
       'title': _profile.get('title'),
     };

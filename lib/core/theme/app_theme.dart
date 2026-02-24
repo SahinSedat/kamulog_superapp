@@ -199,12 +199,12 @@ class AppTheme {
   // ── Helpers
 
   static Color getPrimaryColor(EmploymentType? type) {
-    if (type == EmploymentType.isci) return isciPrimary;
+    if (type == EmploymentType.kamuIsci) return isciPrimary;
     return memurPrimary;
   }
 
   static Color getSecondaryColor(EmploymentType? type) {
-    if (type == EmploymentType.isci) return isciSecondary;
+    if (type == EmploymentType.kamuIsci) return isciSecondary;
     return memurSecondary;
   }
 
@@ -231,7 +231,7 @@ class AppTheme {
     final border =
         isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFE0E0E0);
 
-    final isWorker = type == EmploymentType.isci;
+    final isWorker = type == EmploymentType.kamuIsci;
     final kamulogExt = KamulogThemeData(
       primaryGradient: isWorker ? warmGradient : primaryGradient,
       aiGradient: aiGradient,

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:kamulog_superapp/core/theme/app_theme.dart';
 import 'package:kamulog_superapp/core/widgets/app_toast.dart';
 import 'package:kamulog_superapp/core/data/turkey_locations.dart';
+import 'package:kamulog_superapp/core/providers/home_navigation_provider.dart';
 import 'package:kamulog_superapp/features/profil/presentation/providers/profil_provider.dart';
 import 'package:kamulog_superapp/features/kariyer/presentation/providers/jobs_provider.dart';
 import 'package:kamulog_superapp/features/kariyer/data/models/job_listing_model.dart';
@@ -19,56 +20,60 @@ class CareerScreen extends ConsumerWidget {
     final profil = ref.watch(profilProvider);
     final jobsState = ref.watch(jobsProvider);
 
-    // İlk açılışta kullanıcının şehrini varsayılan filtre yap
-    if (jobsState.selectedCity.isEmpty &&
-        (profil.city ?? profil.surveyCity ?? '').isNotEmpty) {
-      Future.microtask(() {
-        ref
-            .read(jobsProvider.notifier)
-            .setCityFilter(profil.city ?? profil.surveyCity ?? '');
-      });
-    }
-
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_rounded),
           onPressed: () {
-            if (Navigator.of(context).canPop()) {
-              context.pop();
-            } else {
-              context.go('/home');
-            }
+            ref.read(homeNavigationProvider.notifier).setIndex(2);
           },
         ),
         title: const Text('Kariyer'),
         centerTitle: true,
         actions: [
-          Container(
-            margin: const EdgeInsets.only(right: 12),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.toll_rounded,
-                  size: 16,
-                  color: AppTheme.primaryColor,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  profil.isPremium ? 'Sınırsız' : '${profil.credits} Jeton',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.primaryColor,
+          GestureDetector(
+            onTap: () => context.push('/upgrade'),
+            child: Container(
+              margin: const EdgeInsets.only(right: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color:
+                    profil.credits <= 0 && !profil.isPremium
+                        ? Colors.red.withValues(alpha: 0.1)
+                        : AppTheme.primaryColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    profil.credits <= 0 && !profil.isPremium
+                        ? Icons.error_outline_rounded
+                        : Icons.toll_rounded,
+                    size: 16,
+                    color:
+                        profil.credits <= 0 && !profil.isPremium
+                            ? Colors.red
+                            : AppTheme.primaryColor,
                   ),
-                ),
-              ],
+                  const SizedBox(width: 4),
+                  Text(
+                    profil.isPremium
+                        ? 'Sınırsız'
+                        : profil.credits <= 0
+                        ? 'Jeton Al'
+                        : '${profil.credits} Jeton',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color:
+                          profil.credits <= 0 && !profil.isPremium
+                              ? Colors.red
+                              : AppTheme.primaryColor,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -197,20 +202,46 @@ class CareerScreen extends ConsumerWidget {
 
                     const SizedBox(height: 24),
                     // ── Güncel İş İlanları
-                    const Row(
+                    Row(
                       children: [
-                        Icon(
+                        const Icon(
                           Icons.work_rounded,
                           size: 18,
                           color: AppTheme.primaryColor,
                         ),
-                        SizedBox(width: 6),
-                        Text(
+                        const SizedBox(width: 6),
+                        const Text(
                           'Güncel İş İlanları',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w800,
                           ),
+                        ),
+                        const Spacer(),
+                        jobsState.jobs.when(
+                          data:
+                              (jobs) => Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.primaryColor.withValues(
+                                    alpha: 0.1,
+                                  ),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  '${jobs.length} İlan',
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppTheme.primaryColor,
+                                  ),
+                                ),
+                              ),
+                          loading: () => const SizedBox.shrink(),
+                          error: (_, __) => const SizedBox.shrink(),
                         ),
                       ],
                     ),
@@ -275,80 +306,100 @@ class CareerScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 8),
                     // ── Şehir Filtresi
-                    GestureDetector(
-                      onTap:
-                          () => _showCityPicker(
-                            context,
-                            ref,
-                            jobsState.selectedCity,
-                          ),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 10,
-                        ),
-                        decoration: BoxDecoration(
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color:
+                            jobsState.selectedCity.isNotEmpty
+                                ? AppTheme.primaryColor.withValues(alpha: 0.1)
+                                : (isDark
+                                    ? Colors.white10
+                                    : Colors.grey.shade100),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
                           color:
                               jobsState.selectedCity.isNotEmpty
-                                  ? AppTheme.primaryColor.withValues(alpha: 0.1)
-                                  : (isDark
-                                      ? Colors.white10
-                                      : Colors.grey.shade100),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color:
-                                jobsState.selectedCity.isNotEmpty
-                                    ? AppTheme.primaryColor
-                                    : Colors.grey.shade300,
-                            width: 1,
-                          ),
+                                  ? AppTheme.primaryColor
+                                  : Colors.grey.shade300,
+                          width: 1,
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.location_on_rounded,
-                              size: 16,
-                              color:
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Şehir seçme alanı — picker açar
+                          GestureDetector(
+                            onTap:
+                                () => _showCityPicker(
+                                  context,
+                                  ref,
+                                  jobsState.selectedCity,
+                                ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.location_on_rounded,
+                                  size: 16,
+                                  color:
+                                      jobsState.selectedCity.isNotEmpty
+                                          ? AppTheme.primaryColor
+                                          : Colors.grey,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
                                   jobsState.selectedCity.isNotEmpty
-                                      ? AppTheme.primaryColor
-                                      : Colors.grey,
+                                      ? jobsState.selectedCity
+                                      : 'Tüm Şehirler',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color:
+                                        jobsState.selectedCity.isNotEmpty
+                                            ? AppTheme.primaryColor
+                                            : Colors.grey.shade600,
+                                  ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(width: 6),
-                            Text(
-                              jobsState.selectedCity.isNotEmpty
-                                  ? jobsState.selectedCity
-                                  : 'Tüm Şehirler',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color:
-                                    jobsState.selectedCity.isNotEmpty
-                                        ? AppTheme.primaryColor
-                                        : Colors.grey.shade600,
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            if (jobsState.selectedCity.isNotEmpty)
-                              GestureDetector(
-                                onTap:
-                                    () => ref
-                                        .read(jobsProvider.notifier)
-                                        .setCityFilter(''),
+                          ),
+                          const SizedBox(width: 4),
+                          // X butonu — filtreyi temizler (ayrı tap zone)
+                          if (jobsState.selectedCity.isNotEmpty)
+                            GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () {
+                                ref
+                                    .read(jobsProvider.notifier)
+                                    .setCityFilter('');
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.all(4),
                                 child: Icon(
                                   Icons.close,
                                   size: 16,
                                   color: AppTheme.primaryColor,
                                 ),
-                              )
-                            else
-                              Icon(
+                              ),
+                            )
+                          else
+                            GestureDetector(
+                              onTap:
+                                  () => _showCityPicker(
+                                    context,
+                                    ref,
+                                    jobsState.selectedCity,
+                                  ),
+                              child: Icon(
                                 Icons.arrow_drop_down,
                                 size: 18,
                                 color: Colors.grey.shade600,
                               ),
-                          ],
-                        ),
+                            ),
+                        ],
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -479,6 +530,82 @@ class CareerScreen extends ConsumerWidget {
       return;
     }
 
+    // Profil bilgisi kontrolü (TC Kimlik, Kurum, Unvan hariç)
+    final missingFields = <String>[];
+    if (profil.name == null || profil.name!.isEmpty) {
+      missingFields.add('Ad Soyad');
+    }
+    if (profil.phone == null || profil.phone!.isEmpty) {
+      missingFields.add('Telefon');
+    }
+    if (profil.email == null || profil.email!.isEmpty) {
+      missingFields.add('E-posta');
+    }
+    if (profil.city == null) missingFields.add('Şehir');
+    if (profil.district == null) missingFields.add('İlçe');
+    if (profil.employmentType == null) missingFields.add('Çalışma Durumu');
+
+    if (missingFields.isNotEmpty) {
+      showDialog(
+        context: context,
+        builder:
+            (ctx) => AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              title: Row(
+                children: [
+                  Icon(
+                    Icons.warning_amber_rounded,
+                    color: Colors.orange.shade700,
+                  ),
+                  const SizedBox(width: 8),
+                  const Text('Profil Eksik'),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'AI ile CV oluşturmak için aşağıdaki bilgileri tamamlayın:',
+                  ),
+                  const SizedBox(height: 12),
+                  ...missingFields.map(
+                    (f) => Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 2),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.circle, size: 6, color: Colors.red),
+                          const SizedBox(width: 8),
+                          Text(
+                            f,
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Kapat'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    context.push('/profile/edit');
+                  },
+                  child: const Text('Profili Düzenle'),
+                ),
+              ],
+            ),
+      );
+      return;
+    }
+
     context.push('/career/cv-builder');
   }
 
@@ -509,7 +636,7 @@ class CareerScreen extends ConsumerWidget {
                 child: Column(
                   children: [
                     TextField(
-                      autofocus: true,
+                      autofocus: false,
                       decoration: InputDecoration(
                         hintText: 'Şehir ara...',
                         prefixIcon: const Icon(Icons.search, size: 20),

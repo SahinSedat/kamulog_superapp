@@ -194,6 +194,20 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
   void clearError() {
     state = state.copyWith(error: null);
   }
+
+  /// AI Asistan jeton havuzundan düşüm yap (dış modüller için)
+  bool hasEnoughAiCredits(int amount) {
+    return state.aiAssistantCredits >= amount;
+  }
+
+  /// AI Asistan jetonlarını düşür
+  bool decreaseAiCredits(int amount) {
+    if (state.aiAssistantCredits < amount) return false;
+    state = state.copyWith(
+      aiAssistantCredits: state.aiAssistantCredits - amount,
+    );
+    return true;
+  }
 }
 
 // ── Provider ──
