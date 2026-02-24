@@ -296,10 +296,10 @@ class ProfilNotifier extends StateNotifier<ProfilState> {
     );
   }
 
-  /// Login'den gelen bilgilerle profili başlat
+  /// Login'den gelen bilgilerle profili baslat
   void loadFromAuth(dynamic user) {
     if (user != null) {
-      // Lokal olarak kayıtlı kredi varsa onu koru, yoksa backend'den al
+      // Lokal olarak kayitli kredi varsa onu koru, yoksa backend'den al
       final localCredits = LocalStorageService.loadCredits();
       final effectiveCredits = localCredits > 0 ? localCredits : user.credits;
 
@@ -311,10 +311,13 @@ class ProfilNotifier extends StateNotifier<ProfilState> {
         credits: effectiveCredits,
       );
 
-      // Sadece ilk seferde (lokal kayıt yoksa) backend değerini kaydet
+      // Sadece ilk seferde (lokal kayit yoksa) backend degerini kaydet
       if (localCredits <= 0) {
         LocalStorageService.saveCredits(user.credits);
       }
+
+      // Backend'den tam profil verilerini cek ve lokal cache'i guncelle
+      syncFromBackend();
     }
   }
 
@@ -407,23 +410,86 @@ class ProfilNotifier extends StateNotifier<ProfilState> {
     _syncProfileToBackend();
   }
 
-  /// Backend'den profil verilerini çek ve lokal cache'i güncelle
+  /// Backend'den profil verilerini cek ve lokal cache'i guncelle
   Future<void> syncFromBackend() async {
     if (_userRemoteDataSource == null) return;
     try {
-      final backendUser = await _userRemoteDataSource.fetchUserProfile();
-      if (backendUser != null) {
-        // Backend'den gelen profil verilerini lokal state'e merge et
-        state = state.copyWith(
-          name: backendUser.name ?? state.name,
-          email: backendUser.email ?? state.email,
-          title: backendUser.title ?? state.title,
-          credits:
-              backendUser.credits > 0 ? backendUser.credits : state.credits,
-        );
+      final profileData = await _userRemoteDataSource.fetchFullProfile();
+      if (profileData == null) return;
+
+      // Tum alanlari backend'den geri yukle
+      final name = profileData['name'] as String?;
+      final phone = profileData['phone'] as String?;
+      final email = profileData['email'] as String?;
+      final tcKimlik = profileData['tcKimlik'] as String?;
+      final city = profileData['city'] as String?;
+      final district = profileData['district'] as String?;
+      final addressLine = profileData['addressLine'] as String?;
+      final postalCode = profileData['postalCode'] as String?;
+      final titleField = profileData['title'] as String?;
+      final institution = profileData['institution'] as String?;
+      final yearsWorking =
+          profileData['yearsWorking'] != null
+              ? (profileData['yearsWorking'] as num).toInt()
+              : null;
+      final credits =
+          profileData['credits'] != null
+              ? (profileData['credits'] as num).toInt()
+              : 0;
+      final empTypeStr = profileData['employmentType'] as String?;
+      final employmentType =
+          empTypeStr != null
+              ? ProfilState.normalizeEmploymentType(
+                EmploymentType.values.firstWhere(
+                  (e) => e.name == empTypeStr,
+                  orElse: () => EmploymentType.kamuMemur,
+                ),
+              )
+              : null;
+      final profileImagePath = profileData['profileImagePath'] as String?;
+
+      // State guncelle
+      state = state.copyWith(
+        name: name ?? state.name,
+        phone: phone ?? state.phone,
+        email: email ?? state.email,
+        tcKimlik: tcKimlik ?? state.tcKimlik,
+        city: city ?? state.city,
+        district: district ?? state.district,
+        addressLine: addressLine ?? state.addressLine,
+        postalCode: postalCode ?? state.postalCode,
+        title: titleField ?? state.title,
+        institution: institution ?? state.institution,
+        yearsWorking: yearsWorking ?? state.yearsWorking,
+        employmentType: employmentType ?? state.employmentType,
+        credits: credits > 0 ? credits : state.credits,
+        profileImagePath: profileImagePath ?? state.profileImagePath,
+      );
+
+      // Hive'a da kaydet — sonraki oturumlarda lokal erisim icin
+      await LocalStorageService.saveProfile(
+        tcKimlik: state.tcKimlik,
+        city: state.city,
+        district: state.district,
+        addressLine: state.addressLine,
+        postalCode: state.postalCode,
+        email: state.email,
+        employmentType: state.employmentType?.name,
+        yearsWorking: state.yearsWorking,
+        institution: state.institution,
+        title: state.title,
+      );
+      if (state.name != null) {
+        await LocalStorageService.saveProfileName(state.name!);
+      }
+      if (state.phone != null) {
+        await LocalStorageService.saveProfilePhone(state.phone!);
+      }
+      if (state.credits > 0) {
+        await LocalStorageService.saveCredits(state.credits);
       }
     } catch (e) {
-      debugPrint('⚠️ Profil backend sync hatası: $e');
+      debugPrint('Profil backend sync hatasi: $e');
     }
   }
 

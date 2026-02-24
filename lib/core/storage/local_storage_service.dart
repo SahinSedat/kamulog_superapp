@@ -241,5 +241,6 @@ class LocalStorageService {
     await _profile.clear();
     await _survey.clear();
     await _documents.clear();
+    await _career.clear();
   }
 }

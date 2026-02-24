@@ -49,6 +49,7 @@ class AuthRepositoryImpl implements AuthRepository {
     required String verificationId,
     required String smsCode,
     String? displayName,
+    String? phone,
   }) async {
     if (connectivityService.isConnected) {
       try {
@@ -56,6 +57,7 @@ class AuthRepositoryImpl implements AuthRepository {
           verificationId: verificationId,
           smsCode: smsCode,
           displayName: displayName,
+          phone: phone,
         );
 
         // WhatsApp OTP doğrulaması başarılı — backend'e profil kaydet/senkronize et

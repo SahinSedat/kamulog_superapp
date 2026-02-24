@@ -9,6 +9,9 @@ abstract class UserRemoteDataSource {
   /// Backend'den kullanıcı profil bilgilerini çek
   Future<UserModel?> fetchUserProfile();
 
+  /// Backend'den tüm profil alanlarını ham Map olarak çek
+  Future<Map<String, dynamic>?> fetchFullProfile();
+
   /// Backend'e kullanıcı profil bilgilerini kaydet / güncelle
   Future<UserModel> syncUserProfile(Map<String, dynamic> profileData);
 }
@@ -57,6 +60,22 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
       debugPrint('📡 Profil senkronizasyon hatası: $e');
       // Hata olursa bile gönderdiğimiz veriyle lokal kullanım sağla
       return UserModel.fromJson(profileData);
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>?> fetchFullProfile() async {
+    try {
+      final response = await _apiClient.get(ApiEndpoints.userProfile);
+
+      if (response.statusCode == 200 && response.data != null) {
+        final data = response.data as Map<String, dynamic>;
+        return (data['user'] ?? data) as Map<String, dynamic>;
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Tam profil cekme hatasi: $e');
+      return null;
     }
   }
 }

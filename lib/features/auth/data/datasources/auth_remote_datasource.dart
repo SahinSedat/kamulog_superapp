@@ -13,6 +13,7 @@ abstract class AuthRemoteDataSource {
     required String verificationId,
     required String smsCode,
     String? displayName,
+    String? phone,
   });
 
   Future<void> signOut();
@@ -71,13 +72,14 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     required String verificationId,
     required String smsCode,
     String? displayName,
+    String? phone,
   }) async {
     if (!_isFirebaseAvailable || _firebaseAuth == null) {
       // Dev mode: simulate successful verification
       await Future.delayed(const Duration(seconds: 1));
       return UserModel(
         id: 'dev-user-001',
-        phone: '+905551234567',
+        phone: phone ?? '+905001234567',
         name: displayName ?? 'Geliştirici',
       );
     }
@@ -103,7 +105,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
       return UserModel(
         id: user.uid,
-        phone: user.phoneNumber ?? '',
+        phone: phone ?? user.phoneNumber ?? '',
         name: displayName ?? user.displayName,
       );
     } on FirebaseAuthException catch (e) {

@@ -15,6 +15,7 @@ class VerifyOtpUseCase extends UseCase<User, VerifyOtpParams> {
       verificationId: params.verificationId,
       smsCode: params.smsCode,
       displayName: params.displayName,
+      phone: params.phone,
     );
   }
 }
@@ -23,10 +24,12 @@ class VerifyOtpParams {
   final String verificationId;
   final String smsCode;
   final String? displayName;
+  final String? phone;
 
   const VerifyOtpParams({
     required this.verificationId,
     required this.smsCode,
     this.displayName,
+    this.phone,
   });
 }

@@ -936,33 +936,40 @@ class _ProfilEditScreenState extends ConsumerState<ProfilEditScreen> {
               ),
               const SizedBox(height: 14),
 
-              // Kurum seçimi — arama destekli
-              GestureDetector(
-                onTap: () => _showInstitutionPicker(),
-                child: AbsorbPointer(
-                  child: TextFormField(
-                    decoration: InputDecoration(
-                      labelText: 'Kurum',
-                      prefixIcon: const Icon(Icons.business_outlined, size: 20),
-                      suffixIcon: const Icon(Icons.search_rounded, size: 20),
-                      hintText: _selectedInstitution ?? 'Kurum seçiniz',
-                    ),
-                    controller: TextEditingController(
-                      text: _selectedInstitution ?? '',
+              // Kurum ve Unvan — sadece Is Arayan disindaki tipler icin goster
+              if (_selectedType != null &&
+                  _selectedType != EmploymentType.isArayan) ...[
+                // Kurum secimi — arama destekli
+                GestureDetector(
+                  onTap: () => _showInstitutionPicker(),
+                  child: AbsorbPointer(
+                    child: TextFormField(
+                      decoration: InputDecoration(
+                        labelText: 'Kurum',
+                        prefixIcon: const Icon(
+                          Icons.business_outlined,
+                          size: 20,
+                        ),
+                        suffixIcon: const Icon(Icons.search_rounded, size: 20),
+                        hintText: _selectedInstitution ?? 'Kurum seciniz',
+                      ),
+                      controller: TextEditingController(
+                        text: _selectedInstitution ?? '',
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 14),
+                const SizedBox(height: 14),
 
-              TextFormField(
-                controller: _titleController,
-                decoration: const InputDecoration(
-                  labelText: 'Unvan',
-                  prefixIcon: Icon(Icons.work_history_outlined, size: 20),
-                  hintText: 'Örn: Müfettiş, Memur, Tekniker',
+                TextFormField(
+                  controller: _titleController,
+                  decoration: const InputDecoration(
+                    labelText: 'Unvan',
+                    prefixIcon: Icon(Icons.work_history_outlined, size: 20),
+                    hintText: 'Orn: Mufettis, Memur, Tekniker',
+                  ),
                 ),
-              ),
+              ],
 
               const SizedBox(height: 32),
               // ── Kaydet Butonu

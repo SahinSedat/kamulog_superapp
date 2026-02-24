@@ -10,11 +10,12 @@ abstract class AuthRepository {
     required Function(String) onVerificationFailed,
   });
 
-  /// Verify OTP and sign in (Firebase credential)
+  /// Verify OTP and sign in
   Future<Either<Failure, User>> verifyOtp({
     required String verificationId,
     required String smsCode,
     String? displayName,
+    String? phone,
   });
 
   /// Update user profile (name, employmentType, etc.)
