@@ -6,7 +6,6 @@ import 'package:kamulog_superapp/features/auth/data/datasources/auth_local_datas
 import 'package:kamulog_superapp/features/auth/data/datasources/auth_remote_datasource.dart';
 import 'package:kamulog_superapp/features/auth/data/datasources/user_remote_datasource.dart';
 import 'package:kamulog_superapp/features/auth/data/repositories/auth_repository_impl.dart';
-import 'package:kamulog_superapp/core/storage/local_storage_service.dart';
 import 'package:kamulog_superapp/features/auth/domain/entities/user.dart';
 import 'package:kamulog_superapp/features/auth/domain/repositories/auth_repository.dart';
 import 'package:kamulog_superapp/features/auth/domain/usecases/get_current_user.dart';
@@ -312,8 +311,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> logout() async {
     state = state.copyWith(status: AuthStatus.loading);
     await _signOut(NoParams());
-    // Tüm lokal verileri temizle (Hive box'lar + profil resmi)
-    await LocalStorageService.clearAll();
+    // SecureStorage (token/session) zaten _signOut icerisinde temizleniyor
+    // Hive profil verilerini TEMIZLEME — ayni kullanici geri girebilir
     state = const AuthState(status: AuthStatus.unauthenticated);
   }
 

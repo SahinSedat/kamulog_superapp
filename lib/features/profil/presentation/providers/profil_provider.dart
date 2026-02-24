@@ -299,6 +299,22 @@ class ProfilNotifier extends StateNotifier<ProfilState> {
   /// Login'den gelen bilgilerle profili baslat
   void loadFromAuth(dynamic user) {
     if (user != null) {
+      // Onceki kullanicinin telefon numarasini kontrol et
+      final storedPhone = LocalStorageService.loadProfilePhone();
+      final incomingPhone = user.phone as String?;
+
+      // Farkli kullanici giriyorsa eski verileri temizle
+      if (storedPhone != null &&
+          storedPhone.isNotEmpty &&
+          incomingPhone != null &&
+          incomingPhone.isNotEmpty &&
+          storedPhone != incomingPhone) {
+        // Farkli numara — eski kullanicinin verilerini temizle
+        LocalStorageService.clearAll();
+        // State'i de sifirla
+        state = ProfilState(phone: incomingPhone, name: user.name);
+      }
+
       // Lokal olarak kayitli kredi varsa onu koru, yoksa backend'den al
       final localCredits = LocalStorageService.loadCredits();
       final effectiveCredits = localCredits > 0 ? localCredits : user.credits;
