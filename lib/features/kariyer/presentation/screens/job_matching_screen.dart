@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:kamulog_superapp/core/theme/app_theme.dart';
+import 'package:kamulog_superapp/core/widgets/app_toast.dart';
 import 'package:kamulog_superapp/features/kariyer/data/models/job_listing_model.dart';
 import 'package:kamulog_superapp/features/kariyer/presentation/providers/job_matching_provider.dart';
 import 'package:kamulog_superapp/features/kariyer/presentation/providers/jobs_provider.dart';
@@ -446,35 +448,96 @@ KURALLAR:
                           ],
 
                           const SizedBox(height: 14),
-                          SizedBox(
-                            width: double.infinity,
-                            height: 40,
-                            child: OutlinedButton.icon(
-                              onPressed:
-                                  () => context.push('/job-detail', extra: job),
-                              icon: const Icon(
-                                Icons.visibility_rounded,
-                                size: 18,
-                              ),
-                              label: const Text(
-                                'İlanı İncele & Başvur',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: AppTheme.primaryColor,
-                                side: BorderSide(
-                                  color: AppTheme.primaryColor.withValues(
-                                    alpha: 0.5,
+                          Row(
+                            children: [
+                              Expanded(
+                                child: SizedBox(
+                                  height: 40,
+                                  child: OutlinedButton.icon(
+                                    onPressed:
+                                        () => context.push(
+                                          '/job-detail',
+                                          extra: job,
+                                        ),
+                                    icon: const Icon(
+                                      Icons.visibility_rounded,
+                                      size: 18,
+                                    ),
+                                    label: const Text(
+                                      'İlanı İncele',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: AppTheme.primaryColor,
+                                      side: BorderSide(
+                                        color: AppTheme.primaryColor.withValues(
+                                          alpha: 0.5,
+                                        ),
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
                                   ),
                                 ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: SizedBox(
+                                  height: 40,
+                                  child: ElevatedButton.icon(
+                                    onPressed: () async {
+                                      final url = job.applicationUrl;
+                                      if (url != null && url.isNotEmpty) {
+                                        final uri = Uri.parse(url);
+                                        if (await canLaunchUrl(uri)) {
+                                          await launchUrl(
+                                            uri,
+                                            mode:
+                                                LaunchMode.externalApplication,
+                                          );
+                                        }
+                                      } else {
+                                        if (context.mounted) {
+                                          AppToast.info(
+                                            context,
+                                            'Başvuru bağlantısı bulunamadı. İlanı inceleyerek başvurabilirsiniz.',
+                                          );
+                                        }
+                                      }
+                                    },
+                                    icon: Icon(
+                                      isUygun
+                                          ? Icons.check_circle_rounded
+                                          : Icons.open_in_new_rounded,
+                                      color: Colors.white,
+                                      size: 18,
+                                    ),
+                                    label: Text(
+                                      isUygun ? 'Başvur' : 'Yine de Başvur',
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor:
+                                          isUygun
+                                              ? const Color(0xFF2E7D32)
+                                              : const Color(0xFFF57C00),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      elevation: 1,
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
+                            ],
                           ),
                         ],
                       ),

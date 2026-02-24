@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kamulog_superapp/core/theme/app_theme.dart';
+import 'package:kamulog_superapp/core/widgets/app_toast.dart';
 import 'package:kamulog_superapp/features/profil/presentation/providers/profil_provider.dart';
 import 'package:kamulog_superapp/features/kariyer/presentation/providers/jobs_provider.dart';
 import 'package:kamulog_superapp/features/kariyer/data/models/job_listing_model.dart';
@@ -84,15 +85,18 @@ class CareerScreen extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: 12),
-            _QuickActionCard(
-              icon: Icons.auto_awesome_rounded,
-              title: 'AI ile CV Oluştur',
-              subtitle:
-                  profil.remainingAiCvCount > 0
-                      ? 'Aylık 1 hak — ${profil.remainingAiCvCount} kullanım kaldı'
-                      : 'Bu ayki kullanım hakkınız doldu',
-              color: const Color(0xFF1565C0),
-              onTap: () => _showAiCvBuilder(context, ref),
+            Opacity(
+              opacity: profil.remainingAiCvCount > 0 ? 1.0 : 0.5,
+              child: _QuickActionCard(
+                icon: Icons.auto_awesome_rounded,
+                title: 'AI ile CV Oluştur',
+                subtitle:
+                    profil.remainingAiCvCount > 0
+                        ? 'Aylık 1 hak — ${profil.remainingAiCvCount} kullanım kaldı'
+                        : 'Bu ayki hakkınız doldu • PDF yükleyebilirsiniz',
+                color: const Color(0xFF1565C0),
+                onTap: () => _showAiCvBuilder(context, ref),
+              ),
             ),
             const SizedBox(height: 10),
             _QuickActionCard(
@@ -117,11 +121,7 @@ class CareerScreen extends ConsumerWidget {
               subtitle: 'Sınav takvimi ve hazırlık kaynakları',
               color: const Color(0xFFE65100),
               onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('KPSS modülü yakında aktif olacak'),
-                  ),
-                );
+                AppToast.info(context, 'KPSS modülü yakında aktif olacak');
               },
             ),
 
@@ -190,16 +190,13 @@ class CareerScreen extends ConsumerWidget {
     final profil = ref.read(profilProvider);
 
     if (profil.remainingAiCvCount <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Bu ayki AI CV oluşturma hakkınız dolmuştur (2/2).'),
-          backgroundColor: Colors.red,
-        ),
+      AppToast.warning(
+        context,
+        'Bu ayki AI CV oluşturma hakkınız dolmuştur.\nDilerseniz Belgelerim sayfasından PDF olarak CV yükleyebilirsiniz.',
       );
       return;
     }
 
-    // CV akışını başlatmak için yeni sayfaya git
     context.push('/career/cv-builder');
   }
 
@@ -207,13 +204,9 @@ class CareerScreen extends ConsumerWidget {
     final profil = ref.read(profilProvider);
 
     if (!profil.hasCv) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'İş Eşleştirme için önce Belgelerim sayfasından bir CV yüklemelisiniz.',
-          ),
-          backgroundColor: Colors.orange,
-        ),
+      AppToast.warning(
+        context,
+        'İş Eşleştirme için önce bir CV oluşturmanız veya yüklemeniz gerekiyor.',
       );
       return;
     }

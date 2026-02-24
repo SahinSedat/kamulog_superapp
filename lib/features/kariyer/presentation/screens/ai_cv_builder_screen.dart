@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kamulog_superapp/core/theme/app_theme.dart';
+import 'package:kamulog_superapp/core/widgets/app_toast.dart';
 import 'package:kamulog_superapp/features/ai/data/models/ai_message_model.dart';
 import 'package:kamulog_superapp/features/ai/presentation/widgets/ai_typing_indicator.dart';
 import 'package:kamulog_superapp/features/kariyer/presentation/providers/cv_builder_provider.dart';
@@ -71,11 +72,9 @@ class _AiCvBuilderScreenState extends ConsumerState<AiCvBuilderScreen> {
 
     if (cvContent.isEmpty) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('CV içeriği bulunamadı.'),
-            backgroundColor: Colors.red,
-          ),
+        AppToast.warning(
+          context,
+          'CV içeriği bulunamadı. Lütfen bilgilerinizi tamamlayın.',
         );
       }
       return;
@@ -86,33 +85,48 @@ class _AiCvBuilderScreenState extends ConsumerState<AiCvBuilderScreen> {
       final PdfDocument document = PdfDocument();
       final PdfPage page = document.pages.add();
 
-      // CV metnini sayfaya ekle
       final PdfFont headingFont = PdfStandardFont(
         PdfFontFamily.helvetica,
-        16,
+        18,
         style: PdfFontStyle.bold,
       );
       final PdfFont bodyFont = PdfStandardFont(PdfFontFamily.helvetica, 11);
+      final PdfFont footerFont = PdfStandardFont(
+        PdfFontFamily.helvetica,
+        9,
+        style: PdfFontStyle.italic,
+      );
 
+      // Başlık
       page.graphics.drawString(
         'CV - ${profil.name ?? 'Belge'}',
         headingFont,
         bounds: Rect.fromLTWH(0, 0, page.getClientSize().width, 30),
       );
 
-      // Ana CV içeriğini ekle
+      // CV içeriği
       final PdfTextElement textElement = PdfTextElement(
         text: cvContent,
         font: bodyFont,
       );
-      textElement.draw(
+      final result = textElement.draw(
         page: page,
         bounds: Rect.fromLTWH(
           0,
           40,
           page.getClientSize().width,
-          page.getClientSize().height - 40,
+          page.getClientSize().height - 80,
         ),
+      );
+
+      // Alt bilgi — Kamulog AI ibaresi
+      final footerY =
+          (result?.bounds.bottom ?? page.getClientSize().height - 40) + 20;
+      page.graphics.drawString(
+        'Bu CV Kamulog AI tarafından oluşturulmuştur. © ${DateTime.now().year}',
+        footerFont,
+        bounds: Rect.fromLTWH(0, footerY, page.getClientSize().width, 20),
+        format: PdfStringFormat(alignment: PdfTextAlignment.center),
       );
 
       // Dosyayı kaydet
@@ -135,30 +149,20 @@ class _AiCvBuilderScreenState extends ConsumerState<AiCvBuilderScreen> {
       );
 
       await ref.read(profilProvider.notifier).addDocument(docInfo);
-
-      // AI CV kullanımını kaydet
       await ref.read(profilProvider.notifier).recordAiCvUsage();
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              '✅ CV başarıyla PDF olarak kaydedildi ve Belgelerim\'e eklendi!',
-            ),
-            backgroundColor: Color(0xFF2E7D32),
-            duration: Duration(seconds: 3),
-          ),
+        AppToast.success(
+          context,
+          '✅ CV başarıyla oluşturuldu ve Belgelerim\'e kaydedildi!',
         );
-        context.pop();
+        Future.delayed(const Duration(seconds: 1), () {
+          if (mounted) context.pop();
+        });
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('PDF oluşturulurken hata oluştu: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppToast.error(context, 'PDF oluşturulurken hata oluştu: $e');
       }
     }
   }
@@ -187,10 +191,7 @@ class _AiCvBuilderScreenState extends ConsumerState<AiCvBuilderScreen> {
             color: isDark ? Colors.white : AppTheme.primaryColor,
             size: 20,
           ),
-          onPressed: () {
-            // Geri giderken state'i silme — kullanıcı döndüğünde devam eder
-            context.pop();
-          },
+          onPressed: () => context.pop(),
         ),
         title: Row(
           children: [
@@ -242,7 +243,6 @@ class _AiCvBuilderScreenState extends ConsumerState<AiCvBuilderScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Chat List
             Expanded(
               child:
                   chatState.messages.isEmpty
@@ -260,14 +260,12 @@ class _AiCvBuilderScreenState extends ConsumerState<AiCvBuilderScreen> {
                               child: AiTypingIndicator(),
                             );
                           }
-
                           final message = chatState.messages[index];
                           return _buildMessageBubble(message, isDark);
                         },
                       ),
             ),
-
-            // Bottom Bar — PDF butonları veya mesaj input
+            // Bottom bar
             if (chatState.isCvReady)
               _buildPdfActions(isDark)
             else
@@ -278,7 +276,6 @@ class _AiCvBuilderScreenState extends ConsumerState<AiCvBuilderScreen> {
     );
   }
 
-  /// PDF Oluştur / İptal Et butonları
   Widget _buildPdfActions(bool isDark) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -330,7 +327,7 @@ class _AiCvBuilderScreenState extends ConsumerState<AiCvBuilderScreen> {
                   size: 20,
                 ),
                 label: const Text(
-                  'PDF Oluştur',
+                  'CV Oluştur',
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
@@ -352,7 +349,6 @@ class _AiCvBuilderScreenState extends ConsumerState<AiCvBuilderScreen> {
     );
   }
 
-  /// Normal mesaj giriş alanı
   Widget _buildInputArea(CvBuilderState chatState, bool isDark) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -377,31 +373,25 @@ class _AiCvBuilderScreenState extends ConsumerState<AiCvBuilderScreen> {
                   color: isDark ? Colors.white12 : Colors.grey.shade300,
                 ),
               ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _messageController,
-                      focusNode: _focusNode,
-                      maxLines: 4,
-                      minLines: 1,
-                      textInputAction: TextInputAction.send,
-                      onSubmitted: (_) => _sendMessage(),
-                      decoration: InputDecoration(
-                        hintText: 'Bir mesaj yazın...',
-                        hintStyle: TextStyle(
-                          color: Colors.grey.shade500,
-                          fontSize: 15,
-                        ),
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 12,
-                        ),
-                      ),
-                    ),
+              child: TextField(
+                controller: _messageController,
+                focusNode: _focusNode,
+                maxLines: 4,
+                minLines: 1,
+                textInputAction: TextInputAction.send,
+                onSubmitted: (_) => _sendMessage(),
+                decoration: InputDecoration(
+                  hintText: 'Bir mesaj yazın...',
+                  hintStyle: TextStyle(
+                    color: Colors.grey.shade500,
+                    fontSize: 15,
                   ),
-                ],
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 12,
+                  ),
+                ),
               ),
             ),
           ),
@@ -460,19 +450,11 @@ class _AiCvBuilderScreenState extends ConsumerState<AiCvBuilderScreen> {
           ),
           const SizedBox(height: 20),
           Text(
-            'Özgeçmişinizi Oluşturmaya Başlayalım',
+            'Yükleniyor...',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,
               color: isDark ? Colors.white : Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Mesajınızı bekliyorum...',
-            style: TextStyle(
-              fontSize: 14,
-              color: isDark ? Colors.white60 : Colors.black54,
             ),
           ),
         ],
@@ -482,6 +464,15 @@ class _AiCvBuilderScreenState extends ConsumerState<AiCvBuilderScreen> {
 
   Widget _buildMessageBubble(AiMessageModel message, bool isDark) {
     final isUser = message.role == AiRole.user;
+    // Etiketleri UI'da gösterme
+    final displayContent =
+        message.content
+            .replaceAll('[CV_HAZIR]', '')
+            .replaceAll(
+              RegExp(r'\[PROFIL_GUNCELLE\].*?\[/PROFIL_GUNCELLE\]'),
+              '',
+            )
+            .trim();
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -548,8 +539,7 @@ class _AiCvBuilderScreenState extends ConsumerState<AiCvBuilderScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   SelectableText(
-                    // [CV_HAZIR] etiketini UI'da gösterme
-                    message.content.replaceAll('[CV_HAZIR]', '').trim(),
+                    displayContent,
                     style: TextStyle(
                       fontSize: 14.5,
                       height: 1.5,

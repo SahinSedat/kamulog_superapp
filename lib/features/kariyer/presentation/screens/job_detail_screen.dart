@@ -2,7 +2,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:confetti/confetti.dart';
 import 'package:kamulog_superapp/core/theme/app_theme.dart';
+import 'package:kamulog_superapp/core/widgets/app_toast.dart';
 import 'package:kamulog_superapp/features/kariyer/data/models/job_listing_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kamulog_superapp/features/profil/presentation/providers/profil_provider.dart';
@@ -36,26 +38,18 @@ class JobDetailScreen extends ConsumerWidget {
     final profil = ref.read(profilProvider);
 
     if (!profil.hasCv) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Analiz için önce Belgelerim sayfasından bir CV yüklemelisiniz.',
-          ),
-          backgroundColor: Colors.orange,
-        ),
+      AppToast.warning(
+        context,
+        'Analiz için önce bir CV oluşturmanız veya yüklemeniz gerekiyor.',
       );
       return;
     }
 
     // Jeton kontrolü
     if (!profil.hasEnoughCredits(2)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Bu işlem için yeterli jetonunuz bulunmuyor (2 Jeton gerekli).',
-          ),
-          backgroundColor: Colors.red,
-        ),
+      AppToast.error(
+        context,
+        'Bu işlem için yeterli jetonunuz bulunmuyor (2 Jeton gerekli).',
       );
       return;
     }
@@ -477,16 +471,22 @@ class _AnalysisBottomSheetState extends ConsumerState<_AnalysisBottomSheet> {
   String _analysisResult = '';
   bool _isLoading = true;
   StreamSubscription? _sub;
+  late ConfettiController _confettiController;
+  bool _confettiFired = false;
 
   @override
   void initState() {
     super.initState();
+    _confettiController = ConfettiController(
+      duration: const Duration(seconds: 3),
+    );
     _startAnalysis();
   }
 
   @override
   void dispose() {
     _sub?.cancel();
+    _confettiController.dispose();
     super.dispose();
   }
 
@@ -531,6 +531,7 @@ UYUM:%[skor]
               setState(() {
                 _analysisResult += chunk;
               });
+              _checkConfetti();
             }
           },
           onDone: () {
@@ -538,40 +539,65 @@ UYUM:%[skor]
               setState(() {
                 _isLoading = false;
               });
+              _checkConfetti();
             }
           },
           onError: (error) {
             if (mounted) {
               setState(() {
                 _isLoading = false;
-                _analysisResult += '\n\n[Hata oluştu: Sunucu yanıt veremiyor]';
+                _analysisResult += '\n\n[Hata oluştu]';
               });
             }
           },
         );
   }
 
-  /// Skorları parse et
+  void _checkConfetti() {
+    if (_confettiFired) return;
+    final score = _parseScore('GENEL');
+    if (score >= 60) {
+      _confettiFired = true;
+      _confettiController.play();
+    }
+  }
+
   int _parseScore(String label) {
     final match = RegExp('$label:%?(\\d+)').firstMatch(_analysisResult);
     if (match != null) return int.tryParse(match.group(1)!) ?? 0;
     return 0;
   }
 
-  /// Gerekçeyi parse et (--- sonrası)
   String _parseRationale() {
     final parts = _analysisResult.split('---');
     if (parts.length > 1) return parts.sublist(1).join('---').trim();
     return '';
   }
 
-  Color _scoreColor(int score) {
-    if (score >= 70) return const Color(0xFF2E7D32);
-    if (score >= 40) return const Color(0xFFF57C00);
+  Color _scoreColor(int s) {
+    if (s >= 70) return const Color(0xFF2E7D32);
+    if (s >= 40) return const Color(0xFFF57C00);
     return const Color(0xFFD32F2F);
   }
 
-  Widget _buildScoreBar(String label, int score, Color color, bool isDark) {
+  bool get _isUygun => _parseScore('GENEL') >= 60;
+
+  void _applyToJob() async {
+    final url = widget.job.applicationUrl;
+    if (url != null && url.isNotEmpty) {
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+    } else if (mounted) {
+      AppToast.info(
+        context,
+        'Başvuru bağlantısı bulunamadı. İlanı inceleyerek başvurabilirsiniz.',
+      );
+    }
+  }
+
+  Widget _bar(String label, int score, Color color, bool isDark) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
@@ -619,7 +645,6 @@ UYUM:%[skor]
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-
     final genelScore = _parseScore('GENEL');
     final egitimScore = _parseScore('EĞİTİM');
     final deneyimScore = _parseScore('DENEYİM');
@@ -628,265 +653,363 @@ UYUM:%[skor]
     final rationale = _parseRationale();
     final hasScores = genelScore > 0;
 
-    return Container(
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.8,
-      ),
-      decoration: BoxDecoration(
-        color: isDark ? AppTheme.cardDark : Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Handle
-          Container(
-            width: 40,
-            height: 4,
-            margin: const EdgeInsets.only(top: 12),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade300,
-              borderRadius: BorderRadius.circular(2),
-            ),
+    return Stack(
+      children: [
+        Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.8,
           ),
-          // Header
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    Icons.analytics_rounded,
-                    color: AppTheme.primaryColor,
-                    size: 22,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'AI İlan Analizi',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      Text(
-                        widget.job.title,
-                        style: TextStyle(fontSize: 13, color: Colors.grey[500]),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-                if (hasScores)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _scoreColor(genelScore).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      '%$genelScore',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900,
-                        color: _scoreColor(genelScore),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
+          decoration: BoxDecoration(
+            color: isDark ? AppTheme.cardDark : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
-          const Divider(height: 1),
-          // Content
-          Flexible(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Detaylı grafikler
-                  if (hasScores) ...[
-                    Text(
-                      'Uyumluluk Grafikleri',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: isDark ? Colors.white : Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    _buildScoreBar(
-                      'Genel',
-                      genelScore,
-                      _scoreColor(genelScore),
-                      isDark,
-                    ),
-                    _buildScoreBar(
-                      'Eğitim',
-                      egitimScore,
-                      const Color(0xFF1565C0),
-                      isDark,
-                    ),
-                    _buildScoreBar(
-                      'Deneyim',
-                      deneyimScore,
-                      const Color(0xFF7B1FA2),
-                      isDark,
-                    ),
-                    _buildScoreBar(
-                      'Beceri',
-                      beceriScore,
-                      const Color(0xFFF57C00),
-                      isDark,
-                    ),
-                    _buildScoreBar(
-                      'Uyum',
-                      uyumScore,
-                      const Color(0xFF2E7D32),
-                      isDark,
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-
-                  // Kısa gerekçe
-                  if (rationale.isNotEmpty) ...[
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(top: 12),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              // Header
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Row(
+                  children: [
                     Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(14),
+                      padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color:
-                            isDark
-                                ? Colors.white.withValues(alpha: 0.05)
-                                : Colors.grey.shade50,
+                        color: AppTheme.primaryColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: isDark ? Colors.white12 : Colors.grey.shade200,
-                        ),
                       ),
+                      child: const Icon(
+                        Icons.analytics_rounded,
+                        color: AppTheme.primaryColor,
+                        size: 22,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.lightbulb_outline_rounded,
-                                size: 16,
-                                color:
-                                    isDark
-                                        ? Colors.amber[300]
-                                        : Colors.amber[700],
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                'Değerlendirme',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
-                                  color:
-                                      isDark
-                                          ? Colors.amber[300]
-                                          : Colors.amber[700],
-                                ),
-                              ),
-                            ],
+                          const Text(
+                            'AI İlan Analizi',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
-                          const SizedBox(height: 8),
-                          SelectableText(
-                            rationale,
+                          Text(
+                            widget.job.title,
                             style: TextStyle(
                               fontSize: 13,
-                              height: 1.5,
-                              color: isDark ? Colors.white70 : Colors.black87,
+                              color: Colors.grey[500],
                             ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),
                     ),
-                  ],
-
-                  // Yükleme durumları
-                  if (!hasScores &&
-                      _analysisResult.isNotEmpty &&
-                      !_isLoading) ...[
-                    SelectableText(
-                      _analysisResult,
-                      style: TextStyle(
-                        fontSize: 14,
-                        height: 1.6,
-                        color: isDark ? Colors.white70 : Colors.black87,
-                      ),
-                    ),
-                  ],
-
-                  if (_isLoading) ...[
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: AppTheme.primaryColor,
+                    if (hasScores)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _scoreColor(genelScore).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          '%$genelScore',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                            color: _scoreColor(genelScore),
                           ),
                         ),
-                        const SizedBox(width: 10),
+                      ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              // Content
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (hasScores) ...[
                         Text(
-                          'Analiz ediliyor...',
+                          'Uyumluluk Grafikleri',
                           style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey[500],
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: isDark ? Colors.white : Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        _bar(
+                          'Genel',
+                          genelScore,
+                          _scoreColor(genelScore),
+                          isDark,
+                        ),
+                        _bar(
+                          'Eğitim',
+                          egitimScore,
+                          const Color(0xFF1565C0),
+                          isDark,
+                        ),
+                        _bar(
+                          'Deneyim',
+                          deneyimScore,
+                          const Color(0xFF7B1FA2),
+                          isDark,
+                        ),
+                        _bar(
+                          'Beceri',
+                          beceriScore,
+                          const Color(0xFFF57C00),
+                          isDark,
+                        ),
+                        _bar(
+                          'Uyum',
+                          uyumScore,
+                          const Color(0xFF2E7D32),
+                          isDark,
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                      if (rationale.isNotEmpty) ...[
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color:
+                                isDark
+                                    ? Colors.white.withValues(alpha: 0.05)
+                                    : Colors.grey.shade50,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color:
+                                  isDark
+                                      ? Colors.white12
+                                      : Colors.grey.shade200,
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.lightbulb_outline_rounded,
+                                    size: 16,
+                                    color:
+                                        isDark
+                                            ? Colors.amber[300]
+                                            : Colors.amber[700],
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    'Değerlendirme',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                      color:
+                                          isDark
+                                              ? Colors.amber[300]
+                                              : Colors.amber[700],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              SelectableText(
+                                rationale,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  height: 1.5,
+                                  color:
+                                      isDark ? Colors.white70 : Colors.black87,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-          // Close button
-          Container(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-            child: SafeArea(
-              child: SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : () => Navigator.pop(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  child: const Text(
-                    'Kapat',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                    ),
+                      if (!hasScores &&
+                          _analysisResult.isNotEmpty &&
+                          !_isLoading) ...[
+                        SelectableText(
+                          _analysisResult,
+                          style: TextStyle(
+                            fontSize: 14,
+                            height: 1.6,
+                            color: isDark ? Colors.white70 : Colors.black87,
+                          ),
+                        ),
+                      ],
+                      if (_isLoading) ...[
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: AppTheme.primaryColor,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Text(
+                              'Analiz ediliyor...',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.grey[500],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
                   ),
                 ),
               ),
-            ),
+              // Buttons
+              Container(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+                child: SafeArea(
+                  child:
+                      _isLoading
+                          ? SizedBox(
+                            width: double.infinity,
+                            height: 48,
+                            child: ElevatedButton(
+                              onPressed: null,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.grey,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                              ),
+                              child: const Text(
+                                'Analiz ediliyor...',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          )
+                          : Row(
+                            children: [
+                              Expanded(
+                                child: SizedBox(
+                                  height: 48,
+                                  child: OutlinedButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor:
+                                          isDark
+                                              ? Colors.white70
+                                              : Colors.grey[700],
+                                      side: BorderSide(
+                                        color:
+                                            isDark
+                                                ? Colors.white24
+                                                : Colors.grey.shade300,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(14),
+                                      ),
+                                    ),
+                                    child: const Text(
+                                      'Kapat',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                flex: 2,
+                                child: SizedBox(
+                                  height: 48,
+                                  child: ElevatedButton.icon(
+                                    onPressed: _applyToJob,
+                                    icon: Icon(
+                                      _isUygun
+                                          ? Icons.check_circle_rounded
+                                          : Icons.open_in_new_rounded,
+                                      color: Colors.white,
+                                      size: 20,
+                                    ),
+                                    label: Text(
+                                      _isUygun
+                                          ? 'Hemen Başvur 🎉'
+                                          : 'Yine de Başvur',
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w700,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor:
+                                          _isUygun
+                                              ? const Color(0xFF2E7D32)
+                                              : const Color(0xFFF57C00),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(14),
+                                      ),
+                                      elevation: 2,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+        // Confetti
+        Align(
+          alignment: Alignment.topCenter,
+          child: ConfettiWidget(
+            confettiController: _confettiController,
+            blastDirectionality: BlastDirectionality.explosive,
+            shouldLoop: false,
+            colors: const [
+              Color(0xFF2E7D32),
+              Color(0xFF4CAF50),
+              Color(0xFF81C784),
+              Color(0xFFFFD700),
+              Color(0xFF1565C0),
+            ],
+            numberOfParticles: 25,
+            maxBlastForce: 20,
+            minBlastForce: 8,
+            gravity: 0.2,
+          ),
+        ),
+      ],
     );
   }
 }
+
