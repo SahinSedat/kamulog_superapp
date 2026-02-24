@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kamulog_superapp/core/theme/app_theme.dart';
 import 'package:kamulog_superapp/features/favorites/data/favorites_service.dart';
+import 'package:kamulog_superapp/features/kariyer/data/models/job_listing_model.dart';
 
 /// Favoriler sayfasi — kategorilere ayrilmis: Is Ilanlari, Becayis, Diger
 class FavoritesScreen extends ConsumerWidget {
@@ -145,13 +146,46 @@ class _SectionTitle extends StatelessWidget {
   }
 }
 
-class _FavoriteCard extends ConsumerWidget {
+class _FavoriteCard extends ConsumerStatefulWidget {
   final FavoriteItem item;
   final bool isDark;
   const _FavoriteCard({required this.item, required this.isDark});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_FavoriteCard> createState() => _FavoriteCardState();
+}
+
+class _FavoriteCardState extends ConsumerState<_FavoriteCard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _heartController;
+  late Animation<double> _heartScale;
+
+  @override
+  void initState() {
+    super.initState();
+    _heartController = AnimationController(
+      duration: const Duration(milliseconds: 400),
+      vsync: this,
+    );
+    _heartScale = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.4), weight: 50),
+      TweenSequenceItem(tween: Tween(begin: 1.4, end: 1.0), weight: 50),
+    ]).animate(
+      CurvedAnimation(parent: _heartController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _heartController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final item = widget.item;
+    final isDark = widget.isDark;
+
     final categoryIcon =
         item.category == 'job'
             ? Icons.work_outline_rounded
@@ -230,24 +264,38 @@ class _FavoriteCard extends ConsumerWidget {
                   );
                 },
               ),
-              // Favoriden cikar
-              IconButton(
-                icon: const Icon(
-                  Icons.favorite_rounded,
-                  size: 20,
-                  color: Colors.red,
+              // Animasyonlu favori cikarma
+              ScaleTransition(
+                scale: _heartScale,
+                child: GestureDetector(
+                  onTap: () {
+                    _heartController.forward(from: 0);
+                    ref
+                        .read(favoritesProvider.notifier)
+                        .removeFavorite(item.id, item.category);
+                  },
+                  child: const Icon(
+                    Icons.favorite_rounded,
+                    size: 20,
+                    color: Colors.red,
+                  ),
                 ),
-                onPressed: () {
-                  ref
-                      .read(favoritesProvider.notifier)
-                      .removeFavorite(item.id, item.category);
-                },
               ),
             ],
           ),
           onTap: () {
-            if (item.routePath != null) {
-              context.push(item.routePath!, extra: item.extraData);
+            // Is ilani ise extraData'dan JobListingModel olustur ve ilana git
+            if (item.category == 'job' && item.extraData != null) {
+              try {
+                final job = JobListingModel.fromJson(item.extraData!);
+                context.push('/job-detail', extra: job);
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Ilan verisi yuklenemedi')),
+                );
+              }
+            } else if (item.routePath != null) {
+              context.push(item.routePath!);
             }
           },
         ),

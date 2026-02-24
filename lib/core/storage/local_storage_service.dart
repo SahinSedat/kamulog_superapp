@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:hive_flutter/hive_flutter.dart';
 
 /// Yerel depolama servisi — kullanıcı verileri cihazda kalır
@@ -123,13 +124,41 @@ class LocalStorageService {
     };
   }
 
+  // ════════════════════════════════════════════
+  // KULLANICI ID — cihazda kalir
+  // ════════════════════════════════════════════
+
+  static String generateUserId() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    final rng = Random.secure();
+    final code =
+        List.generate(6, (_) => chars[rng.nextInt(chars.length)]).join();
+    return 'KML-$code';
+  }
+
+  static Future<void> saveUserId(String userId) async {
+    await _profile.put('userId', userId);
+  }
+
+  static String? loadUserId() {
+    return _profile.get('userId');
+  }
+
+  static Future<String> getOrCreateUserId() async {
+    final existing = loadUserId();
+    if (existing != null) return existing;
+    final newId = generateUserId();
+    await saveUserId(newId);
+    return newId;
+  }
+
   static Future<void> saveProfileImage(String path) async {
     await _profile.put('profileImage', path);
   }
 
-  static String? loadProfileImage() {
-    return _profile.get('profileImage');
-  }
+  // ════════════════════════════════════════════
+  // İSİM BİLGİSİ — cihazda kalır
+  // ════════════════════════════════════════════
 
   static Future<void> saveProfileName(String name) async {
     await _profile.put('profileName', name);
@@ -137,6 +166,10 @@ class LocalStorageService {
 
   static String? loadProfileName() {
     return _profile.get('profileName');
+  }
+
+  static String? loadProfileImage() {
+    return _profile.get('profileImage');
   }
 
   static Future<void> saveProfilePhone(String phone) async {

@@ -7,6 +7,7 @@ import 'package:kamulog_superapp/core/widgets/common_widgets.dart';
 import 'package:kamulog_superapp/features/auth/presentation/providers/auth_provider.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import 'package:kamulog_superapp/core/storage/local_storage_service.dart';
+import 'package:kamulog_superapp/core/services/notification_preferences_service.dart';
 
 class PhoneInputScreen extends ConsumerStatefulWidget {
   const PhoneInputScreen({super.key});
@@ -26,6 +27,10 @@ class _PhoneInputScreenState extends ConsumerState<PhoneInputScreen>
 
   bool _userAgreementAccepted = false;
   bool _kvkkAccepted = false;
+
+  // Bildirim izinleri (isteğe bağlı — sadece SMS ve E-posta)
+  bool _smsNotifAccepted = false;
+  bool _emailNotifAccepted = false;
 
   late final AnimationController _animController;
   late final Animation<double> _fadeIn;
@@ -75,6 +80,14 @@ class _PhoneInputScreenState extends ConsumerState<PhoneInputScreen>
 
     final phone = _phoneMask.getUnmaskedText();
     final formattedPhone = Formatters.formatPhoneForApi(phone);
+
+    // Bildirim izinlerini kaydet
+    NotificationPreferencesService.saveAll(
+      push: true, // Uygulama bildirimi her zaman açık
+      sms: _smsNotifAccepted,
+      email: _emailNotifAccepted,
+    );
+
     ref.read(authProvider.notifier).sendOtp(formattedPhone);
   }
 
@@ -279,6 +292,48 @@ class _PhoneInputScreenState extends ConsumerState<PhoneInputScreen>
                               context,
                               'KVKK Aydinlatma Metni',
                               _kvkkText,
+                            ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // ── Bildirim Tercihleri Başlığı
+                      Text(
+                        'Bildirim Tercihleri',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'İstediğiniz bildirim kanallarını seçin (isteğe bağlı)',
+                        style: TextStyle(fontSize: 11, color: Colors.grey[400]),
+                      ),
+                      const SizedBox(height: 8),
+
+                      // ── SMS Bildirimi
+                      _NotificationCheckbox(
+                        value: _smsNotifAccepted,
+                        icon: Icons.sms_outlined,
+                        label: 'SMS Bildirimleri',
+                        subtitle: 'Önemli gelişmelerden SMS ile haberdar olun',
+                        onChanged:
+                            (v) =>
+                                setState(() => _smsNotifAccepted = v ?? false),
+                      ),
+                      const SizedBox(height: 2),
+
+                      // ── E-posta Bildirimi
+                      _NotificationCheckbox(
+                        value: _emailNotifAccepted,
+                        icon: Icons.email_outlined,
+                        label: 'E-posta Bildirimleri',
+                        subtitle: 'Haftalık özetler ve fırsatlar',
+                        onChanged:
+                            (v) => setState(
+                              () => _emailNotifAccepted = v ?? false,
                             ),
                       ),
 
@@ -563,6 +618,89 @@ class _AgreementCheckbox extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Bildirim izni checkbox'i — ikon, baslik ve alt baslik ile
+class _NotificationCheckbox extends StatelessWidget {
+  final bool value;
+  final IconData icon;
+  final String label;
+  final String subtitle;
+  final ValueChanged<bool?> onChanged;
+
+  const _NotificationCheckbox({
+    required this.value,
+    required this.icon,
+    required this.label,
+    required this.subtitle,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return GestureDetector(
+      onTap: () => onChanged(!value),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color:
+              value
+                  ? AppTheme.primaryColor.withValues(alpha: 0.06)
+                  : (isDark
+                      ? Colors.white.withValues(alpha: 0.03)
+                      : Colors.grey.withValues(alpha: 0.04)),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color:
+                value
+                    ? AppTheme.primaryColor.withValues(alpha: 0.2)
+                    : Colors.transparent,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              size: 18,
+              color: value ? AppTheme.primaryColor : Colors.grey[400],
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: value ? AppTheme.primaryColor : null,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: TextStyle(fontSize: 10, color: Colors.grey[400]),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(
+              width: 24,
+              height: 24,
+              child: Checkbox(
+                value: value,
+                onChanged: onChanged,
+                activeColor: AppTheme.primaryColor,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                visualDensity: VisualDensity.compact,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -34,6 +34,7 @@ class ProfilState {
   final DateTime? subscriptionEndDate;
   final List<String> aiCvUsageDates; // ISO formatında tarihler
   final String? profileImagePath; // Local profile image path
+  final String? userId; // Random kullanici ID (KML-XXXXXX)
 
   final String? error;
 
@@ -62,6 +63,7 @@ class ProfilState {
     this.aiCvUsageDates = const [],
     this.error,
     this.profileImagePath,
+    this.userId,
   });
 
   ProfilState copyWith({
@@ -89,6 +91,7 @@ class ProfilState {
     List<String>? aiCvUsageDates,
     String? error,
     String? profileImagePath,
+    String? userId,
   }) {
     return ProfilState(
       isLoading: isLoading ?? this.isLoading,
@@ -115,6 +118,7 @@ class ProfilState {
       aiCvUsageDates: aiCvUsageDates ?? this.aiCvUsageDates,
       error: error,
       profileImagePath: profileImagePath ?? this.profileImagePath,
+      userId: userId ?? this.userId,
     );
   }
 
@@ -294,6 +298,12 @@ class ProfilNotifier extends StateNotifier<ProfilState> {
       aiCvUsageDates: aiCvUsage,
       profileImagePath: profileImage,
     );
+
+    // Yerel kayitli isim varsa yukle
+    final savedName = LocalStorageService.loadProfileName();
+    if (savedName != null && savedName.isNotEmpty) {
+      state = state.copyWith(name: savedName);
+    }
   }
 
   /// Login'den gelen bilgilerle profili baslat
@@ -326,6 +336,11 @@ class ProfilNotifier extends StateNotifier<ProfilState> {
         title: state.title ?? user.title,
         credits: effectiveCredits,
       );
+
+      // İsim bilgisini yerel depolamaya kaydet
+      if (user.name != null && (user.name as String).isNotEmpty) {
+        LocalStorageService.saveProfileName(user.name as String);
+      }
 
       // Sadece ilk seferde (lokal kayit yoksa) backend degerini kaydet
       if (localCredits <= 0) {

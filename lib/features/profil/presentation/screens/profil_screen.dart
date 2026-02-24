@@ -42,65 +42,16 @@ class ProfilScreen extends ConsumerWidget {
                 onTap: () => context.push('/profile/edit'),
               ),
 
-            // ── Bilgilerim (Kişisel + Çalışma birleştirildi)
+            // ── Bilgilerim (Tüm kişisel bilgiler tek butonda)
             _SectionHeader(title: 'Bilgilerim'),
             _InfoMenuGroup(
               items: [
                 _MenuItem(
-                  icon: Icons.person_outline,
-                  title: 'Ad Soyad',
-                  trailing: user?.name ?? 'Belirtilmedi',
+                  icon: Icons.person_outline_rounded,
+                  title: 'Bilgilerim',
+                  trailing: 'Kişisel & Çalışma Bilgileri',
                   onTap: () => context.push('/profile/edit'),
-                ),
-                _MenuItem(
-                  icon: Icons.phone_outlined,
-                  title: 'Telefon',
-                  trailing: user?.phone ?? '',
-                  onTap: null,
-                ),
-                _MenuItem(
-                  icon: Icons.badge_outlined,
-                  title: 'TC Kimlik No',
-                  trailing:
-                      profil.tcKimlik != null
-                          ? '••• ••• ${profil.tcKimlik!.substring(profil.tcKimlik!.length > 4 ? profil.tcKimlik!.length - 4 : 0)}'
-                          : 'Girilmedi',
-                  onTap: () => context.push('/profile/edit'),
-                ),
-                _MenuItem(
-                  icon: Icons.email_outlined,
-                  title: 'E-posta',
-                  trailing: profil.email ?? 'Girilmedi',
-                  onTap: () => context.push('/profile/edit'),
-                  showWarning: profil.email == null || profil.email!.isEmpty,
-                ),
-                _MenuItem(
-                  icon: Icons.location_on_outlined,
-                  title: 'Adres Bilgileri',
-                  trailing: profil.addressText,
-                  onTap: () => context.push('/profile/edit'),
-                  showWarning: profil.city == null,
-                ),
-                _MenuItem(
-                  icon: Icons.account_balance_outlined,
-                  title: 'Çalışma Durumu',
-                  trailing: profil.employmentText,
-                  onTap:
-                      profil.employmentType != null
-                          ? null
-                          : () => context.push('/profile/edit'),
-                ),
-                _MenuItem(
-                  icon: Icons.business_outlined,
-                  title: 'Kurum',
-                  trailing: profil.effectiveInstitution,
-                  onTap: () => context.push('/profile/edit'),
-                ),
-                _MenuItem(
-                  icon: Icons.work_outline,
-                  title: 'Unvan',
-                  trailing: profil.title ?? 'Belirtilmedi',
-                  onTap: () => context.push('/profile/edit'),
+                  showWarning: _isProfileIncomplete(user, profil),
                 ),
               ],
               isDark: isDark,
@@ -203,15 +154,21 @@ class ProfilScreen extends ConsumerWidget {
               isDark: isDark,
             ),
 
-            // ── Mesajlarım
-            _SectionHeader(title: 'Mesajlarım'),
+            // ── Mesajlarim
+            _SectionHeader(title: 'Mesajlarim'),
             _InfoMenuGroup(
               items: [
                 _MenuItem(
                   icon: Icons.chat_bubble_outline_rounded,
-                  title: 'Danışman ile Canlı Sohbet',
-                  trailing: 'Anında destek',
+                  title: 'Danisman ile Canli Sohbet',
+                  trailing: 'Aninda destek',
                   onTap: () => context.push('/chat'),
+                ),
+                _MenuItem(
+                  icon: Icons.swap_horiz_rounded,
+                  title: 'Becayis Mesajlarim',
+                  trailing: 'Anlik mesajlasma',
+                  onTap: () => context.push('/becayis-messaging'),
                 ),
               ],
               isDark: isDark,
@@ -242,8 +199,13 @@ class ProfilScreen extends ConsumerWidget {
             _InfoMenuGroup(
               items: [
                 _MenuItem(
+                  icon: Icons.favorite_outline_rounded,
+                  title: 'Favorilerim',
+                  onTap: () => context.push('/favorites'),
+                ),
+                _MenuItem(
                   icon: Icons.notifications_outlined,
-                  title: 'Bildirim Ayarları',
+                  title: 'Bildirim Ayarlari',
                   onTap: () => context.push('/notifications'),
                 ),
                 _MenuItem(
@@ -830,10 +792,18 @@ class _ProfileHeader extends ConsumerWidget {
     }
   }
 
+  /// İsmi "Sedat Ş." formatına çevirir
+  String _formatDisplayName(String fullName) {
+    final parts = fullName.trim().split(RegExp(r'\s+'));
+    if (parts.length < 2) return fullName;
+    final firstName = parts.first;
+    final lastInitial = parts.last[0].toUpperCase();
+    return '$firstName $lastInitial.';
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final name = user?.name ?? 'Kullanıcı';
-    final phone = user?.phone ?? '';
     final profil = ref.watch(profilProvider);
 
     return Column(
@@ -846,11 +816,11 @@ class _ProfileHeader extends ConsumerWidget {
         ),
         const SizedBox(height: 10),
         Text(
-          name,
+          _formatDisplayName(name),
           style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
         ),
         const SizedBox(height: 4),
-        Text(phone, style: TextStyle(fontSize: 14, color: Colors.grey[500])),
+        // Alt bilgi: plan durumu
         const SizedBox(height: 8),
 
         // ── Plan Bilgisi Gösterimi

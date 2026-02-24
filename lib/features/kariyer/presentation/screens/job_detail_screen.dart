@@ -12,6 +12,8 @@ import 'package:kamulog_superapp/features/profil/presentation/providers/profil_p
 import 'package:kamulog_superapp/core/providers/core_providers.dart';
 
 import 'package:kamulog_superapp/features/ai/presentation/providers/ai_provider.dart';
+import 'package:kamulog_superapp/features/favorites/data/favorites_service.dart';
+import 'package:flutter/services.dart';
 import 'package:uuid/uuid.dart';
 
 class JobDetailScreen extends ConsumerWidget {
@@ -130,6 +132,39 @@ class JobDetailScreen extends ConsumerWidget {
           title: const Text('İlan Detayı'),
           centerTitle: true,
           actions: [
+            // Animasyonlu favori butonu
+            _AnimatedFavoriteButton(job: job),
+            // Paylas butonu
+            IconButton(
+              icon: const Icon(Icons.share_rounded, size: 22),
+              onPressed: () {
+                final shareText =
+                    '${job.title}\n${job.company} - ${job.location}\n\nKamulog uzerinden goruntule';
+                Clipboard.setData(ClipboardData(text: shareText));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Ilan bilgileri panoya kopyalandi'),
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+              },
+              tooltip: 'Paylas',
+            ),
+            // Danismana ilet
+            IconButton(
+              icon: const Icon(Icons.support_agent_rounded, size: 22),
+              onPressed: () {
+                context.push('/chat');
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('"${job.title}" ilani danismana iletildi'),
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
+              },
+              tooltip: 'Danismana Ilet',
+            ),
+            // Jeton gostergesi
             Container(
               margin: const EdgeInsets.only(right: 12),
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -147,7 +182,7 @@ class JobDetailScreen extends ConsumerWidget {
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    profil.isPremium ? 'Sınırsız' : '${profil.credits} Jeton',
+                    profil.isPremium ? 'Sinirsiz' : '${profil.credits} Jeton',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
@@ -1056,6 +1091,96 @@ UYUM:%[skor]
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Animasyonlu favori butonu — scale + rotation + renk degisimi
+class _AnimatedFavoriteButton extends ConsumerStatefulWidget {
+  final JobListingModel job;
+  const _AnimatedFavoriteButton({required this.job});
+
+  @override
+  ConsumerState<_AnimatedFavoriteButton> createState() =>
+      _AnimatedFavoriteButtonState();
+}
+
+class _AnimatedFavoriteButtonState
+    extends ConsumerState<_AnimatedFavoriteButton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 500),
+      vsync: this,
+    );
+    _scaleAnim = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.5), weight: 40),
+      TweenSequenceItem(tween: Tween(begin: 1.5, end: 0.8), weight: 30),
+      TweenSequenceItem(tween: Tween(begin: 0.8, end: 1.0), weight: 30),
+    ]).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final job = widget.job;
+    final isFav = ref
+        .watch(favoritesProvider)
+        .any((e) => e.id == job.id && e.category == 'job');
+
+    return ScaleTransition(
+      scale: _scaleAnim,
+      child: GestureDetector(
+        onTap: () {
+          _controller.forward(from: 0);
+          ref
+              .read(favoritesProvider.notifier)
+              .toggleFavorite(
+                FavoriteItem(
+                  id: job.id,
+                  title: job.title,
+                  subtitle: '${job.company} - ${job.location}',
+                  category: 'job',
+                  routePath: '/job-detail',
+                  extraData: job.toJson(),
+                  addedAt: DateTime.now(),
+                ),
+              );
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color:
+                isFav ? Colors.red.withValues(alpha: 0.15) : Colors.transparent,
+            shape: BoxShape.circle,
+          ),
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            transitionBuilder:
+                (child, animation) => RotationTransition(
+                  turns: Tween(begin: 0.5, end: 1.0).animate(animation),
+                  child: ScaleTransition(scale: animation, child: child),
+                ),
+            child: Icon(
+              isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+              key: ValueKey(isFav),
+              color: isFav ? Colors.red : Colors.grey[500],
+              size: 24,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

@@ -8,6 +8,7 @@ import 'package:kamulog_superapp/core/providers/home_navigation_provider.dart';
 import 'package:kamulog_superapp/features/profil/presentation/providers/profil_provider.dart';
 import 'package:kamulog_superapp/features/kariyer/presentation/providers/jobs_provider.dart';
 import 'package:kamulog_superapp/features/kariyer/data/models/job_listing_model.dart';
+import 'package:kamulog_superapp/features/favorites/data/favorites_service.dart';
 
 /// Kariyer modülü — AI CV oluşturma ve iş analizi
 /// Ayrı modül: features/kariyer/ — ileride ayrı API/AI entegrasyonu
@@ -455,7 +456,7 @@ class CareerScreen extends ConsumerWidget {
                                   .toList();
                         }
 
-                        // Kelime araması
+                        // Kelime araması (başlık, açıklama, şirket, ilan kodu)
                         if (q.isNotEmpty) {
                           filteredJobs =
                               filteredJobs
@@ -465,7 +466,10 @@ class CareerScreen extends ConsumerWidget {
                                         j.description.toLowerCase().contains(
                                           q,
                                         ) ||
-                                        j.company.toLowerCase().contains(q),
+                                        j.company.toLowerCase().contains(q) ||
+                                        (j.code ?? '').toLowerCase().contains(
+                                          q,
+                                        ),
                                   )
                                   .toList();
                         }
@@ -998,13 +1002,67 @@ class _QuickActionCard extends StatelessWidget {
 }
 
 // ── Job Card
-class _JobCard extends StatelessWidget {
+class _JobCard extends ConsumerStatefulWidget {
   final JobListingModel job;
   final bool isDark;
   const _JobCard({required this.job, required this.isDark});
 
   @override
+  ConsumerState<_JobCard> createState() => _JobCardState();
+}
+
+class _JobCardState extends ConsumerState<_JobCard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _heartController;
+  late Animation<double> _heartScale;
+
+  @override
+  void initState() {
+    super.initState();
+    _heartController = AnimationController(
+      duration: const Duration(milliseconds: 400),
+      vsync: this,
+    );
+    _heartScale = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.4), weight: 50),
+      TweenSequenceItem(tween: Tween(begin: 1.4, end: 1.0), weight: 50),
+    ]).animate(
+      CurvedAnimation(parent: _heartController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _heartController.dispose();
+    super.dispose();
+  }
+
+  void _toggleFavorite() {
+    final job = widget.job;
+    _heartController.forward(from: 0);
+    ref
+        .read(favoritesProvider.notifier)
+        .toggleFavorite(
+          FavoriteItem(
+            id: job.id,
+            title: job.title,
+            subtitle: '${job.company} - ${job.location ?? ""}',
+            category: 'job',
+            routePath: '/job-detail',
+            extraData: job.toJson(),
+            addedAt: DateTime.now(),
+          ),
+        );
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final job = widget.job;
+    final isDark = widget.isDark;
+    final isFav = ref
+        .watch(favoritesProvider)
+        .any((e) => e.id == job.id && e.category == 'job');
+
     return Container(
       decoration: BoxDecoration(
         color: isDark ? AppTheme.cardDark : Colors.white,
@@ -1057,9 +1115,61 @@ class _JobCard extends StatelessWidget {
                               color: Colors.grey[500],
                             ),
                           ),
+                          if (job.code != null && job.code!.isNotEmpty)
+                            Text(
+                              'İlan No: ${job.code}',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: AppTheme.primaryColor.withValues(
+                                  alpha: 0.7,
+                                ),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
                         ],
                       ),
                     ),
+                    // Animasyonlu favori butonu
+                    ScaleTransition(
+                      scale: _heartScale,
+                      child: GestureDetector(
+                        onTap: _toggleFavorite,
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 300),
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color:
+                                isFav
+                                    ? Colors.red.withValues(alpha: 0.15)
+                                    : Colors.transparent,
+                            shape: BoxShape.circle,
+                          ),
+                          child: AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 300),
+                            transitionBuilder:
+                                (child, animation) => RotationTransition(
+                                  turns: Tween(
+                                    begin: 0.5,
+                                    end: 1.0,
+                                  ).animate(animation),
+                                  child: ScaleTransition(
+                                    scale: animation,
+                                    child: child,
+                                  ),
+                                ),
+                            child: Icon(
+                              isFav
+                                  ? Icons.favorite_rounded
+                                  : Icons.favorite_border_rounded,
+                              key: ValueKey(isFav),
+                              color: isFav ? Colors.red : Colors.grey[400],
+                              size: 24,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 8,
@@ -1084,7 +1194,7 @@ class _JobCard extends StatelessWidget {
                 Row(
                   children: [
                     _JobTag(
-                      label: job.type == 'PUBLIC' ? 'Kamu' : 'Özel Sektör',
+                      label: job.type == 'PUBLIC' ? 'Kamu' : 'Ozel Sektor',
                       color:
                           job.type == 'PUBLIC'
                               ? AppTheme.primaryColor
