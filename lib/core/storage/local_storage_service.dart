@@ -234,6 +234,33 @@ class LocalStorageService {
   }
 
   // ════════════════════════════════════════════
+  // SOZLESME ONAYLARI
+  // ════════════════════════════════════════════
+
+  static Future<void> saveConsent({
+    required bool userAgreement,
+    required bool kvkk,
+  }) async {
+    final now = DateTime.now().toIso8601String();
+    await _profile.put('userAgreementAccepted', userAgreement);
+    await _profile.put('userAgreementDate', now);
+    await _profile.put('kvkkAccepted', kvkk);
+    await _profile.put('kvkkDate', now);
+  }
+
+  static Map<String, dynamic> loadConsent() {
+    return {
+      'userAgreement': _profile.get(
+        'userAgreementAccepted',
+        defaultValue: false,
+      ),
+      'userAgreementDate': _profile.get('userAgreementDate'),
+      'kvkk': _profile.get('kvkkAccepted', defaultValue: false),
+      'kvkkDate': _profile.get('kvkkDate'),
+    };
+  }
+
+  // ════════════════════════════════════════════
   // TEMIZLEME
   // ════════════════════════════════════════════
 

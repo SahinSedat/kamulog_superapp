@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kamulog_superapp/features/ai/data/datasources/ai_remote_datasource.dart';
 import 'package:kamulog_superapp/features/ai/data/models/ai_message_model.dart';
 import 'package:kamulog_superapp/features/ai/data/repositories/ai_repository_impl.dart';
+import 'package:kamulog_superapp/features/profil/presentation/providers/profil_provider.dart';
 
 // ── Providers ──
 final aiRemoteDataSourceProvider = Provider<AiRemoteDataSource>((ref) {
@@ -62,10 +63,11 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
   StreamSubscription<String>? _streamSub;
   int _msgCounter = 0;
 
-  AiChatNotifier(this._repository)
+  AiChatNotifier(this._repository, {int initialCredits = 30})
     : super(
         AiChatState(
           conversationId: 'conv-${DateTime.now().millisecondsSinceEpoch}',
+          aiAssistantCredits: initialCredits,
         ),
       );
 
@@ -214,5 +216,10 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
 final aiChatProvider = StateNotifierProvider<AiChatNotifier, AiChatState>((
   ref,
 ) {
-  return AiChatNotifier(ref.watch(aiRepositoryProvider));
+  final isPremium = ref.watch(profilProvider).isPremium;
+  final initialCredits = isPremium ? 60 : 30;
+  return AiChatNotifier(
+    ref.watch(aiRepositoryProvider),
+    initialCredits: initialCredits,
+  );
 });

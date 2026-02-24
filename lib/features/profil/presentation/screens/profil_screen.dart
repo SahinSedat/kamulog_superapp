@@ -288,7 +288,10 @@ class ProfilScreen extends ConsumerWidget {
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton.icon(
-                  onPressed: () => context.push('/upgrade'),
+                  onPressed:
+                      () => context.push(
+                        profil.isPremium ? '/subscription-history' : '/upgrade',
+                      ),
                   icon: Icon(
                     profil.isPremium
                         ? Icons.star_rounded
