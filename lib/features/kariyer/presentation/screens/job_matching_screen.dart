@@ -107,21 +107,33 @@ class JobMatchingScreen extends ConsumerWidget {
       }
       return;
     }
+    // Kullanıcının şehri
+    final userCity = profil.city ?? profil.surveyCity ?? '';
 
-    // Mevcut ilanların özetini hazırla — TÜM ilanlar
-    final jobsSummary = jobs
+    // Şehir bazlı filtreleme: Özel sektör ilanlarını şehre göre filtrele, kamu ilanları hepsini dahil et
+    final filteredForAi =
+        userCity.isNotEmpty
+            ? jobs.where((j) {
+              final loc = (j.location ?? '').toLowerCase();
+              final isPublic =
+                  (j.type ?? '').toLowerCase().contains('public') ||
+                  (j.type ?? '').toLowerCase().contains('kamu');
+              return isPublic || loc.contains(userCity.toLowerCase());
+            }).toList()
+            : jobs;
+
+    // İlanların özetini hazırla
+    final jobsSummary = filteredForAi
         .map((j) {
           final desc =
               j.description.length > 300
                   ? j.description.substring(0, 300)
                   : j.description;
           final reqs = j.requirements ?? 'Belirtilmedi';
-          return '- İLAN#${j.id}: "${j.title}" | ${j.company} | Gereksinimler: $reqs | Açıklama: $desc';
+          final loc = j.location ?? 'Belirtilmedi';
+          return '- İLAN#${j.id}: "${j.title}" | ${j.company} | Şehir: $loc | Gereksinimler: $reqs | Açıklama: $desc';
         })
         .join('\n');
-
-    // Kullanıcının şehri
-    final userCity = profil.city ?? profil.surveyCity ?? '';
 
     // Veriyi (CV + İlanlar) context olarak gönder (system prompt'a eklenir)
     final dataContext = '''
