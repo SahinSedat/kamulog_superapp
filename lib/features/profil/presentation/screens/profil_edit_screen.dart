@@ -25,6 +25,8 @@ class _ProfilEditScreenState extends ConsumerState<ProfilEditScreen> {
   final _tcController = TextEditingController();
   final _titleController = TextEditingController();
   final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  bool _obscureTC = true;
   EmploymentType? _selectedType;
   String? _selectedCity;
   String? _selectedDistrict;
@@ -44,6 +46,7 @@ class _ProfilEditScreenState extends ConsumerState<ProfilEditScreen> {
     _tcController.text = profil.tcKimlik ?? '';
     _selectedCity = profil.city;
     _selectedDistrict = profil.district;
+    _emailController.text = profil.email ?? '';
     _selectedInstitution = profil.institution;
 
     // Dropdown değerlerini doğrula — listede yoksa null yap (crash önler)
@@ -66,7 +69,208 @@ class _ProfilEditScreenState extends ConsumerState<ProfilEditScreen> {
     _tcController.dispose();
     _titleController.dispose();
     _nameController.dispose();
+    _emailController.dispose();
     super.dispose();
+  }
+
+  void _showSearchableCityPicker() {
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        String search = '';
+        return StatefulBuilder(
+          builder: (ctx, setDialogState) {
+            final cities = TurkeyLocations.cities;
+            final filtered =
+                search.isEmpty
+                    ? cities
+                    : cities
+                        .where(
+                          (c) => c.toLowerCase().contains(search.toLowerCase()),
+                        )
+                        .toList();
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              title: const Text('İl Seçin'),
+              content: SizedBox(
+                width: double.maxFinite,
+                height: 400,
+                child: Column(
+                  children: [
+                    TextField(
+                      autofocus: true,
+                      decoration: InputDecoration(
+                        hintText: 'İl ara...',
+                        prefixIcon: const Icon(Icons.search, size: 20),
+                        filled: true,
+                        fillColor: Colors.grey.shade100,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                      onChanged: (v) => setDialogState(() => search = v),
+                    ),
+                    const SizedBox(height: 8),
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: filtered.length,
+                        itemBuilder: (_, i) {
+                          final city = filtered[i];
+                          final isSelected = city == _selectedCity;
+                          return ListTile(
+                            dense: true,
+                            leading: Icon(
+                              Icons.location_on_outlined,
+                              size: 18,
+                              color:
+                                  isSelected
+                                      ? AppTheme.primaryColor
+                                      : Colors.grey,
+                            ),
+                            title: Text(
+                              city,
+                              style: TextStyle(
+                                fontWeight:
+                                    isSelected
+                                        ? FontWeight.w700
+                                        : FontWeight.w500,
+                                color:
+                                    isSelected ? AppTheme.primaryColor : null,
+                              ),
+                            ),
+                            trailing:
+                                isSelected
+                                    ? const Icon(
+                                      Icons.check_circle,
+                                      color: Colors.green,
+                                      size: 20,
+                                    )
+                                    : null,
+                            onTap: () {
+                              setState(() {
+                                _selectedCity = city;
+                                _selectedDistrict = null;
+                              });
+                              Navigator.pop(ctx);
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showSearchableDistrictPicker() {
+    if (_selectedCity == null) return;
+    final districts = TurkeyLocations.getDistricts(_selectedCity!);
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        String search = '';
+        return StatefulBuilder(
+          builder: (ctx, setDialogState) {
+            final filtered =
+                search.isEmpty
+                    ? districts
+                    : districts
+                        .where(
+                          (d) => d.toLowerCase().contains(search.toLowerCase()),
+                        )
+                        .toList();
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              title: Text('$_selectedCity - İlçe Seçin'),
+              content: SizedBox(
+                width: double.maxFinite,
+                height: 400,
+                child: Column(
+                  children: [
+                    TextField(
+                      autofocus: true,
+                      decoration: InputDecoration(
+                        hintText: 'İlçe ara...',
+                        prefixIcon: const Icon(Icons.search, size: 20),
+                        filled: true,
+                        fillColor: Colors.grey.shade100,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                      onChanged: (v) => setDialogState(() => search = v),
+                    ),
+                    const SizedBox(height: 8),
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: filtered.length,
+                        itemBuilder: (_, i) {
+                          final district = filtered[i];
+                          final isSelected = district == _selectedDistrict;
+                          return ListTile(
+                            dense: true,
+                            leading: Icon(
+                              Icons.map_outlined,
+                              size: 18,
+                              color:
+                                  isSelected
+                                      ? AppTheme.primaryColor
+                                      : Colors.grey,
+                            ),
+                            title: Text(
+                              district,
+                              style: TextStyle(
+                                fontWeight:
+                                    isSelected
+                                        ? FontWeight.w700
+                                        : FontWeight.w500,
+                                color:
+                                    isSelected ? AppTheme.primaryColor : null,
+                              ),
+                            ),
+                            trailing:
+                                isSelected
+                                    ? const Icon(
+                                      Icons.check_circle,
+                                      color: Colors.green,
+                                      size: 20,
+                                    )
+                                    : null,
+                            onTap: () {
+                              setState(() => _selectedDistrict = district);
+                              Navigator.pop(ctx);
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   Future<void> _save() async {
@@ -97,6 +301,7 @@ class _ProfilEditScreenState extends ConsumerState<ProfilEditScreen> {
             tcKimlik: _tcController.text.trim(),
             city: _selectedCity,
             district: _selectedDistrict,
+            email: _emailController.text.trim(),
             employmentType: _selectedType,
             institution: _selectedInstitution,
             title: _titleController.text.trim(),
@@ -235,60 +440,68 @@ class _ProfilEditScreenState extends ConsumerState<ProfilEditScreen> {
               ),
               const SizedBox(height: 12),
 
-              // İl seçimi
-              DropdownButtonFormField<String>(
-                initialValue: _selectedCity,
-                isExpanded: true,
-                decoration: const InputDecoration(
-                  labelText: 'İl',
-                  prefixIcon: Icon(Icons.location_city_outlined, size: 20),
+              // İl seçimi — aranabilir dialog
+              GestureDetector(
+                onTap: () => _showSearchableCityPicker(),
+                child: AbsorbPointer(
+                  child: TextFormField(
+                    decoration: InputDecoration(
+                      labelText: 'İl',
+                      prefixIcon: const Icon(
+                        Icons.location_city_outlined,
+                        size: 20,
+                      ),
+                      suffixIcon: const Icon(Icons.arrow_drop_down),
+                      hintText: 'İl seçin',
+                    ),
+                    controller: TextEditingController(
+                      text: _selectedCity ?? '',
+                    ),
+                  ),
                 ),
-                items:
-                    TurkeyLocations.cities
-                        .map(
-                          (c) => DropdownMenuItem(
-                            value: c,
-                            child: Text(
-                              c,
-                              style: const TextStyle(fontSize: 14),
-                            ),
-                          ),
-                        )
-                        .toList(),
-                onChanged: (v) {
-                  setState(() {
-                    _selectedCity = v;
-                    _selectedDistrict = null; // İl değişince ilçeyi sıfırla
-                  });
-                },
-                validator: (v) => null, // Opsiyonel
               ),
               const SizedBox(height: 14),
 
-              // İlçe seçimi
-              DropdownButtonFormField<String>(
-                initialValue: _selectedDistrict,
-                isExpanded: true,
-                decoration: const InputDecoration(
-                  labelText: 'İlçe',
-                  prefixIcon: Icon(Icons.map_outlined, size: 20),
+              // İlçe seçimi — aranabilir dialog
+              GestureDetector(
+                onTap:
+                    _selectedCity != null
+                        ? () => _showSearchableDistrictPicker()
+                        : null,
+                child: AbsorbPointer(
+                  child: TextFormField(
+                    decoration: InputDecoration(
+                      labelText: 'İlçe',
+                      prefixIcon: const Icon(Icons.map_outlined, size: 20),
+                      suffixIcon: const Icon(Icons.arrow_drop_down),
+                      hintText:
+                          _selectedCity != null
+                              ? 'İlçe seçin'
+                              : 'Önce il seçin',
+                    ),
+                    controller: TextEditingController(
+                      text: _selectedDistrict ?? '',
+                    ),
+                  ),
                 ),
-                items:
-                    (_selectedCity != null
-                            ? TurkeyLocations.getDistricts(_selectedCity!)
-                            : <String>[])
-                        .map(
-                          (d) => DropdownMenuItem(
-                            value: d,
-                            child: Text(
-                              d,
-                              style: const TextStyle(fontSize: 14),
-                            ),
-                          ),
-                        )
-                        .toList(),
-                onChanged: (v) => setState(() => _selectedDistrict = v),
-                validator: (v) => null, // Opsiyonel
+              ),
+
+              const SizedBox(height: 14),
+              // E-posta
+              TextFormField(
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(
+                  labelText: 'E-posta Adresi',
+                  hintText: 'örnek@mail.com',
+                  prefixIcon: Icon(Icons.email_outlined, size: 20),
+                ),
+                validator: (v) {
+                  if (v != null && v.isNotEmpty && !v.contains('@')) {
+                    return 'Geçerli bir e-posta adresi girin';
+                  }
+                  return null;
+                },
               ),
 
               const SizedBox(height: 24),
@@ -300,46 +513,115 @@ class _ProfilEditScreenState extends ConsumerState<ProfilEditScreen> {
               const SizedBox(height: 12),
 
               // Çalışma durumu
-              Text(
-                'Çalışma Durumu',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey[600],
-                ),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  _TypeChip(
-                    label: 'Memur',
-                    isSelected: _selectedType == EmploymentType.memur,
-                    color: const Color(0xFF1565C0),
-                    onTap:
-                        () => setState(
-                          () => _selectedType = EmploymentType.memur,
+              Builder(
+                builder: (context) {
+                  final profil = ref.watch(profilProvider);
+                  final isLocked = profil.employmentType != null;
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            'Çalışma Durumu',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          if (isLocked) ...[
+                            const SizedBox(width: 8),
+                            Icon(
+                              Icons.lock_rounded,
+                              size: 14,
+                              color: Colors.orange.shade700,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Kilitli',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.orange.shade700,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      if (isLocked)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4, bottom: 8),
+                          child: Text(
+                            'Değiştirmek için yöneticiye ulaşın.',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey[500],
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
                         ),
-                  ),
-                  const SizedBox(width: 8),
-                  _TypeChip(
-                    label: 'Kamu İşçisi',
-                    isSelected: _selectedType == EmploymentType.isci,
-                    color: const Color(0xFFE65100),
-                    onTap:
-                        () =>
-                            setState(() => _selectedType = EmploymentType.isci),
-                  ),
-                  const SizedBox(width: 8),
-                  _TypeChip(
-                    label: 'Sözleşmeli',
-                    isSelected: _selectedType == EmploymentType.sozlesmeli,
-                    color: const Color(0xFF7B1FA2),
-                    onTap:
-                        () => setState(
-                          () => _selectedType = EmploymentType.sozlesmeli,
-                        ),
-                  ),
-                ],
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          _TypeChip(
+                            label: 'Memur',
+                            isSelected: _selectedType == EmploymentType.memur,
+                            color: const Color(0xFF1565C0),
+                            onTap:
+                                isLocked
+                                    ? null
+                                    : () => setState(
+                                      () =>
+                                          _selectedType = EmploymentType.memur,
+                                    ),
+                          ),
+                          _TypeChip(
+                            label: 'Kamu İşçisi',
+                            isSelected: _selectedType == EmploymentType.isci,
+                            color: const Color(0xFFE65100),
+                            onTap:
+                                isLocked
+                                    ? null
+                                    : () => setState(
+                                      () => _selectedType = EmploymentType.isci,
+                                    ),
+                          ),
+                          _TypeChip(
+                            label: 'Sözleşmeli',
+                            isSelected:
+                                _selectedType == EmploymentType.sozlesmeli,
+                            color: const Color(0xFF7B1FA2),
+                            onTap:
+                                isLocked
+                                    ? null
+                                    : () => setState(
+                                      () =>
+                                          _selectedType =
+                                              EmploymentType.sozlesmeli,
+                                    ),
+                          ),
+                          _TypeChip(
+                            label: 'Özel Sektör',
+                            isSelected:
+                                _selectedType == EmploymentType.ozelSektor,
+                            color: const Color(0xFF00897B),
+                            onTap:
+                                isLocked
+                                    ? null
+                                    : () => setState(
+                                      () =>
+                                          _selectedType =
+                                              EmploymentType.ozelSektor,
+                                    ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  );
+                },
               ),
               const SizedBox(height: 14),
 

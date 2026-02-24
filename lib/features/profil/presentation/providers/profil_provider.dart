@@ -11,6 +11,7 @@ class ProfilState {
   final String? tcKimlik;
   final String? city;
   final String? district;
+  final String? email;
   final EmploymentType? employmentType;
   final String? institution;
   final String? title;
@@ -37,6 +38,7 @@ class ProfilState {
     this.tcKimlik,
     this.city,
     this.district,
+    this.email,
     this.employmentType,
     this.institution,
     this.title,
@@ -59,6 +61,7 @@ class ProfilState {
     String? tcKimlik,
     String? city,
     String? district,
+    String? email,
     EmploymentType? employmentType,
     String? institution,
     String? title,
@@ -80,6 +83,7 @@ class ProfilState {
       tcKimlik: tcKimlik ?? this.tcKimlik,
       city: city ?? this.city,
       district: district ?? this.district,
+      email: email ?? this.email,
       employmentType: employmentType ?? this.employmentType,
       institution: institution ?? this.institution,
       title: title ?? this.title,
@@ -156,6 +160,8 @@ class ProfilState {
         return 'Kamu İşçisi';
       case EmploymentType.sozlesmeli:
         return 'Sözleşmeli';
+      case EmploymentType.ozelSektor:
+        return 'Özel Sektör';
     }
   }
 }
@@ -220,6 +226,7 @@ class ProfilNotifier extends StateNotifier<ProfilState> {
       tcKimlik: profileData['tcKimlik'],
       city: profileData['city'],
       district: profileData['district'],
+      email: profileData['email'],
       employmentType:
           profileData['employmentType'] != null
               ? EmploymentType.values.firstWhere(
@@ -307,6 +314,7 @@ class ProfilNotifier extends StateNotifier<ProfilState> {
     String? tcKimlik,
     String? city,
     String? district,
+    String? email,
     EmploymentType? employmentType,
     String? institution,
     String? title,
@@ -315,6 +323,7 @@ class ProfilNotifier extends StateNotifier<ProfilState> {
       tcKimlik: tcKimlik,
       city: city,
       district: district,
+      email: email,
       employmentType: employmentType,
       institution: institution,
       title: title,
@@ -325,6 +334,7 @@ class ProfilNotifier extends StateNotifier<ProfilState> {
       tcKimlik: tcKimlik,
       city: city,
       district: district,
+      email: email,
       employmentType: employmentType?.name,
       institution: institution,
       title: title,

@@ -116,8 +116,8 @@ class JobMatchingScreen extends ConsumerWidget {
             ? jobs.where((j) {
               final loc = (j.location ?? '').toLowerCase();
               final isPublic =
-                  (j.type ?? '').toLowerCase().contains('public') ||
-                  (j.type ?? '').toLowerCase().contains('kamu');
+                  j.type.toLowerCase().contains('public') ||
+                  j.type.toLowerCase().contains('kamu');
               return isPublic || loc.contains(userCity.toLowerCase());
             }).toList()
             : jobs;
@@ -167,7 +167,7 @@ PUANLAMA: EĞİTİM %35, DENEYİM %25, BECERİ %20, UYUM %20
 - %40 altı = LİSTELEME
 
 ÇIKTI FORMATI (SADECE bu format, başka hiçbir şey yazma):
-İLAN#[id] %[genel_skor] [UYGUN veya ALTERNATİF]
+İLAN#[id] %[genel_skor] [UYGUN veya ALTERNATİF] [KAMU veya ÖZEL]
 EĞİTİM:%[skor] DENEYİM:%[skor] BECERİ:%[skor] UYUM:%[skor]
 ''';
 
@@ -392,6 +392,9 @@ EĞİTİM:%[skor] DENEYİM:%[skor] BECERİ:%[skor] UYUM:%[skor]
                     final subScores = ref
                         .read(jobMatchingProvider.notifier)
                         .parseSubScoresForJob(job.id);
+                    final sector = ref
+                        .read(jobMatchingProvider.notifier)
+                        .parseSectorForJob(job.id);
 
                     // Analiz bittiyse ve skor yoksa bu ilanı gösterme
                     if (score == null) {
@@ -463,6 +466,37 @@ EĞİTİM:%[skor] DENEYİM:%[skor] BECERİ:%[skor] UYUM:%[skor]
                                           isUygun
                                               ? const Color(0xFF2E7D32)
                                               : const Color(0xFFF57C00),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                              if (sector != null) ...[
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 3,
+                                  ),
+                                  margin: const EdgeInsets.only(right: 8),
+                                  decoration: BoxDecoration(
+                                    color:
+                                        sector == 'KAMU'
+                                            ? const Color(
+                                              0xFF1565C0,
+                                            ).withValues(alpha: 0.12)
+                                            : const Color(
+                                              0xFF7B1FA2,
+                                            ).withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    sector,
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                      color:
+                                          sector == 'KAMU'
+                                              ? const Color(0xFF1565C0)
+                                              : const Color(0xFF7B1FA2),
                                     ),
                                   ),
                                 ),

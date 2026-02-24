@@ -170,6 +170,19 @@ class JobMatchingNotifier extends Notifier<JobMatchingState> {
     return null;
   }
 
+  /// İlan sektörü parse et: KAMU veya ÖZEL
+  String? parseSectorForJob(String jobId) {
+    if (state.aiContent.isEmpty) return null;
+    final lines = state.aiContent.split('\n');
+    for (final line in lines) {
+      if (line.contains('İLAN#$jobId') || line.contains(jobId)) {
+        if (line.contains('KAMU')) return 'KAMU';
+        if (line.contains('ÖZEL')) return 'ÖZEL';
+      }
+    }
+    return null;
+  }
+
   /// Alt kategori puanlarını parse et (EĞİTİM, DENEYİM, BECERİ, UYUM)
   Map<String, int>? parseSubScoresForJob(String jobId) {
     if (state.aiContent.isEmpty) return null;

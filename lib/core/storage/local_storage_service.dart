@@ -81,6 +81,7 @@ class LocalStorageService {
     String? tcKimlik,
     String? city,
     String? district,
+    String? email,
     String? employmentType,
     String? institution,
     String? title,
@@ -88,6 +89,7 @@ class LocalStorageService {
     if (tcKimlik != null) await _profile.put('tcKimlik', tcKimlik);
     if (city != null) await _profile.put('city', city);
     if (district != null) await _profile.put('district', district);
+    if (email != null) await _profile.put('email', email);
     if (employmentType != null) {
       await _profile.put('employmentType', employmentType);
     }
@@ -100,6 +102,7 @@ class LocalStorageService {
       'tcKimlik': _profile.get('tcKimlik'),
       'city': _profile.get('city'),
       'district': _profile.get('district'),
+      'email': _profile.get('email'),
       'employmentType': _profile.get('employmentType'),
       'institution': _profile.get('institution'),
       'title': _profile.get('title'),

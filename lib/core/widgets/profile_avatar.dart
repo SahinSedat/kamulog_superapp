@@ -93,28 +93,30 @@ class ProfileAvatar extends ConsumerWidget {
               Positioned(
                 bottom: 0,
                 right: 0,
-                child: Container(
-                  width: badgeSize,
-                  height: badgeSize,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1DA1F2),
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: isDark ? AppTheme.surfaceDark : Colors.white,
-                      width: badgeSize * 0.12,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF1DA1F2).withValues(alpha: 0.4),
-                        blurRadius: 6,
-                        offset: const Offset(0, 2),
+                child: IgnorePointer(
+                  child: Container(
+                    width: badgeSize,
+                    height: badgeSize,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1DA1F2),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: isDark ? AppTheme.surfaceDark : Colors.white,
+                        width: badgeSize * 0.12,
                       ),
-                    ],
-                  ),
-                  child: Icon(
-                    Icons.check_rounded,
-                    color: Colors.white,
-                    size: badgeSize * 0.6,
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF1DA1F2).withValues(alpha: 0.4),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      Icons.check_rounded,
+                      color: Colors.white,
+                      size: badgeSize * 0.6,
+                    ),
                   ),
                 ),
               ),

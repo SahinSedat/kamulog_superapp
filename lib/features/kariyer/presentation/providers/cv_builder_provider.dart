@@ -70,6 +70,9 @@ class CvBuilderNotifier extends Notifier<CvBuilderState> {
     if (profil.phone != null && profil.phone!.isNotEmpty) {
       data['Telefon'] = profil.phone!;
     }
+    if (profil.email != null && profil.email!.isNotEmpty) {
+      data['E-posta'] = profil.email!;
+    }
     if (profil.tcKimlik != null && profil.tcKimlik!.isNotEmpty) {
       data['TC Kimlik No'] = profil.tcKimlik!;
     }

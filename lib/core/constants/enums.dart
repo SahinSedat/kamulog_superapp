@@ -3,6 +3,7 @@ enum EmploymentType {
   memur, // 4A/4B/4C → Mavi Tema (#1565C0)
   isci, // 4D → Turuncu Tema (#E65100)
   sozlesmeli, // 4B → Sözleşmeli
+  ozelSektor, // Özel Sektör
 }
 
 // ── Uygulama Tema Modu

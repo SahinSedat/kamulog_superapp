@@ -60,9 +60,19 @@ class ProfilScreen extends ConsumerWidget {
                 _MenuItem(
                   icon: Icons.badge_outlined,
                   title: 'TC Kimlik No',
-                  trailing: profil.tcKimlik ?? 'Girilmedi',
+                  trailing:
+                      profil.tcKimlik != null
+                          ? '••• ••• ${profil.tcKimlik!.substring(profil.tcKimlik!.length > 4 ? profil.tcKimlik!.length - 4 : 0)}'
+                          : 'Girilmedi',
                   onTap: () => context.push('/profile/edit'),
                   showWarning: profil.tcKimlik == null,
+                ),
+                _MenuItem(
+                  icon: Icons.email_outlined,
+                  title: 'E-posta',
+                  trailing: profil.email ?? 'Girilmedi',
+                  onTap: () => context.push('/profile/edit'),
+                  showWarning: profil.email == null || profil.email!.isEmpty,
                 ),
                 _MenuItem(
                   icon: Icons.location_on_outlined,
@@ -75,7 +85,10 @@ class ProfilScreen extends ConsumerWidget {
                   icon: Icons.account_balance_outlined,
                   title: 'Çalışma Durumu',
                   trailing: profil.employmentText,
-                  onTap: () => context.push('/profile/edit'),
+                  onTap:
+                      profil.employmentType != null
+                          ? null
+                          : () => context.push('/profile/edit'),
                 ),
                 _MenuItem(
                   icon: Icons.business_outlined,
@@ -268,6 +281,44 @@ class ProfilScreen extends ConsumerWidget {
             ),
 
             const SizedBox(height: 16),
+            // ── Üyelik Plan Değiştirme
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton.icon(
+                  onPressed: () => context.push('/upgrade-plan'),
+                  icon: Icon(
+                    profil.isPremium
+                        ? Icons.star_rounded
+                        : Icons.workspace_premium_rounded,
+                    color: Colors.white,
+                  ),
+                  label: Text(
+                    profil.isPremium
+                        ? 'Premium Planınızı Yönetin'
+                        : '✨ Premium Plana Geçin',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor:
+                        profil.isPremium
+                            ? const Color(0xFF1DA1F2)
+                            : AppTheme.primaryColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 2,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
             // ── Çıkış Butonu
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
