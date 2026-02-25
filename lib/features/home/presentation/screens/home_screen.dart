@@ -9,8 +9,7 @@ import 'package:kamulog_superapp/features/stk/presentation/screens/stk_screen.da
 import 'package:kamulog_superapp/features/becayis/presentation/screens/becayis_screen.dart';
 import 'package:kamulog_superapp/features/kariyer/presentation/screens/career_screen.dart';
 import 'package:kamulog_superapp/features/home/presentation/widgets/home_dashboard.dart';
-import 'package:kamulog_superapp/features/ai/presentation/screens/ai_assistant_screen.dart';
-import 'package:kamulog_superapp/features/ai/presentation/providers/ai_provider.dart';
+import 'package:kamulog_superapp/features/expert_marketplace/presentation/screens/expert_discover_screen.dart';
 import 'package:kamulog_superapp/core/providers/home_navigation_provider.dart';
 import 'package:kamulog_superapp/features/notifications/presentation/providers/notifications_provider.dart';
 
@@ -31,7 +30,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     BecayisScreen(),
     HomeDashboard(),
     CareerScreen(),
-    AiAssistantScreen(),
+    const ExpertDiscoverScreen(),
   ];
 
   @override
@@ -82,7 +81,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             currentIndex == 2
                 ? _buildHomeWithHeader(user, theme, isDark)
                 : currentIndex == 4
-                ? _buildAiScreen(theme, isDark)
+                ? _buildConsultationScreen(user, theme, isDark)
                 : _buildRegularScreen(user, theme, isDark),
         bottomNavigationBar: AnimatedBottomNavBar(
           currentIndex: currentIndex,
@@ -250,23 +249,94 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   // ── AI Tab
-  Widget _buildAiScreen(ThemeData theme, bool isDark) {
-    final aiState = ref.watch(aiChatProvider);
-    final hasMessages = aiState.messages.isNotEmpty;
+  // ── Danışmanlık — profil doluluğu kontrol eden ekran
+  Widget _buildConsultationScreen(dynamic user, ThemeData theme, bool isDark) {
+    // Profil doluluk kontrolü
+    final isProfileComplete =
+        user != null &&
+        user.name != null &&
+        user.name.toString().trim().isNotEmpty &&
+        user.employmentType != null;
 
+    if (!isProfileComplete) {
+      return Scaffold(
+        appBar: AppBar(
+          backgroundColor: isDark ? AppTheme.surfaceDark : Colors.white,
+          title: const Text('Uzman Danışmanlık'),
+          centerTitle: true,
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.person_outline,
+                    size: 40,
+                    color: Colors.orange,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Profil Bilgilerinizi Tamamlayın',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'Uzman danışmanlık hizmetlerinden yararlanabilmek için lütfen profil bilgilerinizi doldurun.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: isDark ? Colors.white60 : Colors.grey[600],
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Ad-Soyad ve Çalışma Durumu alanları zorunludur.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isDark ? Colors.white38 : Colors.grey[400],
+                  ),
+                ),
+                const SizedBox(height: 28),
+                ElevatedButton.icon(
+                  onPressed: () => context.push('/profile/edit'),
+                  icon: const Icon(Icons.edit_rounded, size: 18),
+                  label: const Text('Profili Düzenle'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 14,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Profil tamamsa normal ekranı göster
     return Scaffold(
       appBar: AppBar(
         backgroundColor: isDark ? AppTheme.surfaceDark : Colors.white,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
-          onPressed: () {
-            if (hasMessages) {
-              ref.read(aiChatProvider.notifier).newConversation();
-            } else {
-              _onTabChanged(2);
-            }
-          },
-        ),
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -274,39 +344,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               width: 28,
               height: 28,
               decoration: BoxDecoration(
-                gradient: AppTheme.aiGradient,
+                gradient: AppTheme.primaryGradient,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(
-                Icons.auto_awesome,
+                Icons.support_agent,
                 size: 15,
                 color: Colors.white,
               ),
             ),
             const SizedBox(width: 8),
-            ShaderMask(
-              shaderCallback:
-                  (bounds) => AppTheme.aiGradient.createShader(bounds),
-              child: Text(
-                hasMessages ? 'Kamulog AI' : 'AI Asistan',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white,
-                ),
-              ),
+            const Text(
+              'Uzman Danışmanlık',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
             ),
           ],
         ),
         centerTitle: true,
         actions: [
-          if (hasMessages)
-            IconButton(
-              icon: const Icon(Icons.add_comment_outlined, size: 22),
-              onPressed:
-                  () => ref.read(aiChatProvider.notifier).newConversation(),
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: ProfileAvatar(
+              radius: 17,
+              showPremiumBadge: true,
+              onTap: () => context.push('/profile'),
             ),
-          const SizedBox(width: 4),
+          ),
         ],
       ),
       body: FadeTransition(

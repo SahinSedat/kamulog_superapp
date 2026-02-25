@@ -111,39 +111,21 @@ class AboutScreen extends StatelessWidget {
               items: [
                 _ActionRow(
                   Icons.description_rounded,
-                  'Kullanıcı Sözleşmesi',
+                  'Kullanım Koşulları',
                   isDark: isDark,
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Kullanıcı Sözleşmesi yakında eklenecek'),
-                      ),
-                    );
-                  },
+                  onTap: () => context.push('/permissions'),
                 ),
                 _ActionRow(
                   Icons.privacy_tip_rounded,
                   'Gizlilik Politikası',
                   isDark: isDark,
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Gizlilik Politikası yakında eklenecek'),
-                      ),
-                    );
-                  },
+                  onTap: () => context.push('/permissions'),
                 ),
                 _ActionRow(
-                  Icons.cookie_rounded,
-                  'Çerez Politikası',
+                  Icons.security_rounded,
+                  'KVKK Aydınlatma Metni',
                   isDark: isDark,
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Çerez Politikası yakında eklenecek'),
-                      ),
-                    );
-                  },
+                  onTap: () => context.push('/permissions'),
                 ),
                 _ActionRow(
                   Icons.article_rounded,
@@ -155,7 +137,10 @@ class AboutScreen extends StatelessWidget {
                       applicationName: 'Kamulog',
                       applicationVersion: 'v$_appVersion',
                       applicationLegalese:
-                          '© 2026 Kamulog. Tüm hakları saklıdır.',
+                          '© 2026 Kamulog Teknoloji. Tüm hakları saklıdır.\n\n'
+                          'Bu uygulama açık kaynak yazılım kütüphaneleri kullanılarak '
+                          'geliştirilmiştir. Aşağıda kullanılan kütüphanelerin '
+                          'lisans bilgilerini görebilirsiniz.',
                       applicationIcon: Padding(
                         padding: const EdgeInsets.all(16),
                         child: Container(
@@ -184,10 +169,10 @@ class AboutScreen extends StatelessWidget {
               title: 'Geliştirici',
               isDark: isDark,
               items: const [
-                _InfoRow(Icons.business_rounded, 'Kamulog Teknoloji A.Ş.'),
+                _InfoRow(Icons.business_rounded, 'Kamulog Teknoloji'),
                 _InfoRow(Icons.location_on_rounded, 'Türkiye'),
-                _InfoRow(Icons.email_rounded, 'info@kamulog.com'),
-                _InfoRow(Icons.language_rounded, 'www.kamulog.com'),
+                _InfoRow(Icons.email_rounded, 'iletisim@kamulogstk.net'),
+                _InfoRow(Icons.language_rounded, 'www.kamulogstk.net'),
               ],
             ),
             const SizedBox(height: 32),
@@ -198,14 +183,6 @@ class AboutScreen extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12,
                 color: isDark ? Colors.white38 : Colors.black38,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Flutter ile ❤️ yapıldı',
-              style: TextStyle(
-                fontSize: 11,
-                color: isDark ? Colors.white24 : Colors.black26,
               ),
             ),
             const SizedBox(height: 16),

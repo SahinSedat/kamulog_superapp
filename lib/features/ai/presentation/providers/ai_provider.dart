@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kamulog_superapp/features/ai/data/datasources/ai_remote_datasource.dart';
 import 'package:kamulog_superapp/features/ai/data/models/ai_message_model.dart';
@@ -96,7 +97,19 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
       return;
     }
 
+    // İnternet kontrolü — jeton düşmeden önce
+    final hasInternet = await _checkInternetConnection();
+    if (!hasInternet) {
+      state = state.copyWith(
+        error:
+            'İnternet bağlantısı bulunamadı. Lütfen bağlantınızı kontrol edip tekrar deneyin.',
+      );
+      return;
+    }
+
+    // Jeton düşümü — başarılı bağlantı sonrası
     state = state.copyWith(aiAssistantCredits: state.aiAssistantCredits - 1);
+    final creditsBefore = state.aiAssistantCredits;
 
     _msgCounter++;
     final userMsg = AiMessageModel(
@@ -157,14 +170,28 @@ class AiChatNotifier extends StateNotifier<AiChatState> {
             state = state.copyWith(isLoading: false);
           },
           onError: (error) {
+            // Hata durumunda jetonu iade et
+            state = state.copyWith(aiAssistantCredits: creditsBefore + 1);
             _updateLastAssistantMessage(
               assistantMsgId,
-              'Bir hata oluştu. Lütfen tekrar deneyin.',
+              'Bir hata oluştu. Jetonunuz iade edildi. Lütfen tekrar deneyin.',
               isStreaming: false,
             );
             state = state.copyWith(isLoading: false, error: error.toString());
           },
         );
+  }
+
+  /// İnternet bağlantısını kontrol et
+  Future<bool> _checkInternetConnection() async {
+    try {
+      final result = await InternetAddress.lookup(
+        'google.com',
+      ).timeout(const Duration(seconds: 5));
+      return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
+    } catch (_) {
+      return false;
+    }
   }
 
   void _updateLastAssistantMessage(

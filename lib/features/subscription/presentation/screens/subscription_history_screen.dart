@@ -39,6 +39,87 @@ class SubscriptionHistoryScreen extends ConsumerWidget {
               isPremium: isPremium,
             ),
             const SizedBox(height: 24),
+
+            // ── Premium değilse: Aylık Plan Önerisi
+            if (!isPremium) ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF6366F1).withValues(alpha: 0.3),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.star_rounded, color: Colors.amber, size: 22),
+                        SizedBox(width: 8),
+                        Text(
+                          'Önerilen Plan',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    const Text(
+                      'Aylık Premium — ₺ 299,99 / ay',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Sınırsız mesajlaşma, AI CV, +1000 kredi ve daha fazlası. '
+                      'Ödeme Apple App Store / Google Play Store üzerinden güvenle alınır.',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.8),
+                        fontSize: 12,
+                        height: 1.4,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () => context.push('/upgrade'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: const Color(0xFF6366F1),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: const Text(
+                          'Premium\'a Geç',
+                          style: TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
+
             const Text(
               'Abonelik Geçmişi',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -75,14 +156,56 @@ class SubscriptionHistoryScreen extends ConsumerWidget {
                       size: 20,
                     ),
                   ),
-                  title: const Text('Premium Plan'),
+                  title: Text(
+                    profil.currentPlan == 'yillik'
+                        ? 'Yıllık Premium Plan'
+                        : 'Aylık Premium Plan',
+                  ),
                   subtitle: const Text('Başarılı ödeme işlemi'),
-                  trailing: const Text(
-                    '₺ 299,99 / ay',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                  trailing: Text(
+                    profil.currentPlan == 'yillik'
+                        ? '₺ 2.999,99 / yıl'
+                        : '₺ 299,99 / ay',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
+            const SizedBox(height: 16),
+
+            // ── Store Bilgilendirmesi
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color:
+                    isDark
+                        ? Colors.blue.withValues(alpha: 0.08)
+                        : Colors.blue.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.blue.withValues(alpha: 0.15)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.info_outline_rounded,
+                    size: 16,
+                    color: Colors.blue,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Ödemeler Apple App Store / Google Play Store üzerinden güvenle işlenir.',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color:
+                            isDark
+                                ? Colors.blue.shade200
+                                : Colors.blue.shade700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),

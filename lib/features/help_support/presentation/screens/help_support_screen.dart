@@ -8,7 +8,7 @@ class HelpSupportScreen extends StatelessWidget {
   const HelpSupportScreen({super.key});
 
   // ── WhatsApp Numarası (web panelinden ayarlanacak)
-  static const String _whatsappNumber = '905XXXXXXXXX';
+  static const String _whatsappNumber = '905016547534';
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +41,7 @@ class HelpSupportScreen extends StatelessWidget {
             _SupportOptionCard(
               icon: Icons.email_rounded,
               title: 'E-posta Desteği',
-              subtitle: 'destek@kamulog.com',
+              subtitle: 'iletisim@kamulogstk.net',
               color: AppTheme.infoColor,
               isDark: isDark,
               onTap: () => _launchEmail(),
@@ -128,6 +128,81 @@ class HelpSupportScreen extends StatelessWidget {
                   'İptal işlemi Apple/Google mağaza ayarları üzerinden gerçekleşir.',
               isDark: isDark,
             ),
+            _FaqItem(
+              question: 'Jeton (kredi) sistemi nasıl çalışır?',
+              answer:
+                  'Her yeni kullanıcıya 20 jeton hediye edilir. AI CV oluşturma, '
+                  'iş analizi ve bazı premium özellikler jeton ile kullanılır. '
+                  'Jetonlarınız bittiğinde Profil > Üyelik & Abonelik bölümünden '
+                  'ek jeton satın alabilir veya Premium aboneliğe geçebilirsiniz.',
+              isDark: isDark,
+            ),
+            _FaqItem(
+              question: 'Maaş hesaplama aracı nasıl kullanılır?',
+              answer:
+                  'Ana sayfadaki "Maaş Hesaplama" seçeneğinden mevcut maaşınızı, '
+                  'derece ve kademe bilgilerinizi girerek güncel maaş hesaplamanızı '
+                  'yapabilirsiniz. Memur ve işçi maaş hesaplamaları desteklenmektedir.',
+              isDark: isDark,
+            ),
+            _FaqItem(
+              question:
+                  'STK ve sendika özelliklerinden nasıl yararlanabilirim?',
+              answer:
+                  'Ana sayfadaki "STK" menüsünden sendika ve sivil toplum '
+                  'kuruluşlarının etkinliklerini takip edebilir, üyelik '
+                  'başvurularını görüntüleyebilirsiniz.',
+              isDark: isDark,
+            ),
+            _FaqItem(
+              question: 'Verilerim güvende mi?',
+              answer:
+                  'Evet. Tüm verileriniz endüstri standardı şifreleme yöntemleri '
+                  'ile korunur. SSL/TLS protokolleri kullanılarak iletişim güvenliği '
+                  'sağlanır. KVKK kapsamında veri güvenliği politikalarımıza '
+                  'Gizlilik & Güvenlik bölümünden erişebilirsiniz.',
+              isDark: isDark,
+            ),
+            _FaqItem(
+              question: 'Birden fazla cihazda kullanabilir miyim?',
+              answer:
+                  'Evet, Kamulog hesabınızla birden fazla cihazda oturum açabilirsiniz. '
+                  'Verileriniz tüm cihazlarınız arasında senkronize edilir.',
+              isDark: isDark,
+            ),
+            _FaqItem(
+              question: 'Profil bilgilerimi nasıl güncellerim?',
+              answer:
+                  'Profil sayfanızın sağ üst köşesindeki düzenleme butonuna '
+                  'dokunarak kişisel bilgilerinizi, iletişim adresinizi ve kariyer '
+                  'detaylarınızı güncelleyebilirsiniz.',
+              isDark: isDark,
+            ),
+            _FaqItem(
+              question: 'Favorilere nasıl ilan eklerim?',
+              answer:
+                  'İlan detay sayfasında sağ üst köşedeki kalp ikonuna dokunarak '
+                  'ilanı favorilerinize ekleyebilirsiniz. Favorilerinize '
+                  'Profil > Favorilerim bölümünden erişebilirsiniz.',
+              isDark: isDark,
+            ),
+            _FaqItem(
+              question: 'Uygulama çöküyor veya yavaş çalışıyor, ne yapmalıyım?',
+              answer:
+                  'Öncelikle uygulamanın en güncel sürümünü kullandığınızdan emin olun. '
+                  'Sorun devam ederse uygulamayı kapatıp yeniden başlatın. '
+                  'Çözülmezse "Hata Bildir" seçeneğinden bize yazın, en kısa sürede yardımcı olalım.',
+              isDark: isDark,
+            ),
+            _FaqItem(
+              question:
+                  'Aylık Premium ve Yıllık Premium arasındaki fark nedir?',
+              answer:
+                  'Her iki plan da aynı özellikleri sunar: sınırsız mesajlaşma, AI CV, '
+                  'sınırsız becayiş inceleme ve +1000 kredi. Yıllık planda %17 '
+                  'tasarruf edersiniz. Aylık plandan yıllığa istediğiniz zaman yükseltebilirsiniz.',
+              isDark: isDark,
+            ),
             const SizedBox(height: 24),
 
             // ── Alt Bilgi
@@ -163,7 +238,7 @@ class HelpSupportScreen extends StatelessWidget {
   Future<void> _launchEmail({String? subject}) async {
     final uri = Uri(
       scheme: 'mailto',
-      path: 'destek@kamulog.com',
+      path: 'iletisim@kamulogstk.net',
       queryParameters: subject != null ? {'subject': subject} : null,
     );
     if (await canLaunchUrl(uri)) {

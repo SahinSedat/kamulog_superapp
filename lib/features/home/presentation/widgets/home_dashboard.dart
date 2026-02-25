@@ -98,7 +98,6 @@ class _QuickAccessGrid extends StatelessWidget {
     _QuickAction('Duyurular', Icons.campaign_rounded, _kKirmizi),
     _QuickAction('Haberler', Icons.newspaper_rounded, _kMavi),
     _QuickAction('Başvurular', Icons.assignment_turned_in_rounded, _kYesil),
-    _QuickAction('AI Asistan', Icons.auto_awesome_rounded, _kMor),
   ];
 
   @override
@@ -183,13 +182,6 @@ class _QuickAccessGrid extends StatelessWidget {
                           );
                           break;
                         case 'AI Asistan':
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Alt menüden AI Asistan sekmesine geçin',
-                              ),
-                            ),
-                          );
                           break;
                       }
                     },

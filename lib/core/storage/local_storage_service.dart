@@ -85,6 +85,38 @@ class LocalStorageService {
   }
 
   // ════════════════════════════════════════════
+  // SİPARİŞ KAYITLARI — uygulama içi satışlar
+  // ════════════════════════════════════════════
+
+  /// Yeni sipariş kaydı ekle
+  static Future<void> addOrderRecord({
+    required String title,
+    required String description,
+    required String price,
+    required String plan,
+  }) async {
+    final orders = loadOrderRecords();
+    final now = DateTime.now();
+    orders.add({
+      'id': '${now.millisecondsSinceEpoch}',
+      'title': title,
+      'description': description,
+      'price': price,
+      'plan': plan,
+      'date': now.toIso8601String(),
+      'status': 'active',
+    });
+    await _career.put('orderRecords', orders);
+  }
+
+  /// Sipariş kayıtlarını yükle
+  static List<Map<dynamic, dynamic>> loadOrderRecords() {
+    final raw = _career.get('orderRecords');
+    if (raw == null) return [];
+    return List<Map<dynamic, dynamic>>.from(raw);
+  }
+
+  // ════════════════════════════════════════════
   // PROFIL VERİLERİ — cihazda kalır
   // ════════════════════════════════════════════
 

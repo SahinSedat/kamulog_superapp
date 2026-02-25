@@ -13,8 +13,6 @@ import 'package:kamulog_superapp/core/widgets/profile_avatar.dart';
 import 'package:kamulog_superapp/features/auth/presentation/providers/auth_provider.dart';
 import 'package:kamulog_superapp/features/profil/presentation/providers/profil_provider.dart';
 
-import 'package:kamulog_superapp/core/providers/home_navigation_provider.dart';
-
 /// Gelişmiş Profil Ekranı — kullanıcı bilgileri, üyelik, satın alımlar, çıkış
 class ProfilScreen extends ConsumerWidget {
   const ProfilScreen({super.key});
@@ -60,50 +58,26 @@ class ProfilScreen extends ConsumerWidget {
             // ── İlgi Alanlarım (Anketten)
             if (profil.surveyInterests.isNotEmpty) ...[
               _SectionHeader(title: 'İlgi Alanlarım'),
-              Container(
-                width: double.infinity,
-                margin: const EdgeInsets.symmetric(horizontal: 16),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: isDark ? AppTheme.cardDark : Colors.white,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color:
-                        isDark
-                            ? Colors.white.withValues(alpha: 0.06)
-                            : const Color(0xFFEEEEEE),
+              _InfoMenuGroup(
+                items: [
+                  _MenuItem(
+                    icon: Icons.interests_rounded,
+                    title: 'İlgi Alanlarım',
+                    trailing: '${profil.surveyInterests.length} alan',
+                    onTap:
+                        () => _showInterestsBottomSheet(
+                          context,
+                          profil.surveyInterests,
+                          isDark,
+                        ),
                   ),
-                ),
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children:
-                      profil.surveyInterests.map((interest) {
-                        return Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: AppTheme.primaryColor.withValues(
-                                alpha: 0.2,
-                              ),
-                            ),
-                          ),
-                          child: Text(
-                            interest,
-                            style: const TextStyle(
-                              color: AppTheme.primaryColor,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                ),
+                  _MenuItem(
+                    icon: Icons.favorite_outline_rounded,
+                    title: 'Favorilerim',
+                    onTap: () => context.push('/favorites'),
+                  ),
+                ],
+                isDark: isDark,
               ),
             ],
 
@@ -134,12 +108,8 @@ class ProfilScreen extends ConsumerWidget {
                 _MenuItem(
                   icon: Icons.auto_awesome_rounded,
                   title: 'AI CV Oluşturucu',
-                  trailing: 'Yapay zeka ile',
-                  onTap: () {
-                    // CV oluşturma sadece Kariyer modülünden yapılır
-                    ref.read(homeNavigationProvider.notifier).setIndex(3);
-                    context.go('/');
-                  },
+                  trailing: 'Yapay zekâ ile',
+                  onTap: () => context.push('/career/cv-builder'),
                 ),
                 _MenuItem(
                   icon: Icons.analytics_rounded,
@@ -160,8 +130,8 @@ class ProfilScreen extends ConsumerWidget {
               items: [
                 _MenuItem(
                   icon: Icons.chat_bubble_outline_rounded,
-                  title: 'Danisman ile Canli Sohbet',
-                  trailing: 'Aninda destek',
+                  title: 'Danışman Mesajlarım',
+                  trailing: 'Mesajlaşmalar',
                   onTap: () => context.push('/chat'),
                 ),
                 _MenuItem(
@@ -198,11 +168,6 @@ class ProfilScreen extends ConsumerWidget {
             _SectionHeader(title: 'Ayarlar'),
             _InfoMenuGroup(
               items: [
-                _MenuItem(
-                  icon: Icons.favorite_outline_rounded,
-                  title: 'Favorilerim',
-                  onTap: () => context.push('/favorites'),
-                ),
                 _MenuItem(
                   icon: Icons.notifications_active_outlined,
                   title: 'Bildirimler',
@@ -356,6 +321,80 @@ class ProfilScreen extends ConsumerWidget {
                 ),
               ),
             ],
+          ),
+    );
+  }
+
+  void _showInterestsBottomSheet(
+    BuildContext context,
+    List<String> interests,
+    bool isDark,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder:
+          (ctx) => Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: isDark ? AppTheme.surfaceDark : Colors.white,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(20),
+              ),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'İlgi Alanlarım',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 16),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children:
+                      interests.map((interest) {
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: AppTheme.primaryColor.withValues(
+                                alpha: 0.2,
+                              ),
+                            ),
+                          ),
+                          child: Text(
+                            interest,
+                            style: const TextStyle(
+                              color: AppTheme.primaryColor,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                ),
+                const SizedBox(height: 24),
+              ],
+            ),
           ),
     );
   }
@@ -894,6 +933,57 @@ class _ProfileHeader extends ConsumerWidget {
                 ),
               ),
             ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        // ── Jeton Göstergesi (tıklanabilir)
+        GestureDetector(
+          onTap: () {
+            if (profil.isPremium) {
+              context.push('/subscription-history');
+            } else {
+              context.push('/upgrade');
+            }
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  const Color(0xFFFFA726).withValues(alpha: 0.15),
+                  const Color(0xFFFF9800).withValues(alpha: 0.08),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: const Color(0xFFFFA726).withValues(alpha: 0.4),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.toll_rounded,
+                  size: 15,
+                  color: Color(0xFFFFA726),
+                ),
+                const SizedBox(width: 5),
+                Text(
+                  '${user?.credits ?? 20} Jeton',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFFFFA726),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 10,
+                  color: const Color(0xFFFFA726).withValues(alpha: 0.6),
+                ),
+              ],
+            ),
           ),
         ),
       ],

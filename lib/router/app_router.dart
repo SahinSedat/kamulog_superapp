@@ -5,7 +5,7 @@ import 'package:kamulog_superapp/features/auth/presentation/providers/auth_provi
 import 'package:kamulog_superapp/features/auth/presentation/screens/phone_input_screen.dart';
 import 'package:kamulog_superapp/features/auth/presentation/screens/otp_verification_screen.dart';
 import 'package:kamulog_superapp/features/home/presentation/screens/home_screen.dart';
-import 'package:kamulog_superapp/features/danismanlik/presentation/screens/danismanlik_screen.dart';
+import 'package:kamulog_superapp/features/expert_marketplace/presentation/screens/expert_discover_screen.dart';
 import 'package:kamulog_superapp/features/profil/presentation/screens/profil_screen.dart';
 import 'package:kamulog_superapp/features/profil/presentation/screens/profil_edit_screen.dart';
 import 'package:kamulog_superapp/features/salary/presentation/screens/salary_calculator_screen.dart';
@@ -30,6 +30,9 @@ import 'package:kamulog_superapp/features/favorites/presentation/screens/favorit
 import 'package:kamulog_superapp/features/becayis_messaging/presentation/screens/becayis_messaging_screen.dart';
 import 'package:kamulog_superapp/features/help_support/presentation/screens/help_support_screen.dart';
 import 'package:kamulog_superapp/features/about/presentation/screens/about_screen.dart';
+import 'package:kamulog_superapp/features/expert_marketplace/presentation/screens/expert_list_screen.dart';
+import 'package:kamulog_superapp/features/expert_marketplace/presentation/screens/expert_detail_screen.dart';
+import 'package:kamulog_superapp/features/expert_marketplace/presentation/screens/expert_request_screen.dart';
 
 /// Bridges Riverpod state changes to GoRouter's refreshListenable
 class AuthChangeNotifier extends ChangeNotifier {
@@ -118,7 +121,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/consultation',
         name: 'consultation',
-        builder: (context, state) => const DanismanlikScreen(),
+        builder: (context, state) => const ExpertDiscoverScreen(),
       ),
       GoRoute(
         path: '/profile',
@@ -225,6 +228,32 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/about',
         name: 'about',
         builder: (context, state) => const AboutScreen(),
+      ),
+
+      GoRoute(
+        path: '/expert-list',
+        name: 'expert-list',
+        builder: (context, state) {
+          final category = state.uri.queryParameters['category'];
+          return ExpertListScreen(initialCategory: category);
+        },
+      ),
+      GoRoute(
+        path: '/expert-detail/:expertId',
+        name: 'expert-detail',
+        builder: (context, state) {
+          final expertId = state.pathParameters['expertId']!;
+          return ExpertDetailScreen(expertId: expertId);
+        },
+      ),
+      GoRoute(
+        path: '/expert-request/:expertId/:packageId',
+        name: 'expert-request',
+        builder: (context, state) {
+          final expertId = state.pathParameters['expertId']!;
+          final packageId = state.pathParameters['packageId']!;
+          return ExpertRequestScreen(expertId: expertId, packageId: packageId);
+        },
       ),
     ],
   );

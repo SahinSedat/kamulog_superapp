@@ -35,9 +35,9 @@ class AnimatedBottomNavBar extends StatelessWidget {
       label: 'Kariyer',
     ),
     _NavItem(
-      icon: Icons.smart_toy_outlined,
-      activeIcon: Icons.smart_toy,
-      label: 'AI Asistan',
+      icon: Icons.support_agent_outlined,
+      activeIcon: Icons.support_agent,
+      label: 'Danışmanlık',
     ),
   ];
 

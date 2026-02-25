@@ -70,10 +70,35 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen>
 
     ref.listen(aiChatProvider, (previous, next) {
       if (next.error != null && previous?.error != next.error) {
+        final isNoInternet = next.error!.contains('İnternet bağlantısı');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(next.error!),
-            backgroundColor: AppTheme.errorColor,
+            content: Row(
+              children: [
+                Icon(
+                  isNoInternet
+                      ? Icons.wifi_off_rounded
+                      : Icons.error_outline_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    next.error!,
+                    style: const TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor:
+                isNoInternet ? Colors.orange.shade700 : AppTheme.errorColor,
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            duration: const Duration(seconds: 4),
           ),
         );
       }

@@ -6,6 +6,7 @@ import 'package:confetti/confetti.dart';
 import 'package:kamulog_superapp/core/theme/app_theme.dart';
 import 'package:kamulog_superapp/features/subscription/presentation/providers/subscription_provider.dart';
 import 'package:kamulog_superapp/features/profil/presentation/providers/profil_provider.dart';
+import 'package:kamulog_superapp/core/storage/local_storage_service.dart';
 
 class UpgradePlanScreen extends ConsumerStatefulWidget {
   const UpgradePlanScreen({super.key});
@@ -252,7 +253,7 @@ class _UpgradePlanScreenState extends ConsumerState<UpgradePlanScreen> {
         _DummyPlanCard(
           title: 'Aylık Premium',
           price: '₺ 299,99 / ay',
-          isPopular: false,
+          isPopular: true,
           isDark: isDark,
           isDisabled: isPremium && currentPlan == 'aylik',
           disabledText: 'Mevcut Planınız',
@@ -275,7 +276,7 @@ class _UpgradePlanScreenState extends ConsumerState<UpgradePlanScreen> {
         _DummyPlanCard(
           title: 'Yıllık Premium',
           price: '₺ 2.999,99 / yıl',
-          isPopular: true,
+          isPopular: false,
           isDark: isDark,
           isDisabled: false,
           disabledText: null,
@@ -318,6 +319,20 @@ class _UpgradePlanScreenState extends ConsumerState<UpgradePlanScreen> {
           DateTime.now().add(Duration(days: duration)),
           plan: plan,
         );
+
+    // 📝 Sipariş kaydı oluştur
+    final planTitle = plan == 'yillik' ? 'Yıllık Premium' : 'Aylık Premium';
+    final planPrice = plan == 'yillik' ? '₺ 2.999,99' : '₺ 299,99';
+    final planDesc =
+        plan == 'yillik'
+            ? '12 aylık premium abonelik'
+            : 'Aylık premium abonelik';
+    await LocalStorageService.addOrderRecord(
+      title: isUpgrade ? 'Plan Yükseltme — $planTitle' : planTitle,
+      description: planDesc,
+      price: planPrice,
+      plan: plan,
+    );
 
     // 🎉 Konfeti animasyonunu tetikle!
     _confettiController.play();
