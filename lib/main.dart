@@ -5,6 +5,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:kamulog_superapp/app.dart';
 import 'package:kamulog_superapp/core/config/env_config.dart';
 import 'package:kamulog_superapp/core/storage/local_storage_service.dart';
+import 'package:kamulog_superapp/core/services/job_change_notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,6 +32,10 @@ void main() async {
   // Initialize Hive for local storage
   await Hive.initFlutter();
   await LocalStorageService.init();
+  await Hive.openBox('notifications');
+
+  // Initialize push notification service for job changes
+  await JobChangeNotificationService.initialize();
 
   // Initialize Firebase (uncomment after configuring)
   // await Firebase.initializeApp(

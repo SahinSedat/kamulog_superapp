@@ -172,6 +172,27 @@ class LocalStorageService {
     return _profile.get('profileImage');
   }
 
+  // ════════════════════════════════════════════
+  // PROFİL FOTOĞRAFI DEĞİŞTİRME SAYACI
+  // ════════════════════════════════════════════
+
+  static int loadPhotoChangeCount() {
+    return _profile.get('photoChangeCount', defaultValue: 0);
+  }
+
+  static Future<void> incrementPhotoChangeCount() async {
+    final current = loadPhotoChangeCount();
+    await _profile.put('photoChangeCount', current + 1);
+  }
+
+  static String? loadLastPhotoChangeDate() {
+    return _profile.get('lastPhotoChangeDate');
+  }
+
+  static Future<void> saveLastPhotoChangeDate() async {
+    await _profile.put('lastPhotoChangeDate', DateTime.now().toIso8601String());
+  }
+
   static Future<void> saveProfilePhone(String phone) async {
     await _profile.put('profilePhone', phone);
   }

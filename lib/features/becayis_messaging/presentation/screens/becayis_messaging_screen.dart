@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kamulog_superapp/core/theme/app_theme.dart';
 
-/// Becayis Mesajlarim — anlik mesajlasma ekrani
-/// Becayis sayfasina entegre calisacak
+/// Becayiş Mesajlarım — anlık mesajlaşma ekranı
+/// Becayiş sayfasına entegre çalışacak
 class BecayisMessagingScreen extends ConsumerStatefulWidget {
   const BecayisMessagingScreen({super.key});
 
@@ -18,13 +18,13 @@ class _BecayisMessagingScreenState
   final _messageController = TextEditingController();
   final _scrollController = ScrollController();
 
-  // Ornek mesajlar — backend entegrasyonunda gercek veriyle degisecek
+  // Örnek mesajlar — backend entegrasyonunda gerçek veriyle değişecek
   final List<_BecayisMessage> _messages = [
     _BecayisMessage(
       id: '1',
       senderName: 'Sistem',
       content:
-          'Becayis mesajlariniz burada gorunecek. Bir becayis ilani olusturdugunuzda veya eslestiginizde mesajlasmaya baslayabilirsiniz.',
+          'Becayiş mesajlarınız burada görünecek. Bir becayiş ilanı oluşturduğunuzda veya eşleştiğinizde mesajlaşmaya başlayabilirsiniz.',
       isSystem: true,
       timestamp: DateTime.now().subtract(const Duration(hours: 1)),
     ),
@@ -55,7 +55,7 @@ class _BecayisMessagingScreenState
 
     _messageController.clear();
 
-    // Otomatik asagi kaydir
+    // Otomatik aşağı kaydır
     Future.delayed(const Duration(milliseconds: 100), () {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
@@ -78,7 +78,7 @@ class _BecayisMessagingScreenState
           icon: const Icon(Icons.arrow_back_ios_rounded),
           onPressed: () => context.pop(),
         ),
-        title: const Text('Becayis Mesajlarim'),
+        title: const Text('Becayiş Mesajlarım'),
         centerTitle: true,
         actions: [
           IconButton(
@@ -86,11 +86,11 @@ class _BecayisMessagingScreenState
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('Becayis ilanlarina yonlendirilecek'),
+                  content: Text('Becayiş ilanlarına yönlendirilecek'),
                 ),
               );
             },
-            tooltip: 'Becayis Ilanlari',
+            tooltip: 'Becayiş İlanları',
           ),
         ],
       ),
@@ -111,7 +111,7 @@ class _BecayisMessagingScreenState
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            'Henuz becayis mesajiniz yok',
+                            'Henüz becayiş mesajınız yok',
                             style: TextStyle(
                               fontSize: 16,
                               color: Colors.grey[500],
@@ -131,7 +131,7 @@ class _BecayisMessagingScreenState
                     ),
           ),
 
-          // Mesaj girisi
+          // Mesaj girişi
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
@@ -152,7 +152,7 @@ class _BecayisMessagingScreenState
                     child: TextField(
                       controller: _messageController,
                       decoration: InputDecoration(
-                        hintText: 'Mesajinizi yazin...',
+                        hintText: 'Mesajınızı yazın...',
                         hintStyle: TextStyle(
                           fontSize: 14,
                           color: Colors.grey[400],

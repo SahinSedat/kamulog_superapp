@@ -19,7 +19,7 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
           icon: const Icon(Icons.arrow_back_ios_rounded),
           onPressed: () => context.pop(),
         ),
-        title: const Text('Gizlilik & Guvenlik'),
+        title: const Text('Gizlilik & Güvenlik'),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
@@ -45,11 +45,11 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
 
             _PolicyTile(
               icon: Icons.article_outlined,
-              title: 'Gizlilik Politikasi',
+              title: 'Gizlilik Politikası',
               onTap: () {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Gizlilik politikasi yakinda eklenecek'),
+                    content: Text('Gizlilik politikası yakında eklenecek'),
                   ),
                 );
               },
@@ -60,18 +60,18 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
               onTap: () {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Kullanim kosullari yakinda eklenecek'),
+                    content: Text('Kullanım koşulları yakında eklenecek'),
                   ),
                 );
               },
             ),
             _PolicyTile(
               icon: Icons.cookie_outlined,
-              title: 'Cerez Politikasi',
+              title: 'Çerez Politikası',
               onTap: () {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Cerez politikasi yakinda eklenecek'),
+                    content: Text('Çerez politikası yakında eklenecek'),
                   ),
                 );
               },
@@ -96,21 +96,21 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
-            title: const Text('Hesabi Sil'),
+            title: const Text('Hesabı Sil'),
             content: const Text(
-              'Hesabinizi silmek istediginize emin misiniz?\nBu islem geri alinamaz ve tum verileriniz silinir.',
+              'Hesabınızı silmek istediğinize emin misiniz?\nBu işlem geri alınamaz ve tüm verileriniz silinir.',
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: const Text('Iptal'),
+                child: const Text('İptal'),
               ),
               TextButton(
                 onPressed: () {
                   Navigator.pop(ctx);
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('Hesap silme talebi gonderildi'),
+                      content: Text('Hesap silme talebi gönderildi'),
                     ),
                   );
                 },

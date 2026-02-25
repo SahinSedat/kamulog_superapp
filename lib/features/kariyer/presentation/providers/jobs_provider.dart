@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kamulog_superapp/features/kariyer/data/models/job_listing_model.dart';
 import 'package:kamulog_superapp/features/kariyer/data/repositories/jobs_repository.dart';
+import 'package:kamulog_superapp/core/services/job_change_notification_service.dart';
 
 // State definition for jobs
 class JobsState {
@@ -44,6 +45,9 @@ class JobsNotifier extends StateNotifier<JobsState> {
     try {
       final jobs = await repository.getJobs(type: state.filterType);
       state = state.copyWith(jobs: AsyncValue.data(jobs));
+
+      // İlan değişikliklerini kontrol et ve bildirim gönder
+      JobChangeNotificationService.checkForChanges(jobs);
     } catch (e, stackTrace) {
       state = state.copyWith(jobs: AsyncValue.error(e, stackTrace));
     }

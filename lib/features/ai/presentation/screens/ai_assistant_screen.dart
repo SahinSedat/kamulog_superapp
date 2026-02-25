@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:kamulog_superapp/core/theme/app_theme.dart';
+import 'package:kamulog_superapp/features/profil/presentation/providers/profil_provider.dart';
 
 import 'package:kamulog_superapp/features/ai/presentation/providers/ai_provider.dart';
 import 'package:kamulog_superapp/features/ai/presentation/widgets/ai_message_bubble.dart';
@@ -86,47 +88,65 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen>
 
     return Column(
       children: [
-        // Jeton bilgisi barı
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            color: isDark ? AppTheme.cardDark : Colors.white,
-            border: Border(
-              bottom: BorderSide(
-                color:
-                    isDark
-                        ? Colors.white.withValues(alpha: 0.06)
-                        : Colors.black.withValues(alpha: 0.06),
-              ),
-            ),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.toll_rounded,
-                size: 16,
-                color:
-                    aiCredits > 0 ? AppTheme.primaryColor : AppTheme.errorColor,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                '$aiCredits Jeton kaldı',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
+        // Jeton bilgisi barı — tıklanınca yönlendirir
+        GestureDetector(
+          onTap: () {
+            final profil = ref.read(profilProvider);
+            if (profil.isPremium) {
+              context.push('/subscription-history');
+            } else {
+              context.push('/upgrade');
+            }
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: isDark ? AppTheme.cardDark : Colors.white,
+              border: Border(
+                bottom: BorderSide(
                   color:
-                      aiCredits > 0
-                          ? (isDark ? Colors.white70 : Colors.black54)
-                          : AppTheme.errorColor,
+                      isDark
+                          ? Colors.white.withValues(alpha: 0.06)
+                          : Colors.black.withValues(alpha: 0.06),
                 ),
               ),
-              const SizedBox(width: 4),
-              Text(
-                '(her mesaj 1 jeton)',
-                style: TextStyle(fontSize: 10, color: Colors.grey[500]),
-              ),
-            ],
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.toll_rounded,
+                  size: 16,
+                  color:
+                      aiCredits > 0
+                          ? AppTheme.primaryColor
+                          : AppTheme.errorColor,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  '$aiCredits Jeton kaldı',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color:
+                        aiCredits > 0
+                            ? (isDark ? Colors.white70 : Colors.black54)
+                            : AppTheme.errorColor,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  '(her mesaj 1 jeton)',
+                  style: TextStyle(fontSize: 10, color: Colors.grey[500]),
+                ),
+                const SizedBox(width: 6),
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 12,
+                  color: Colors.grey[400],
+                ),
+              ],
+            ),
           ),
         ),
 

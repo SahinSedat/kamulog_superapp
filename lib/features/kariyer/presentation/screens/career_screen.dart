@@ -8,6 +8,7 @@ import 'package:kamulog_superapp/core/providers/home_navigation_provider.dart';
 import 'package:kamulog_superapp/features/profil/presentation/providers/profil_provider.dart';
 import 'package:kamulog_superapp/features/kariyer/presentation/providers/jobs_provider.dart';
 import 'package:kamulog_superapp/features/kariyer/data/models/job_listing_model.dart';
+import 'package:kamulog_superapp/features/kariyer/presentation/screens/job_detail_screen.dart';
 import 'package:kamulog_superapp/features/favorites/data/favorites_service.dart';
 
 /// Kariyer modülü — AI CV oluşturma ve iş analizi
@@ -33,7 +34,13 @@ class CareerScreen extends ConsumerWidget {
         centerTitle: true,
         actions: [
           GestureDetector(
-            onTap: () => context.push('/upgrade'),
+            onTap: () {
+              if (profil.isPremium) {
+                context.push('/subscription-history');
+              } else {
+                context.push('/upgrade');
+              }
+            },
             child: Container(
               margin: const EdgeInsets.only(right: 12),
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -467,9 +474,9 @@ class CareerScreen extends ConsumerWidget {
                                           q,
                                         ) ||
                                         j.company.toLowerCase().contains(q) ||
-                                        (j.code ?? '').toLowerCase().contains(
-                                          q,
-                                        ),
+                                        JobDetailScreen.getListingCode(
+                                          j,
+                                        ).toLowerCase().contains(q),
                                   )
                                   .toList();
                         }
@@ -1125,6 +1132,17 @@ class _JobCardState extends ConsumerState<_JobCard>
                                 ),
                                 fontWeight: FontWeight.w500,
                               ),
+                            )
+                          else
+                            Text(
+                              'İlan No: ${JobDetailScreen.getListingCode(job)}',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: AppTheme.primaryColor.withValues(
+                                  alpha: 0.7,
+                                ),
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                         ],
                       ),
@@ -1194,7 +1212,7 @@ class _JobCardState extends ConsumerState<_JobCard>
                 Row(
                   children: [
                     _JobTag(
-                      label: job.type == 'PUBLIC' ? 'Kamu' : 'Ozel Sektor',
+                      label: job.type == 'PUBLIC' ? 'Kamu' : 'Özel Sektör',
                       color:
                           job.type == 'PUBLIC'
                               ? AppTheme.primaryColor

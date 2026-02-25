@@ -46,12 +46,12 @@ class FavoritesScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Henuz favori eklemediniz',
+                      'Henüz favori eklemediniz',
                       style: TextStyle(fontSize: 16, color: Colors.grey[500]),
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Is ilanlari ve becayis ilanlarini\nfavorilere ekleyebilirsiniz',
+                      'İş ilanları ve becayiş ilanlarını\nfavorilere ekleyebilirsiniz',
                       textAlign: TextAlign.center,
                       style: TextStyle(fontSize: 13, color: Colors.grey[400]),
                     ),
@@ -66,7 +66,7 @@ class FavoritesScreen extends ConsumerWidget {
                     if (jobFavorites.isNotEmpty) ...[
                       _SectionTitle(
                         icon: Icons.work_outline_rounded,
-                        title: 'Is Ilanlari',
+                        title: 'İş İlanları',
                         count: jobFavorites.length,
                       ),
                       const SizedBox(height: 8),
@@ -78,7 +78,7 @@ class FavoritesScreen extends ConsumerWidget {
                     if (becayisFavorites.isNotEmpty) ...[
                       _SectionTitle(
                         icon: Icons.swap_horiz_rounded,
-                        title: 'Becayis Ilanlari',
+                        title: 'Becayiş İlanları',
                         count: becayisFavorites.length,
                       ),
                       const SizedBox(height: 8),
@@ -90,7 +90,7 @@ class FavoritesScreen extends ConsumerWidget {
                     if (otherFavorites.isNotEmpty) ...[
                       _SectionTitle(
                         icon: Icons.bookmark_outline_rounded,
-                        title: 'Diger',
+                        title: 'Diğer',
                         count: otherFavorites.length,
                       ),
                       const SizedBox(height: 8),
@@ -202,102 +202,130 @@ class _FavoriteCardState extends ConsumerState<_FavoriteCard>
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
-      child: Container(
-        decoration: BoxDecoration(
-          color: isDark ? AppTheme.cardDark : Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color:
-                isDark ? Colors.white12 : Colors.grey.withValues(alpha: 0.12),
+      child: Dismissible(
+        key: ValueKey('${item.category}_${item.id}'),
+        direction: DismissDirection.endToStart,
+        background: Container(
+          alignment: Alignment.centerRight,
+          padding: const EdgeInsets.only(right: 20),
+          decoration: BoxDecoration(
+            color: Colors.red.shade400,
+            borderRadius: BorderRadius.circular(12),
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          child: const Icon(
+            Icons.delete_outline_rounded,
+            color: Colors.white,
+            size: 28,
+          ),
         ),
-        child: ListTile(
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 14,
-            vertical: 4,
-          ),
-          leading: Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: categoryColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
+        onDismissed: (_) {
+          ref
+              .read(favoritesProvider.notifier)
+              .removeFavorite(item.id, item.category);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${item.title} favorilerden kaldırıldı'),
+              duration: const Duration(seconds: 2),
             ),
-            child: Icon(categoryIcon, color: categoryColor, size: 20),
-          ),
-          title: Text(
-            item.title,
-            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          subtitle: Text(
-            item.subtitle,
-            style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Link kopyala
-              IconButton(
-                icon: const Icon(Icons.link_rounded, size: 20),
-                onPressed: () {
-                  Clipboard.setData(
-                    ClipboardData(
-                      text: 'kamulog://detail/${item.category}/${item.id}',
-                    ),
-                  );
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Link kopyalandi'),
-                      duration: Duration(seconds: 1),
-                    ),
-                  );
-                },
-              ),
-              // Animasyonlu favori cikarma
-              ScaleTransition(
-                scale: _heartScale,
-                child: GestureDetector(
-                  onTap: () {
-                    _heartController.forward(from: 0);
-                    ref
-                        .read(favoritesProvider.notifier)
-                        .removeFavorite(item.id, item.category);
-                  },
-                  child: const Icon(
-                    Icons.favorite_rounded,
-                    size: 20,
-                    color: Colors.red,
-                  ),
-                ),
+          );
+        },
+        child: Container(
+          decoration: BoxDecoration(
+            color: isDark ? AppTheme.cardDark : Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color:
+                  isDark ? Colors.white12 : Colors.grey.withValues(alpha: 0.12),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
               ),
             ],
           ),
-          onTap: () {
-            // Is ilani ise extraData'dan JobListingModel olustur ve ilana git
-            if (item.category == 'job' && item.extraData != null) {
-              try {
-                final job = JobListingModel.fromJson(item.extraData!);
-                context.push('/job-detail', extra: job);
-              } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Ilan verisi yuklenemedi')),
-                );
+          child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: 4,
+            ),
+            leading: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: categoryColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(categoryIcon, color: categoryColor, size: 20),
+            ),
+            title: Text(
+              item.title,
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            subtitle: Text(
+              item.subtitle,
+              style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Link kopyala
+                IconButton(
+                  icon: const Icon(Icons.link_rounded, size: 20),
+                  onPressed: () {
+                    Clipboard.setData(
+                      ClipboardData(
+                        text: 'kamulog://detail/${item.category}/${item.id}',
+                      ),
+                    );
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Link kopyalandı'),
+                        duration: Duration(seconds: 1),
+                      ),
+                    );
+                  },
+                ),
+                // Animasyonlu favori cikarma
+                ScaleTransition(
+                  scale: _heartScale,
+                  child: GestureDetector(
+                    onTap: () {
+                      _heartController.forward(from: 0);
+                      ref
+                          .read(favoritesProvider.notifier)
+                          .removeFavorite(item.id, item.category);
+                    },
+                    child: const Icon(
+                      Icons.favorite_rounded,
+                      size: 20,
+                      color: Colors.red,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            onTap: () {
+              // Is ilani ise extraData'dan JobListingModel olustur ve ilana git
+              if (item.category == 'job' && item.extraData != null) {
+                try {
+                  final job = JobListingModel.fromJson(item.extraData!);
+                  context.push('/job-detail', extra: job);
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('İlan verisi yüklenemedi')),
+                  );
+                }
+              } else if (item.routePath != null) {
+                context.push(item.routePath!);
               }
-            } else if (item.routePath != null) {
-              context.push(item.routePath!);
-            }
-          },
+            },
+          ),
         ),
       ),
     );

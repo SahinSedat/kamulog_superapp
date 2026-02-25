@@ -75,7 +75,7 @@ class _PhoneInputScreenState extends ConsumerState<PhoneInputScreen>
       return;
     }
 
-    // Onaylari kayit altina al
+    // Onayları kayıt altına al
     LocalStorageService.saveConsent(userAgreement: true, kvkk: true);
 
     final phone = _phoneMask.getUnmaskedText();
@@ -255,17 +255,17 @@ class _PhoneInputScreenState extends ConsumerState<PhoneInputScreen>
 
                       // Submit button
                       KamulogButton(
-                        text: 'Dogrulama Kodu Gonder',
+                        text: 'Doğrulama Kodu Gönder',
                         onPressed: _submit,
                         isLoading: authState.status == AuthStatus.loading,
                         icon: Icons.sms_outlined,
                       ),
                       const SizedBox(height: 16),
 
-                      // ── Kullanici Sozlesmesi Onayi
+                      // ── Kullanıcı Sözleşmesi Onayı
                       _AgreementCheckbox(
                         value: _userAgreementAccepted,
-                        label: 'Kullanici Sozlesmesini',
+                        label: 'Kullanıcı Sözleşmesini',
                         linkText: 'okudum ve kabul ediyorum.',
                         onChanged:
                             (v) => setState(
@@ -274,23 +274,23 @@ class _PhoneInputScreenState extends ConsumerState<PhoneInputScreen>
                         onLinkTap:
                             () => _showAgreementDialog(
                               context,
-                              'Kullanici Sozlesmesi',
+                              'Kullanıcı Sözleşmesi',
                               _userAgreementText,
                             ),
                       ),
                       const SizedBox(height: 4),
 
-                      // ── KVKK Onayi
+                      // ── KVKK Onayı
                       _AgreementCheckbox(
                         value: _kvkkAccepted,
-                        label: 'KVKK Aydinlatma Metnini',
+                        label: 'KVKK Aydınlatma Metnini',
                         linkText: 'okudum ve kabul ediyorum.',
                         onChanged:
                             (v) => setState(() => _kvkkAccepted = v ?? false),
                         onLinkTap:
                             () => _showAgreementDialog(
                               context,
-                              'KVKK Aydinlatma Metni',
+                              'KVKK Aydınlatma Metni',
                               _kvkkText,
                             ),
                       ),
@@ -443,78 +443,78 @@ class _PhoneInputScreenState extends ConsumerState<PhoneInputScreen>
   }
 
   static const String _userAgreementText = '''
-KULLANICI SOZLESMESI
+KULLANICI SÖZLEŞMESİ
 
 1. TARAFLAR
-Bu sozlesme, Kamulog uygulamasini kullanan kullanici ("Kullanici") ile Kamulog platformu ("Platform") arasinda akdedilmistir.
+Bu sözleşme, Kamulog uygulamasını kullanan kullanıcı ("Kullanıcı") ile Kamulog platformu ("Platform") arasında akdedilmiştir.
 
-2. HIZMET TANIMI
-Platform, ucretli calisanlar icin kariyer yonetimi, is ilanlari eslestirme, ozgecmis olusturma ve danismanlik hizmetleri sunmaktadir.
+2. HİZMET TANIMI
+Platform, ücretli çalışanlar için kariyer yönetimi, iş ilanları eşleştirme, özgeçmiş oluşturma ve danışmanlık hizmetleri sunmaktadır.
 
-3. KULLANICI YUKUMLULUKLERI
-- Kullanici, dogru ve guncel bilgiler saglamakla yukumludur.
-- Hesap guvenliginden kullanici sorumludur.
-- Platform uzerinden yasa disi faaliyetler yapilamaz.
-- Ucuncu sahislarin haklarini ihlal eden icerikler paylasilamaz.
+3. KULLANICI YÜKÜMLÜLÜKLERİ
+- Kullanıcı, doğru ve güncel bilgiler sağlamakla yükümlüdür.
+- Hesap güvenliğinden kullanıcı sorumludur.
+- Platform üzerinden yasa dışı faaliyetler yapılamaz.
+- Üçüncü şahısların haklarını ihlal eden içerikler paylaşılamaz.
 
 4. PLATFORM HAKLARI
-- Platform, hizmet icerigini ve fiyatlandirmayi degistirme hakkini sakli tutar.
-- Kurallara uymayan hesaplar askiya alinabilir veya kapatilabilir.
-- Platform, kullanici verilerini gizlilik politikasina uygun olarak isler.
+- Platform, hizmet içeriğini ve fiyatlandırmayı değiştirme hakkını saklı tutar.
+- Kurallara uymayan hesaplar askıya alınabilir veya kapatılabilir.
+- Platform, kullanıcı verilerini gizlilik politikasına uygun olarak işler.
 
-5. ABONELIK VE ODEME
-- Premium abonelik ucretleri uygulama magazalari uzerinden tahsil edilir.
-- Iptal islemi magazalarin belirleidigi kurallara tabidir.
-- Iade politikasi magazalarin kurallarina uygun olarak uygulanir.
+5. ABONELIK VE ÖDEME
+- Premium abonelik ücretleri uygulama mağazaları üzerinden tahsil edilir.
+- İptal işlemi mağazaların belirlediği kurallara tabidir.
+- İade politikası mağazaların kurallarına uygun olarak uygulanır.
 
 6. SORUMLULUK SINIRLAMASI
-- Platform, hizmetin kesintisiz oldugunu garanti etmez.
-- AI tabanli oneriler bilgilendirme amaclidir, kesin sonuc garanti edilmez.
+- Platform, hizmetin kesintisiz olduğunu garanti etmez.
+- AI tabanlı öneriler bilgilendirme amaçlıdır, kesin sonuç garanti edilmez.
 
-7. UYUSMAZLIK
-Bu sozlesmeden kaynakli uyusmazliklarda Turkiye Cumhuriyeti kanunlari uygulanir.
+7. UYUŞMAZLIK
+Bu sözleşmeden kaynaklı uyuşmazlıklarda Türkiye Cumhuriyeti kanunları uygulanır.
 ''';
 
   static const String _kvkkText = '''
-KISISEL VERILERIN KORUNMASI AYDINLATMA METNI
+KİŞİSEL VERİLERİN KORUNMASI AYDINLATMA METNİ
 
-6698 sayili Kisisel Verilerin Korunmasi Kanunu ("KVKK") geregince, kisisel verilerinizin islenmesine iliskin sizi bilgilendirmek istiyoruz.
+6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") gereğince, kişisel verilerinizin işlenmesine ilişkin sizi bilgilendirmek istiyoruz.
 
-1. VERI SORUMLUSU
-Kamulog platformu, kisisel verilerinizin veri sorumlusudur.
+1. VERİ SORUMLUSU
+Kamulog platformu, kişisel verilerinizin veri sorumlusudur.
 
-2. ISLENEN KISISEL VERILER
-- Kimlik bilgileri: Ad, soyad, TC Kimlik numarasi
-- Iletisim bilgileri: Telefon numarasi, e-posta adresi
-- Lokasyon bilgileri: Sehir, ilce
-- Mesleki bilgiler: Calisma durumu, kurum, unvan, kidem yili
-- Belge bilgileri: Yuklenen CV ve belgeler
-- Kullanim verileri: Uygulama ici etkilesimler
+2. İŞLENEN KİŞİSEL VERİLER
+- Kimlik bilgileri: Ad, soyad, TC Kimlik numarası
+- İletişim bilgileri: Telefon numarası, e-posta adresi
+- Lokasyon bilgileri: Şehir, ilçe
+- Mesleki bilgiler: Çalışma durumu, kurum, unvan, kıdem yılı
+- Belge bilgileri: Yüklenen CV ve belgeler
+- Kullanım verileri: Uygulama içi etkileşimler
 
-3. VERILERIN ISLENME AMACLARI
-- Kullanici hesabinin olusturulmasi ve yonetimi
-- Kariyer hizmetlerinin sunulmasi
-- AI tabanli is eslestirme ve CV analizi
-- Yasal yukumluluklerin yerine getirilmesi
-- Hizmet kalitesinin iyilestirilmesi
+3. VERİLERİN İŞLENME AMAÇLARI
+- Kullanıcı hesabının oluşturulması ve yönetimi
+- Kariyer hizmetlerinin sunulması
+- AI tabanlı iş eşleştirme ve CV analizi
+- Yasal yükümlülüklerin yerine getirilmesi
+- Hizmet kalitesinin iyileştirilmesi
 
-4. VERILERIN AKTARIMI
-Kisisel verileriniz;
-- Yasal yukumlulukler kapsaminda yetkili kurumlara,
-- Hizmet saglayicilara (sunucu, bulut hizmetleri),
-- Odeme islemleri icin odeme hizmet saglayicilarina aktarilabilir.
+4. VERİLERİN AKTARIMI
+Kişisel verileriniz;
+- Yasal yükümlülükler kapsamında yetkili kurumlara,
+- Hizmet sağlayıcılara (sunucu, bulut hizmetleri),
+- Ödeme işlemleri için ödeme hizmet sağlayıcılarına aktarılabilir.
 
-5. VERI SAKLAMA SURESI
-Kisisel verileriniz, islenme amacinin gerektirdigi sure boyunca ve yasal saklama yukululukleri kapsaminda muhafaza edilir.
+5. VERİ SAKLAMA SÜRESİ
+Kişisel verileriniz, işlenme amacının gerektirdiği süre boyunca ve yasal saklama yükümlülükleri kapsamında muhafaza edilir.
 
 6. HAKLARINIZ
-KVKK Madde 11 uyarinca asagidaki haklara sahipsiniz:
-- Verilerinizin islenip islenmedigini ogrenme
-- Verilerinizin islenmissse buna iliskin bilgi talep etme
+KVKK Madde 11 uyarınca aşağıdaki haklara sahipsiniz:
+- Verilerinizin işlendiğini öğrenme
+- Verilerinizin işlenmişse buna ilişkin bilgi talep etme
 - Verilerinizin silinmesini veya yok edilmesini isteme
-- Verilerinizin duzeltilmesini isteme
+- Verilerinizin düzeltilmesini isteme
 
-Bu haklarinizi kullanmak icin uygulama ici iletisim kanallari uzerinden bize ulasabilirsiniz.
+Bu haklarınızı kullanmak için uygulama içi iletişim kanalları üzerinden bize ulaşabilirsiniz.
 ''';
 }
 

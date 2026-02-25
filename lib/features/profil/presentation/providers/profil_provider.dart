@@ -520,7 +520,7 @@ class ProfilNotifier extends StateNotifier<ProfilState> {
         await LocalStorageService.saveCredits(state.credits);
       }
     } catch (e) {
-      debugPrint('Profil backend sync hatasi: $e');
+      debugPrint('Profil backend sync hatas\u0131: $e');
     }
   }
 

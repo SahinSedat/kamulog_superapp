@@ -3,19 +3,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:kamulog_superapp/core/theme/app_theme.dart';
+import 'package:kamulog_superapp/features/notifications/presentation/providers/notifications_provider.dart';
 
-/// Bildirim Ayarlari ekrani — bildirim izinleri + bildirim listesi
+/// Bildirim ekranı — mode parametresine göre tek sayfa gösterir
 class NotificationsScreen extends ConsumerStatefulWidget {
-  const NotificationsScreen({super.key});
+  /// 'settings' = sadece ayarlar, 'list' = sadece bildirimler
+  final String mode;
+  const NotificationsScreen({super.key, this.mode = 'settings'});
 
   @override
   ConsumerState<NotificationsScreen> createState() =>
       _NotificationsScreenState();
 }
 
-class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   bool _smsConsent = false;
   bool _emailConsent = false;
   bool _notificationGranted = false;
@@ -23,14 +24,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
     _loadPreferences();
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
   }
 
   Future<void> _loadPreferences() async {
@@ -52,42 +46,34 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final notifications = _sampleNotifications;
+    final isSettings = widget.mode == 'settings';
+    final notifState = ref.watch(notificationsProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Bildirimler'),
+        title: Text(isSettings ? 'Bildirim Ayarları' : 'Bildirimler'),
         centerTitle: true,
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(text: 'Bildirim Ayarlari'),
-            Tab(text: 'Bildirimler'),
-          ],
-          labelStyle: const TextStyle(
-            fontWeight: FontWeight.w700,
-            fontSize: 13,
-          ),
-          indicatorColor: AppTheme.primaryColor,
-        ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          // ── Tab 1: Bildirim Ayarlari
-          _buildNotificationSettings(isDark),
-
-          // ── Tab 2: Bildirim Listesi
-          _buildNotificationList(notifications, isDark),
+        actions: [
+          if (!isSettings && notifState.unreadCount > 0)
+            TextButton(
+              onPressed:
+                  () =>
+                      ref.read(notificationsProvider.notifier).markAllAsRead(),
+              child: const Text('Tümünü Oku', style: TextStyle(fontSize: 12)),
+            ),
         ],
       ),
+      body:
+          isSettings
+              ? _buildNotificationSettings(isDark)
+              : _buildNotificationList(isDark),
     );
   }
 
-  Widget _buildNotificationList(
-    List<_NotificationItem> notifications,
-    bool isDark,
-  ) {
+  Widget _buildNotificationList(bool isDark) {
+    final notifState = ref.watch(notificationsProvider);
+    final notifications = notifState.notifications;
+
     if (notifications.isEmpty) {
       return Center(
         child: Column(
@@ -100,7 +86,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
             ),
             const SizedBox(height: 16),
             Text(
-              'Henuz bildirim yok',
+              'Henüz bildirim yok',
               style: TextStyle(fontSize: 16, color: Colors.grey[500]),
             ),
           ],
@@ -116,7 +102,13 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
               Divider(height: 1, color: Colors.grey.withValues(alpha: 0.15)),
       itemBuilder: (context, index) {
         final n = notifications[index];
-        return _NotificationTile(notification: n, isDark: isDark);
+        return _NotificationProviderTile(
+          notification: n,
+          isDark: isDark,
+          onTap: () {
+            ref.read(notificationsProvider.notifier).markAsRead(n.id);
+          },
+        );
       },
     );
   }
@@ -130,9 +122,9 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
           // Bildirim Izni (Cihaz)
           _SettingsCard(
             icon: Icons.notifications_active_rounded,
-            title: 'Bildirim Izni',
+            title: 'Bildirim İzni',
             description:
-                'Becayis eslesmeleri, duyurular ve kampanya bildirimlerini alin.',
+                'Becayiş eşleşmeleri, duyurular ve kampanya bildirimlerini alın.',
             isButton: true,
             granted: _notificationGranted,
             onRequest: _requestNotificationPermission,
@@ -146,7 +138,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
             icon: Icons.sms_rounded,
             title: 'SMS Bildirimleri',
             description:
-                'Onemli bildirimler ve dogrulama kodlari SMS ile gonderilsin.',
+                'Önemli bildirimler ve doğrulama kodları SMS ile gönderilsin.',
             isToggle: true,
             value: _smsConsent,
             onChanged: (v) async {
@@ -164,7 +156,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
             icon: Icons.email_rounded,
             title: 'E-posta Bildirimleri',
             description:
-                'Guncellemeler, kampanyalar ve duyurular e-posta ile gonderilsin.',
+                'Güncellemeler, kampanyalar ve duyurular e-posta ile gönderilsin.',
             isToggle: true,
             value: _emailConsent,
             onChanged: (v) async {
@@ -192,7 +184,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'Bildirim tercihleriniz cihazinizda ve veritabaninda kaydedilir.',
+                    'Bildirim tercihleriniz cihazınızda ve veritabanında kaydedilir.',
                     style: TextStyle(
                       fontSize: 12,
                       color: AppTheme.infoColor.withValues(alpha: 0.85),
@@ -312,7 +304,7 @@ class _SettingsCard extends StatelessWidget {
                       elevation: 0,
                     ),
                     child: const Text(
-                      'Izin Ver',
+                      'İzin Ver',
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
@@ -327,15 +319,36 @@ class _SettingsCard extends StatelessWidget {
   }
 }
 
-// ── Bildirim Listesi Tile
-class _NotificationTile extends StatelessWidget {
-  final _NotificationItem notification;
+// ── Provider-tabanlı Bildirim Tile
+class _NotificationProviderTile extends StatelessWidget {
+  final NotificationItem notification;
   final bool isDark;
+  final VoidCallback onTap;
 
-  const _NotificationTile({required this.notification, required this.isDark});
+  const _NotificationProviderTile({
+    required this.notification,
+    required this.isDark,
+    required this.onTap,
+  });
+
+  IconData _getIcon() {
+    switch (notification.iconName) {
+      case 'swap':
+        return Icons.swap_horiz_rounded;
+      case 'work':
+        return Icons.work_outline_rounded;
+      case 'smart_toy':
+        return Icons.auto_awesome;
+      case 'card':
+        return Icons.card_membership_rounded;
+      default:
+        return Icons.notifications_outlined;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final color = Color(notification.colorValue);
     return Container(
       color:
           notification.isRead
@@ -347,10 +360,10 @@ class _NotificationTile extends StatelessWidget {
           width: 44,
           height: 44,
           decoration: BoxDecoration(
-            color: notification.color.withValues(alpha: 0.12),
+            color: color.withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(notification.icon, color: notification.color, size: 22),
+          child: Icon(_getIcon(), color: color, size: 22),
         ),
         title: Text(
           notification.title,
@@ -386,68 +399,8 @@ class _NotificationTile extends StatelessWidget {
                     shape: BoxShape.circle,
                   ),
                 ),
-        onTap: () {},
+        onTap: onTap,
       ),
     );
   }
 }
-
-class _NotificationItem {
-  final String title;
-  final String body;
-  final String timeAgo;
-  final IconData icon;
-  final Color color;
-  final bool isRead;
-
-  const _NotificationItem({
-    required this.title,
-    required this.body,
-    required this.timeAgo,
-    required this.icon,
-    required this.color,
-    this.isRead = false,
-  });
-}
-
-const _sampleNotifications = [
-  _NotificationItem(
-    title: 'Becayis Eslesmesi!',
-    body: 'Istanbul \u2192 Ankara becayis ilanina uygun bir eslesme bulundu.',
-    timeAgo: '5 dk once',
-    icon: Icons.swap_horiz_rounded,
-    color: Color(0xFF2E7D32),
-  ),
-  _NotificationItem(
-    title: 'Yeni Duyuru',
-    body:
-        'Milli Egitim Bakanligi yeni personel alimi hakkinda duyuru yayinladi.',
-    timeAgo: '1 saat once',
-    icon: Icons.campaign_rounded,
-    color: Color(0xFF1565C0),
-  ),
-  _NotificationItem(
-    title: 'AI Analiz Sonucu',
-    body: 'CV analiz raporunuz hazir. Becayis uyum puaniniz: 87/100.',
-    timeAgo: '3 saat once',
-    icon: Icons.auto_awesome,
-    color: Color(0xFF7B1FA2),
-    isRead: true,
-  ),
-  _NotificationItem(
-    title: 'Danismanlik Yaniti',
-    body: 'Hukuk danismaniniz mesajiniza yanit verdi.',
-    timeAgo: '5 saat once',
-    icon: Icons.support_agent_rounded,
-    color: Color(0xFFE65100),
-    isRead: true,
-  ),
-  _NotificationItem(
-    title: 'Uyelik Hatirlatma',
-    body: 'Premium uyeliginizin suresi 7 gun icinde dolacak.',
-    timeAgo: '1 gun once',
-    icon: Icons.card_membership_rounded,
-    color: Color(0xFFC62828),
-    isRead: true,
-  ),
-];

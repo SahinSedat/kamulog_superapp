@@ -12,6 +12,7 @@ import 'package:kamulog_superapp/features/home/presentation/widgets/home_dashboa
 import 'package:kamulog_superapp/features/ai/presentation/screens/ai_assistant_screen.dart';
 import 'package:kamulog_superapp/features/ai/presentation/providers/ai_provider.dart';
 import 'package:kamulog_superapp/core/providers/home_navigation_provider.dart';
+import 'package:kamulog_superapp/features/notifications/presentation/providers/notifications_provider.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -151,8 +152,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                       const Spacer(),
                       _HeaderIcon(
                         icon: Icons.notifications_outlined,
-                        badgeCount: 3,
-                        onTap: () => context.push('/notifications'),
+                        badgeCount: ref.watch(unreadNotificationCountProvider),
+                        onTap: () => context.push('/notifications?mode=list'),
                       ),
                       const SizedBox(width: 8),
                       // Profile
@@ -333,14 +334,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         actions: [
           IconButton(
             icon: Badge(
-              smallSize: 8,
+              label:
+                  ref.watch(unreadNotificationCountProvider) > 0
+                      ? Text(
+                        '${ref.watch(unreadNotificationCountProvider)}',
+                        style: const TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      )
+                      : null,
+              isLabelVisible: ref.watch(unreadNotificationCountProvider) > 0,
               backgroundColor: AppTheme.errorColor,
               child: Icon(
                 Icons.notifications_outlined,
                 color: theme.textTheme.bodyLarge?.color?.withValues(alpha: 0.6),
               ),
             ),
-            onPressed: () => context.push('/notifications'),
+            onPressed: () => context.push('/notifications?mode=list'),
           ),
           Padding(
             padding: const EdgeInsets.only(right: 8),

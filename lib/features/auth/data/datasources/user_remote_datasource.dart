@@ -74,7 +74,7 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
       }
       return null;
     } catch (e) {
-      debugPrint('Tam profil cekme hatasi: $e');
+      debugPrint('Tam profil \u00e7ekme hatas\u0131: $e');
       return null;
     }
   }

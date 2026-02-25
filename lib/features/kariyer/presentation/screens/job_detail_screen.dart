@@ -21,6 +21,23 @@ class JobDetailScreen extends ConsumerWidget {
 
   const JobDetailScreen({super.key, required this.job});
 
+  /// Job ID'den deterministic ilan numarası üretir (KML-XXXXXX)
+  static String _generateListingCode(String jobId) {
+    int hash = 0;
+    for (int i = 0; i < jobId.length; i++) {
+      hash = (hash * 31 + jobId.codeUnitAt(i)) & 0x7FFFFFFF;
+    }
+    final num = (hash % 900000) + 100000; // 6 haneli
+    return 'KML-$num';
+  }
+
+  /// İlan kodunu al: API'den geldiyse onu, yoksa ID'den üret
+  static String getListingCode(JobListingModel job) {
+    return (job.code != null && job.code!.isNotEmpty)
+        ? job.code!
+        : _generateListingCode(job.id);
+  }
+
   Future<void> _launchUrl(BuildContext context, String? urlStr) async {
     if (urlStr == null || urlStr.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -134,62 +151,44 @@ class JobDetailScreen extends ConsumerWidget {
           actions: [
             // Animasyonlu favori butonu
             _AnimatedFavoriteButton(job: job),
-            // Paylas butonu
-            IconButton(
-              icon: const Icon(Icons.share_rounded, size: 22),
-              onPressed: () {
-                final shareText =
-                    '${job.title}\n${job.company} - ${job.location}\n\nKamulog uzerinden goruntule';
-                Clipboard.setData(ClipboardData(text: shareText));
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Ilan bilgileri panoya kopyalandi'),
-                    duration: Duration(seconds: 2),
-                  ),
-                );
+            // Jeton göstergesi — tıklanınca yönlendirir
+            GestureDetector(
+              onTap: () {
+                if (profil.isPremium) {
+                  context.push('/subscription-history');
+                } else {
+                  context.push('/upgrade');
+                }
               },
-              tooltip: 'Paylas',
-            ),
-            // Danismana ilet
-            IconButton(
-              icon: const Icon(Icons.support_agent_rounded, size: 22),
-              onPressed: () {
-                context.push('/chat');
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('"${job.title}" ilani danismana iletildi'),
-                    duration: const Duration(seconds: 2),
-                  ),
-                );
-              },
-              tooltip: 'Danismana Ilet',
-            ),
-            // Jeton gostergesi
-            Container(
-              margin: const EdgeInsets.only(right: 12),
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.toll_rounded,
-                    size: 16,
-                    color: AppTheme.primaryColor,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    profil.isPremium ? 'Sinirsiz' : '${profil.credits} Jeton',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
+              child: Container(
+                margin: const EdgeInsets.only(right: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.toll_rounded,
+                      size: 16,
                       color: AppTheme.primaryColor,
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 4),
+                    Text(
+                      profil.isPremium ? 'Sınırsız' : '${profil.credits} Jeton',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.primaryColor,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -259,6 +258,52 @@ class JobDetailScreen extends ConsumerWidget {
                             ],
                           ),
                         ],
+                        const SizedBox(height: 6),
+                        GestureDetector(
+                          onTap: () {
+                            final code = getListingCode(job);
+                            Clipboard.setData(ClipboardData(text: code));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'İlan No: $code panoya kopyalandı',
+                                ),
+                                duration: const Duration(seconds: 2),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppTheme.primaryColor.withValues(
+                                alpha: 0.08,
+                              ),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  'İlan No: ${getListingCode(job)}',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppTheme.primaryColor,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Icon(
+                                  Icons.copy_rounded,
+                                  size: 14,
+                                  color: AppTheme.primaryColor,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),

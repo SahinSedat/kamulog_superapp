@@ -78,7 +78,7 @@ class SubscriptionHistoryScreen extends ConsumerWidget {
                   title: const Text('Premium Plan'),
                   subtitle: const Text('Başarılı ödeme işlemi'),
                   trailing: const Text(
-                    '₺99.99',
+                    '₺ 299,99 / ay',
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),

@@ -63,7 +63,7 @@ class FavoritesNotifier extends StateNotifier<List<FavoriteItem>> {
                 .toList();
         state = list;
       } catch (e) {
-        debugPrint('Favori yukleme hatasi: $e');
+        debugPrint('Favori y\u00fckleme hatas\u0131: $e');
       }
     }
   }

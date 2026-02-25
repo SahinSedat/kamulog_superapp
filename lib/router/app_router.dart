@@ -131,7 +131,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/notifications',
         name: 'notifications',
-        builder: (context, state) => const NotificationsScreen(),
+        builder: (context, state) {
+          final mode = state.uri.queryParameters['mode'] ?? 'settings';
+          return NotificationsScreen(mode: mode);
+        },
       ),
       GoRoute(
         path: '/profile/edit',

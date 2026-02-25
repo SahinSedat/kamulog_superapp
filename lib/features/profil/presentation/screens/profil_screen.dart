@@ -155,7 +155,7 @@ class ProfilScreen extends ConsumerWidget {
             ),
 
             // ── Mesajlarim
-            _SectionHeader(title: 'Mesajlarim'),
+            _SectionHeader(title: 'Mesajlarım'),
             _InfoMenuGroup(
               items: [
                 _MenuItem(
@@ -166,8 +166,8 @@ class ProfilScreen extends ConsumerWidget {
                 ),
                 _MenuItem(
                   icon: Icons.swap_horiz_rounded,
-                  title: 'Becayis Mesajlarim',
-                  trailing: 'Anlik mesajlasma',
+                  title: 'Becayiş Mesajlarım',
+                  trailing: 'Anlık mesajlaşma',
                   onTap: () => context.push('/becayis-messaging'),
                 ),
               ],
@@ -186,7 +186,7 @@ class ProfilScreen extends ConsumerWidget {
                 ),
                 _MenuItem(
                   icon: Icons.card_membership_outlined,
-                  title: 'Üyelik Geçmişi',
+                  title: 'Üyelik & Abonelik',
                   trailing: 'Görüntüle',
                   onTap: () => context.push('/subscription-history'),
                 ),
@@ -204,9 +204,14 @@ class ProfilScreen extends ConsumerWidget {
                   onTap: () => context.push('/favorites'),
                 ),
                 _MenuItem(
-                  icon: Icons.notifications_outlined,
-                  title: 'Bildirim Ayarlari',
-                  onTap: () => context.push('/notifications'),
+                  icon: Icons.notifications_active_outlined,
+                  title: 'Bildirimler',
+                  onTap: () => context.push('/notifications?mode=list'),
+                ),
+                _MenuItem(
+                  icon: Icons.tune_rounded,
+                  title: 'Bildirim Ayarları',
+                  onTap: () => context.push('/notifications?mode=settings'),
                 ),
                 _MenuItem(
                   icon: Icons.lock_outline,
@@ -601,6 +606,46 @@ class _ProfileHeader extends ConsumerWidget {
   const _ProfileHeader({required this.user, required this.isDark});
 
   Future<void> _pickAndCropImage(BuildContext context, WidgetRef ref) async {
+    final profil = ref.read(profilProvider);
+    final isPremium = profil.isPremium;
+    final changeCount = LocalStorageService.loadPhotoChangeCount();
+
+    // Premium: haftada 1 kez
+    if (isPremium) {
+      final lastDate = LocalStorageService.loadLastPhotoChangeDate();
+      if (lastDate != null) {
+        final last = DateTime.tryParse(lastDate);
+        if (last != null && DateTime.now().difference(last).inDays < 7) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Premium üyeler haftada 1 kez profil fotoğrafı değiştirebilir.',
+                ),
+                duration: Duration(seconds: 3),
+              ),
+            );
+          }
+          return;
+        }
+      }
+    } else {
+      // Temel Plan: toplam 2 kez ücretsiz
+      if (changeCount >= 2) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Temel Plan üyeler toplam 2 kez profil fotoğrafı değiştirebilir. Premium\'a yükseltin!',
+              ),
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+        return;
+      }
+    }
+
     // Kaynak seçimi: Kamera veya Galeri
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
@@ -776,6 +821,10 @@ class _ProfileHeader extends ConsumerWidget {
       await File(croppedFile.path).copy(savedPath);
 
       ref.read(profilProvider.notifier).updateProfileImage(savedPath);
+
+      // Foto degistirme sayacini guncelle
+      await LocalStorageService.incrementPhotoChangeCount();
+      await LocalStorageService.saveLastPhotoChangeDate();
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

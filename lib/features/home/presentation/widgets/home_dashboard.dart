@@ -170,7 +170,7 @@ class _QuickAccessGrid extends StatelessWidget {
                           context.push('/consultation');
                           break;
                         case 'Duyurular':
-                          context.push('/notifications');
+                          context.push('/notifications?mode=list');
                           break;
                         case 'Haberler':
                           // Haberler bölümüne scroll
