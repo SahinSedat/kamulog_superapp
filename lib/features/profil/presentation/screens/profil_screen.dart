@@ -221,27 +221,13 @@ class ProfilScreen extends ConsumerWidget {
                 _MenuItem(
                   icon: Icons.help_outline,
                   title: 'Yardım & Destek',
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Yardım merkezi yakında aktif olacak'),
-                      ),
-                    );
-                  },
+                  onTap: () => context.push('/help-support'),
                 ),
                 _MenuItem(
                   icon: Icons.info_outline,
                   title: 'Hakkında',
                   trailing: 'v1.0.0',
-                  onTap: () {
-                    showAboutDialog(
-                      context: context,
-                      applicationName: 'Kamulog',
-                      applicationVersion: 'v1.0.0',
-                      applicationLegalese:
-                          '© 2026 Kamulog. Tüm hakları saklıdır.',
-                    );
-                  },
+                  onTap: () => context.push('/about'),
                 ),
               ],
               isDark: isDark,

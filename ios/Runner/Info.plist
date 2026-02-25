@@ -72,5 +72,7 @@
 	<string>Görüntülü danışmanlık görüşmeleri ve belge tarama için kamera izni gereklidir.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Görüntülü ve sesli görüşmeler için mikrofon izni gereklidir.</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 </dict>
 </plist>

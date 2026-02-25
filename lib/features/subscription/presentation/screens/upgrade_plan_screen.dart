@@ -205,6 +205,48 @@ class _UpgradePlanScreenState extends ConsumerState<UpgradePlanScreen> {
 
   // Apple & Google Store ID'leri henüz tanımlı değilse gösterilecek test kartları
   Widget _buildDummyPlans(BuildContext context, WidgetRef ref, bool isDark) {
+    final profil = ref.watch(profilProvider);
+    final isPremium = profil.isPremium;
+    final currentPlan = profil.currentPlan;
+
+    // Zaten yıllık premium ise — tüm planlar devre dışı
+    if (isPremium && currentPlan == 'yillik') {
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: AppTheme.successColor.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: AppTheme.successColor.withValues(alpha: 0.3),
+          ),
+        ),
+        child: Column(
+          children: [
+            const Icon(
+              Icons.check_circle_rounded,
+              color: AppTheme.successColor,
+              size: 48,
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Zaten en yüksek plan olan Yıllık Premium\'a abonesiniz!',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Aboneliğiniz ${_formatEndDate(profil.subscriptionEndDate)} tarihine kadar aktif.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 13,
+                color: isDark ? Colors.white60 : Colors.black54,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Column(
       children: [
         _DummyPlanCard(
@@ -212,7 +254,22 @@ class _UpgradePlanScreenState extends ConsumerState<UpgradePlanScreen> {
           price: '₺ 299,99 / ay',
           isPopular: false,
           isDark: isDark,
-          onTap: () => _simulatePurchase(context, ref, 'aylik'),
+          isDisabled: isPremium && currentPlan == 'aylik',
+          disabledText: 'Mevcut Planınız',
+          onTap: () {
+            if (isPremium && currentPlan == 'aylik') {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    'Zaten Aylık Premium abonesiniz. Plan yükseltmek için Yıllık planı seçin.',
+                  ),
+                  backgroundColor: Colors.orange,
+                ),
+              );
+              return;
+            }
+            _simulatePurchase(context, ref, 'aylik');
+          },
         ),
         const SizedBox(height: 16),
         _DummyPlanCard(
@@ -220,10 +277,18 @@ class _UpgradePlanScreenState extends ConsumerState<UpgradePlanScreen> {
           price: '₺ 2.999,99 / yıl',
           isPopular: true,
           isDark: isDark,
+          isDisabled: false,
+          disabledText: null,
+          isUpgrade: isPremium && currentPlan == 'aylik',
           onTap: () => _simulatePurchase(context, ref, 'yillik'),
         ),
       ],
     );
+  }
+
+  String _formatEndDate(DateTime? date) {
+    if (date == null) return 'Sınırsız';
+    return '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}';
   }
 
   void _simulatePurchase(
@@ -231,9 +296,17 @@ class _UpgradePlanScreenState extends ConsumerState<UpgradePlanScreen> {
     WidgetRef ref,
     String plan,
   ) async {
+    final profil = ref.read(profilProvider);
+    final isUpgrade =
+        profil.isPremium && profil.currentPlan == 'aylik' && plan == 'yillik';
+
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Satın alım simülasyonu başlatılıyor... (Test Modu)'),
+      SnackBar(
+        content: Text(
+          isUpgrade
+              ? 'Plan yükseltme işlemi başlatılıyor... (Test Modu)'
+              : 'Satın alım simülasyonu başlatılıyor... (Test Modu)',
+        ),
       ),
     );
     await Future.delayed(const Duration(seconds: 2));
@@ -241,19 +314,24 @@ class _UpgradePlanScreenState extends ConsumerState<UpgradePlanScreen> {
     final duration = plan == 'yillik' ? 365 : 30;
     await ref
         .read(profilProvider.notifier)
-        .activatePremium(DateTime.now().add(Duration(days: duration)));
+        .activatePremium(
+          DateTime.now().add(Duration(days: duration)),
+          plan: plan,
+        );
 
     // 🎉 Konfeti animasyonunu tetikle!
     _confettiController.play();
 
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text(
-            '🎉 Tebrikler, Premium hesaba geçtiniz! +1000 Kredi eklendi.',
+            isUpgrade
+                ? '🎉 Tebrikler! Yıllık Premium\'a yükseldiniz!'
+                : '🎉 Tebrikler, Premium hesaba geçtiniz! +1000 Kredi eklendi.',
           ),
           backgroundColor: AppTheme.successColor,
-          duration: Duration(seconds: 4),
+          duration: const Duration(seconds: 4),
         ),
       );
     }
@@ -363,6 +441,9 @@ class _DummyPlanCard extends StatelessWidget {
   final String price;
   final bool isPopular;
   final bool isDark;
+  final bool isDisabled;
+  final String? disabledText;
+  final bool isUpgrade;
   final VoidCallback onTap;
 
   const _DummyPlanCard({
@@ -371,86 +452,125 @@ class _DummyPlanCard extends StatelessWidget {
     required this.isPopular,
     required this.isDark,
     required this.onTap,
+    this.isDisabled = false,
+    this.disabledText,
+    this.isUpgrade = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: isDark ? AppTheme.cardDark : Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color:
-                isPopular
-                    ? AppTheme.primaryColor
-                    : (isDark ? Colors.white12 : Colors.grey.shade200),
-            width: isPopular ? 2 : 1,
-          ),
-          boxShadow: [
-            BoxShadow(
+      onTap: isDisabled ? null : onTap,
+      child: Opacity(
+        opacity: isDisabled ? 0.5 : 1.0,
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: isDark ? AppTheme.cardDark : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
               color:
-                  isPopular
-                      ? AppTheme.primaryColor.withValues(alpha: 0.1)
-                      : Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
+                  isDisabled
+                      ? Colors.grey.shade400
+                      : (isPopular || isUpgrade)
+                      ? AppTheme.primaryColor
+                      : (isDark ? Colors.white12 : Colors.grey.shade200),
+              width: (isPopular || isUpgrade) && !isDisabled ? 2 : 1,
             ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            boxShadow: [
+              BoxShadow(
+                color:
+                    (isPopular || isUpgrade) && !isDisabled
+                        ? AppTheme.primaryColor.withValues(alpha: 0.1)
+                        : Colors.black.withValues(alpha: 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
+                    ),
+                    if (isDisabled && disabledText != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        disabledText!,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.successColor,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    title,
+                    price,
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
-                      color: isDark ? Colors.white : Colors.black87,
+                      color: isDisabled ? Colors.grey : AppTheme.primaryColor,
                     ),
                   ),
-                ],
-              ),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  price,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    color: AppTheme.primaryColor,
-                  ),
-                ),
-                if (isPopular)
-                  Container(
-                    margin: const EdgeInsets.only(top: 6),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppTheme.accentColor.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Text(
-                      'En Popüler',
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: AppTheme.accentDark,
-                        fontWeight: FontWeight.bold,
+                  if (isPopular && !isDisabled)
+                    Container(
+                      margin: const EdgeInsets.only(top: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppTheme.accentColor.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        'En Popüler',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: AppTheme.accentDark,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
-                  ),
-              ],
-            ),
-          ],
+                  if (isUpgrade)
+                    Container(
+                      margin: const EdgeInsets.only(top: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryColor.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        '⬆ Plan Yükselt',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: AppTheme.primaryColor,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

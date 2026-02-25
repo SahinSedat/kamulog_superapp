@@ -32,6 +32,7 @@ class ProfilState {
   final int credits;
   final bool isPremium;
   final DateTime? subscriptionEndDate;
+  final String? currentPlan; // 'aylik' veya 'yillik'
   final List<String> aiCvUsageDates; // ISO formatında tarihler
   final String? profileImagePath; // Local profile image path
   final String? userId; // Random kullanici ID (KML-XXXXXX)
@@ -60,6 +61,7 @@ class ProfilState {
     this.credits = 20,
     this.isPremium = false,
     this.subscriptionEndDate,
+    this.currentPlan,
     this.aiCvUsageDates = const [],
     this.error,
     this.profileImagePath,
@@ -88,6 +90,7 @@ class ProfilState {
     int? credits,
     bool? isPremium,
     DateTime? subscriptionEndDate,
+    String? currentPlan,
     List<String>? aiCvUsageDates,
     String? error,
     String? profileImagePath,
@@ -115,6 +118,7 @@ class ProfilState {
       credits: credits ?? this.credits,
       isPremium: isPremium ?? this.isPremium,
       subscriptionEndDate: subscriptionEndDate ?? this.subscriptionEndDate,
+      currentPlan: currentPlan ?? this.currentPlan,
       aiCvUsageDates: aiCvUsageDates ?? this.aiCvUsageDates,
       error: error,
       profileImagePath: profileImagePath ?? this.profileImagePath,
@@ -262,6 +266,7 @@ class ProfilNotifier extends StateNotifier<ProfilState> {
     final aiCvUsage = LocalStorageService.loadAiCvUsage();
     final isPremium = LocalStorageService.loadIsPremium();
     final subscriptionEndDate = LocalStorageService.loadSubscriptionEndDate();
+    final currentPlan = LocalStorageService.loadCurrentPlan();
     final profileImage = LocalStorageService.loadProfileImage();
     final savedCredits = LocalStorageService.loadCredits();
 
@@ -295,6 +300,7 @@ class ProfilNotifier extends StateNotifier<ProfilState> {
       documents: documentsData.map((d) => DocumentInfo.fromJson(d)).toList(),
       isPremium: isPremium,
       subscriptionEndDate: subscriptionEndDate,
+      currentPlan: currentPlan,
       aiCvUsageDates: aiCvUsage,
       profileImagePath: profileImage,
     );
@@ -364,14 +370,25 @@ class ProfilNotifier extends StateNotifier<ProfilState> {
   }
 
   /// Premium aboneliği aktifleştir
-  Future<void> activatePremium(DateTime endDate) async {
-    state = state.copyWith(isPremium: true, subscriptionEndDate: endDate);
-    await LocalStorageService.savePremiumStatus(true, endDate);
+  Future<void> activatePremium(
+    DateTime endDate, {
+    String plan = 'aylik',
+  }) async {
+    state = state.copyWith(
+      isPremium: true,
+      subscriptionEndDate: endDate,
+      currentPlan: plan,
+    );
+    await LocalStorageService.savePremiumStatus(true, endDate, plan: plan);
   }
 
   /// Premium aboneliği iptal et
   Future<void> cancelPremium() async {
-    state = state.copyWith(isPremium: false, subscriptionEndDate: null);
+    state = state.copyWith(
+      isPremium: false,
+      subscriptionEndDate: null,
+      currentPlan: null,
+    );
     await LocalStorageService.savePremiumStatus(false, null);
   }
 

@@ -54,13 +54,19 @@ class LocalStorageService {
 
   static Future<void> savePremiumStatus(
     bool isPremium,
-    DateTime? endDate,
-  ) async {
+    DateTime? endDate, {
+    String? plan,
+  }) async {
     await _career.put('isPremium', isPremium);
     if (endDate != null) {
       await _career.put('subscriptionEndDate', endDate.toIso8601String());
     } else {
       await _career.delete('subscriptionEndDate');
+    }
+    if (plan != null) {
+      await _career.put('currentPlan', plan);
+    } else if (!isPremium) {
+      await _career.delete('currentPlan');
     }
   }
 
@@ -72,6 +78,10 @@ class LocalStorageService {
     final raw = _career.get('subscriptionEndDate');
     if (raw == null) return null;
     return DateTime.tryParse(raw);
+  }
+
+  static String? loadCurrentPlan() {
+    return _career.get('currentPlan');
   }
 
   // ════════════════════════════════════════════
