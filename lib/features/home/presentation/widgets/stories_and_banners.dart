@@ -3,30 +3,27 @@ import 'package:flutter/material.dart';
 import 'package:kamulog_superapp/core/theme/app_theme.dart';
 import 'package:kamulog_superapp/core/theme/app_animations.dart';
 
-/// Instagram-like story circles — BOLD colors
+// ══════════════════════════════════════════════════════════════
+// 5 ANA RENK PALETİ (Gradient yok — düz renkler)
+// ══════════════════════════════════════════════════════════════
+const Color _kMavi = Color(0xFF2563EB); // Kariyer, Bilgi
+const Color _kYesil = Color(0xFF059669); // Becayiş, Başarı
+const Color _kTuruncu = Color(0xFFEA580C); // Danışmanlık, Dikkat
+const Color _kMor = Color(0xFF7C3AED); // STK, AI
+const Color _kKirmizi = Color(0xFFDC2626); // Duyurular, Önemli
+
+/// Instagram-like story circles — 5 düz renk
 class StoriesRow extends StatelessWidget {
   const StoriesRow({super.key});
 
   static const _stories = [
-    _StoryData('Duyurular', Icons.campaign, [
-      Color(0xFFD32F2F),
-      Color(0xFFFF5252),
-    ]),
-    _StoryData('Etkinlikler', Icons.event, [
-      Color(0xFF1565C0),
-      Color(0xFF42A5F5),
-    ]),
-    _StoryData('Kariyer', Icons.work, [Color(0xFF7B1FA2), Color(0xFFAB47BC)]),
-    _StoryData('Hukuk', Icons.gavel, [Color(0xFFE65100), Color(0xFFFF8F00)]),
-    _StoryData('Becayiş', Icons.swap_horiz, [
-      Color(0xFF2E7D32),
-      Color(0xFF66BB6A),
-    ]),
-    _StoryData('Eğitim', Icons.school, [Color(0xFF0D47A1), Color(0xFF1976D2)]),
-    _StoryData('Sağlık', Icons.health_and_safety, [
-      Color(0xFFC62828),
-      Color(0xFFEF5350),
-    ]),
+    _StoryData('Duyurular', Icons.campaign_rounded, _kKirmizi),
+    _StoryData('Becayiş', Icons.swap_horiz_rounded, _kYesil),
+    _StoryData('Kariyer', Icons.work_rounded, _kMavi),
+    _StoryData('Hukuk', Icons.gavel_rounded, _kTuruncu),
+    _StoryData('AI', Icons.auto_awesome_rounded, _kMor),
+    _StoryData('Eğitim', Icons.school_rounded, _kMavi),
+    _StoryData('Sağlık', Icons.health_and_safety_rounded, _kKirmizi),
   ];
 
   @override
@@ -39,7 +36,7 @@ class StoriesRow extends StatelessWidget {
         itemCount: _stories.length,
         itemBuilder: (context, index) {
           final story = _stories[index];
-          return _StoryCircle(data: story, index: index);
+          return _StoryCircle(data: story);
         },
       ),
     );
@@ -49,14 +46,13 @@ class StoriesRow extends StatelessWidget {
 class _StoryData {
   final String label;
   final IconData icon;
-  final List<Color> gradientColors;
-  const _StoryData(this.label, this.icon, this.gradientColors);
+  final Color color;
+  const _StoryData(this.label, this.icon, this.color);
 }
 
 class _StoryCircle extends StatelessWidget {
   final _StoryData data;
-  final int index;
-  const _StoryCircle({required this.data, required this.index});
+  const _StoryCircle({required this.data});
 
   @override
   Widget build(BuildContext context) {
@@ -66,21 +62,18 @@ class _StoryCircle extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          // Dış halka — düz renk
           Container(
             width: 68,
             height: 68,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              gradient: LinearGradient(
-                colors: data.gradientColors,
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+              color: data.color,
               boxShadow: [
                 BoxShadow(
-                  color: data.gradientColors[0].withValues(alpha: 0.35),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
+                  color: data.color.withValues(alpha: 0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
                 ),
               ],
             ),
@@ -93,10 +86,10 @@ class _StoryCircle extends StatelessWidget {
               padding: const EdgeInsets.all(2),
               child: CircleAvatar(
                 radius: 28,
-                backgroundColor: data.gradientColors[0].withValues(
-                  alpha: isDark ? 0.25 : 0.12,
+                backgroundColor: data.color.withValues(
+                  alpha: isDark ? 0.2 : 0.08,
                 ),
-                child: Icon(data.icon, size: 26, color: data.gradientColors[0]),
+                child: Icon(data.icon, size: 26, color: data.color),
               ),
             ),
           ),
@@ -112,7 +105,7 @@ class _StoryCircle extends StatelessWidget {
   }
 }
 
-/// Auto-scrolling banner carousel with images and bold gradients
+/// Auto-scrolling banner carousel — düz renkler
 class BannerCarousel extends StatefulWidget {
   const BannerCarousel({super.key});
 
@@ -131,29 +124,29 @@ class _BannerCarouselState extends State<BannerCarousel> {
       subtitle:
           'Binlerce memur ve işçi yer değiştirme bekliyor. Hemen başvurun!',
       icon: Icons.swap_horiz_rounded,
-      gradient: [Color(0xFF1565C0), Color(0xFF0D47A1)],
-      bgPattern: _BannerPattern.arrows,
+      color: _kYesil,
+      label: 'YENİ',
     ),
     _BannerData(
       title: 'Kariyer Fırsatları',
       subtitle: 'Kamu ve özel sektörden binlerce iş ilanı',
       icon: Icons.trending_up_rounded,
-      gradient: [Color(0xFF2E7D32), Color(0xFF1B5E20)],
-      bgPattern: _BannerPattern.chart,
+      color: _kMavi,
+      label: 'POPÜLER',
     ),
     _BannerData(
       title: 'Online Danışmanlık',
       subtitle: 'Hukuki, kariyer ve psikolojik destek hizmetleri',
       icon: Icons.support_agent_rounded,
-      gradient: [Color(0xFFE65100), Color(0xFFBF360C)],
-      bgPattern: _BannerPattern.people,
+      color: _kTuruncu,
+      label: 'ÜCRETSİZ',
     ),
     _BannerData(
       title: 'STK ve Sendikalar',
       subtitle: 'Sendika ve dernek etkinliklerine katılın',
       icon: Icons.groups_3_rounded,
-      gradient: [Color(0xFF7B1FA2), Color(0xFF4A148C)],
-      bgPattern: _BannerPattern.community,
+      color: _kMor,
+      label: 'ETKİNLİK',
     ),
   ];
 
@@ -184,6 +177,7 @@ class _BannerCarouselState extends State<BannerCarousel> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       children: [
         SizedBox(
@@ -198,17 +192,13 @@ class _BannerCarouselState extends State<BannerCarousel> {
                 duration: AppAnimations.normal,
                 margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: banner.gradient,
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  color: banner.color,
                   borderRadius: BorderRadius.circular(AppTheme.radiusLg),
                   boxShadow: [
                     BoxShadow(
-                      color: banner.gradient[0].withValues(alpha: 0.4),
-                      blurRadius: 16,
-                      offset: const Offset(0, 6),
+                      color: banner.color.withValues(alpha: 0.35),
+                      blurRadius: 14,
+                      offset: const Offset(0, 5),
                     ),
                   ],
                 ),
@@ -228,12 +218,12 @@ class _BannerCarouselState extends State<BannerCarousel> {
                     },
                     child: Stack(
                       children: [
-                        // Background pattern
+                        // Background decorative icon
                         Positioned(
                           right: -10,
                           bottom: -10,
                           child: Icon(
-                            _getPatternIcon(banner.bgPattern),
+                            banner.icon,
                             size: 120,
                             color: Colors.white.withValues(alpha: 0.08),
                           ),
@@ -248,6 +238,7 @@ class _BannerCarouselState extends State<BannerCarousel> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
+                                    // Label badge
                                     Container(
                                       padding: const EdgeInsets.symmetric(
                                         horizontal: 8,
@@ -260,7 +251,7 @@ class _BannerCarouselState extends State<BannerCarousel> {
                                         borderRadius: BorderRadius.circular(6),
                                       ),
                                       child: Text(
-                                        _getBannerLabel(index),
+                                        banner.label,
                                         style: const TextStyle(
                                           color: Colors.white,
                                           fontSize: 10,
@@ -296,6 +287,7 @@ class _BannerCarouselState extends State<BannerCarousel> {
                                 ),
                               ),
                               const SizedBox(width: 12),
+                              // Icon container
                               Container(
                                 width: 56,
                                 height: 56,
@@ -326,12 +318,12 @@ class _BannerCarouselState extends State<BannerCarousel> {
           ),
         ),
         const SizedBox(height: 10),
-        // Bold dot indicators
+        // Dot indicators
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(
-            _banners.length,
-            (i) => AnimatedContainer(
+          children: List.generate(_banners.length, (i) {
+            final banner = _banners[i];
+            return AnimatedContainer(
               duration: AppAnimations.normal,
               curve: AppAnimations.defaultCurve,
               margin: const EdgeInsets.symmetric(horizontal: 3),
@@ -340,49 +332,29 @@ class _BannerCarouselState extends State<BannerCarousel> {
               decoration: BoxDecoration(
                 color:
                     i == _currentPage
-                        ? AppTheme.primaryColor
-                        : AppTheme.primaryColor.withValues(alpha: 0.2),
+                        ? banner.color
+                        : (isDark ? Colors.white24 : Colors.grey.shade300),
                 borderRadius: BorderRadius.circular(4),
               ),
-            ),
-          ),
+            );
+          }),
         ),
       ],
     );
   }
-
-  IconData _getPatternIcon(_BannerPattern pattern) {
-    switch (pattern) {
-      case _BannerPattern.arrows:
-        return Icons.swap_horiz_rounded;
-      case _BannerPattern.chart:
-        return Icons.show_chart_rounded;
-      case _BannerPattern.people:
-        return Icons.people_alt_rounded;
-      case _BannerPattern.community:
-        return Icons.diversity_3_rounded;
-    }
-  }
-
-  String _getBannerLabel(int index) {
-    const labels = ['YENİ', 'POPÜLER', 'ÜCRETSİZ', 'ETKİNLİK'];
-    return labels[index % labels.length];
-  }
 }
-
-enum _BannerPattern { arrows, chart, people, community }
 
 class _BannerData {
   final String title;
   final String subtitle;
   final IconData icon;
-  final List<Color> gradient;
-  final _BannerPattern bgPattern;
+  final Color color;
+  final String label;
   const _BannerData({
     required this.title,
     required this.subtitle,
     required this.icon,
-    required this.gradient,
-    required this.bgPattern,
+    required this.color,
+    required this.label,
   });
 }

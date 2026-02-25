@@ -7,6 +7,15 @@ import 'package:kamulog_superapp/features/home/presentation/widgets/stories_and_
 import 'package:kamulog_superapp/features/stories/presentation/widgets/stories_section.dart';
 import 'package:kamulog_superapp/features/news/presentation/widgets/news_section.dart';
 
+// ══════════════════════════════════════════════════════════════
+// 5 ANA RENK PALETİ (Gradient yok)
+// ══════════════════════════════════════════════════════════════
+const Color _kMavi = Color(0xFF2563EB);
+const Color _kYesil = Color(0xFF059669);
+const Color _kTuruncu = Color(0xFFEA580C);
+const Color _kMor = Color(0xFF7C3AED);
+const Color _kKirmizi = Color(0xFFDC2626);
+
 class HomeDashboard extends ConsumerWidget {
   const HomeDashboard({super.key});
 
@@ -27,39 +36,39 @@ class HomeDashboard extends ConsumerWidget {
           const StoriesSection(),
           const SizedBox(height: 16),
 
-          // ═══ SECTION 2: BANNER CAROUSEL (Promotion Slider)
+          // ═══ SECTION 2: BANNER CAROUSEL
           const FadeSlideIn(child: BannerCarousel()),
           const SizedBox(height: 20),
 
-          // ═══ SECTION 3: QUICK ACCESS CIRCULAR ICON GRID
+          // ═══ SECTION 3: QUICK ACCESS GRID
           FadeSlideIn(
             delay: const Duration(milliseconds: 100),
             child: _QuickAccessGrid(theme: theme, isDark: isDark),
           ),
           const SizedBox(height: 20),
 
-          // ═══ SECTION 4: ANNOUNCEMENT STRIP (Kampanya)
+          // ═══ SECTION 4: ANNOUNCEMENT STRIP
           FadeSlideIn(
             delay: const Duration(milliseconds: 200),
             child: _AnnouncementStrip(isDark: isDark),
           ),
           const SizedBox(height: 20),
 
-          // ═══ SECTION 4.5: HABERLER
+          // ═══ SECTION 5: HABERLER
           FadeSlideIn(
             delay: const Duration(milliseconds: 250),
             child: const NewsSection(),
           ),
           const SizedBox(height: 20),
 
-          // ═══ SECTION 5: POPULAR CONTENT / AI RECOMMENDATIONS
+          // ═══ SECTION 6: POPÜLER İÇERİKLER
           FadeSlideIn(
             delay: const Duration(milliseconds: 300),
             child: _PopularContentSection(theme: theme, isDark: isDark),
           ),
           const SizedBox(height: 20),
 
-          // ═══ SECTION 6: AI RECOMMENDATION PANEL
+          // ═══ SECTION 7: AI ÖNERİLERİ
           FadeSlideIn(
             delay: const Duration(milliseconds: 400),
             child: _AiRecommendationPanel(theme: theme, isDark: isDark),
@@ -72,7 +81,7 @@ class HomeDashboard extends ConsumerWidget {
 }
 
 // ══════════════════════════════════════════════════════════════
-// ── SECTION 3: Quick Access Circular Icon Grid
+// ── SECTION 3: Quick Access Grid — 5 renk
 // ══════════════════════════════════════════════════════════════
 
 class _QuickAccessGrid extends StatelessWidget {
@@ -82,18 +91,14 @@ class _QuickAccessGrid extends StatelessWidget {
   const _QuickAccessGrid({required this.theme, required this.isDark});
 
   static const _actions = [
-    _QuickAction('STK', Icons.groups_rounded, Color(0xFF7B1FA2)),
-    _QuickAction('Becayiş', Icons.swap_horiz_rounded, Color(0xFF2E7D32)),
-    _QuickAction('Kariyer', Icons.work_rounded, Color(0xFF1565C0)),
-    _QuickAction('Danışmanlık', Icons.support_agent_rounded, Color(0xFFE65100)),
-    _QuickAction('Duyurular', Icons.campaign_rounded, Color(0xFFC62828)),
-    _QuickAction('Haberler', Icons.newspaper_rounded, Color(0xFF00695C)),
-    _QuickAction(
-      'Başvurular',
-      Icons.assignment_turned_in_rounded,
-      Color(0xFF4A148C),
-    ),
-    _QuickAction('AI Asistan', Icons.auto_awesome_rounded, Color(0xFF0D47A1)),
+    _QuickAction('STK', Icons.groups_rounded, _kMor),
+    _QuickAction('Becayiş', Icons.swap_horiz_rounded, _kYesil),
+    _QuickAction('Kariyer', Icons.work_rounded, _kMavi),
+    _QuickAction('Danışmanlık', Icons.support_agent_rounded, _kTuruncu),
+    _QuickAction('Duyurular', Icons.campaign_rounded, _kKirmizi),
+    _QuickAction('Haberler', Icons.newspaper_rounded, _kMavi),
+    _QuickAction('Başvurular', Icons.assignment_turned_in_rounded, _kYesil),
+    _QuickAction('AI Asistan', Icons.auto_awesome_rounded, _kMor),
   ];
 
   @override
@@ -105,11 +110,7 @@ class _QuickAccessGrid extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
             children: [
-              Icon(
-                Icons.grid_view_rounded,
-                size: 18,
-                color: AppTheme.primaryColor,
-              ),
+              const Icon(Icons.grid_view_rounded, size: 18, color: _kMavi),
               const SizedBox(width: 6),
               const Text(
                 'Hızlı Erişim',
@@ -118,12 +119,12 @@ class _QuickAccessGrid extends StatelessWidget {
               const Spacer(),
               TextButton(
                 onPressed: () {},
-                child: Text(
+                child: const Text(
                   'Tümü →',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: AppTheme.primaryColor,
+                    color: _kMavi,
                   ),
                 ),
               ),
@@ -146,7 +147,6 @@ class _QuickAccessGrid extends StatelessWidget {
                     onTap: () {
                       switch (action.label) {
                         case 'STK':
-                          // STK modülü eklenince aktifleşecek
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text('STK modülü yakında aktif olacak'),
@@ -154,7 +154,6 @@ class _QuickAccessGrid extends StatelessWidget {
                           );
                           break;
                         case 'Becayiş':
-                          // Becayiş modülü eklenince aktifleşecek
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text(
@@ -173,10 +172,8 @@ class _QuickAccessGrid extends StatelessWidget {
                           context.push('/notifications?mode=list');
                           break;
                         case 'Haberler':
-                          // Haberler bölümüne scroll
                           break;
                         case 'Başvurular':
-                          // Başvurular modülü eklenince aktifleşecek
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text(
@@ -186,7 +183,6 @@ class _QuickAccessGrid extends StatelessWidget {
                           );
                           break;
                         case 'AI Asistan':
-                          // HomeScreen'daki tab'a geçiş
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text(
@@ -205,22 +201,15 @@ class _QuickAccessGrid extends StatelessWidget {
                           height: 64,
                           decoration: BoxDecoration(
                             color: action.color.withValues(
-                              alpha: isDark ? 0.2 : 0.1,
+                              alpha: isDark ? 0.18 : 0.08,
                             ),
                             shape: BoxShape.circle,
                             border: Border.all(
                               color: action.color.withValues(
-                                alpha: isDark ? 0.15 : 0.12,
+                                alpha: isDark ? 0.12 : 0.1,
                               ),
                               width: 1.5,
                             ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: action.color.withValues(alpha: 0.15),
-                                blurRadius: 8,
-                                offset: const Offset(0, 3),
-                              ),
-                            ],
                           ),
                           child: Icon(
                             action.icon,
@@ -257,7 +246,7 @@ class _QuickAction {
 }
 
 // ══════════════════════════════════════════════════════════════
-// ── SECTION 4: Announcement Strip
+// ── SECTION 4: Announcement Strip — düz renkler
 // ══════════════════════════════════════════════════════════════
 
 class _AnnouncementStrip extends StatelessWidget {
@@ -265,18 +254,9 @@ class _AnnouncementStrip extends StatelessWidget {
   const _AnnouncementStrip({required this.isDark});
 
   static const _announcements = [
-    _AnnData('🔔 Becayiş başvuruları açıldı! Son gün: 28 Şubat', [
-      Color(0xFF1565C0),
-      Color(0xFF0D47A1),
-    ]),
-    _AnnData('📢 Yeni kariyer fırsatları eklendi — 250 ilan', [
-      Color(0xFF2E7D32),
-      Color(0xFF1B5E20),
-    ]),
-    _AnnData('⚖️ Hukuk danışmanlığı hizmeti için randevu alın', [
-      Color(0xFFE65100),
-      Color(0xFFBF360C),
-    ]),
+    _AnnData('🔔 Becayiş başvuruları açıldı! Son gün: 28 Şubat', _kYesil),
+    _AnnData('📢 Yeni kariyer fırsatları eklendi — 250 ilan', _kMavi),
+    _AnnData('⚖️ Hukuk danışmanlığı hizmeti için randevu alın', _kTuruncu),
   ];
 
   @override
@@ -293,11 +273,11 @@ class _AnnouncementStrip extends StatelessWidget {
             margin: const EdgeInsets.only(right: 10),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
-              gradient: LinearGradient(colors: ann.gradient),
+              color: ann.color,
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: ann.gradient[0].withValues(alpha: 0.25),
+                  color: ann.color.withValues(alpha: 0.25),
                   blurRadius: 8,
                   offset: const Offset(0, 3),
                 ),
@@ -322,12 +302,12 @@ class _AnnouncementStrip extends StatelessWidget {
 
 class _AnnData {
   final String text;
-  final List<Color> gradient;
-  const _AnnData(this.text, this.gradient);
+  final Color color;
+  const _AnnData(this.text, this.color);
 }
 
 // ══════════════════════════════════════════════════════════════
-// ── SECTION 5: Popular Content (Card List)
+// ── SECTION 6: Popüler İçerikler — düz renkler
 // ══════════════════════════════════════════════════════════════
 
 class _PopularContentSection extends StatelessWidget {
@@ -345,10 +325,10 @@ class _PopularContentSection extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.local_fire_department_rounded,
                 size: 20,
-                color: AppTheme.errorColor,
+                color: _kKirmizi,
               ),
               const SizedBox(width: 6),
               const Text(
@@ -358,12 +338,12 @@ class _PopularContentSection extends StatelessWidget {
               const Spacer(),
               TextButton(
                 onPressed: () {},
-                child: Text(
+                child: const Text(
                   'Tümünü Gör →',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: AppTheme.primaryColor,
+                    color: _kMavi,
                   ),
                 ),
               ),
@@ -392,36 +372,36 @@ class _PopularContentSection extends StatelessWidget {
       title: 'İstanbul → Ankara Becayiş',
       subtitle: 'Milli Eğitim Bakanlığı · Öğretmen',
       badge: 'Popüler',
-      badgeColor: Color(0xFFC62828),
+      badgeColor: _kKirmizi,
       icon: Icons.swap_horiz_rounded,
-      color: Color(0xFF2E7D32),
+      color: _kYesil,
       stats: '45 eşleşme',
     ),
     _PopularItem(
       title: 'Hukuk Danışmanlığı',
       subtitle: 'Av. Mehmet Yılmaz · ₺250/seans',
       badge: 'Yeni',
-      badgeColor: Color(0xFF1565C0),
+      badgeColor: _kMavi,
       icon: Icons.gavel_rounded,
-      color: Color(0xFF4A148C),
+      color: _kTuruncu,
       stats: '⭐ 4.9',
     ),
     _PopularItem(
       title: 'Devlet Memurluğu İlanları',
       subtitle: 'Sağlık Bakanlığı · 35 açık pozisyon',
       badge: 'Sıcak',
-      badgeColor: Color(0xFFE65100),
+      badgeColor: _kTuruncu,
       icon: Icons.work_rounded,
-      color: Color(0xFF1565C0),
+      color: _kMavi,
       stats: '1.2K görülme',
     ),
     _PopularItem(
       title: 'STK Sendika Etkinlikleri',
       subtitle: 'Türk Eğitim-Sen · Online buluşma',
       badge: 'Etkinlik',
-      badgeColor: Color(0xFF7B1FA2),
+      badgeColor: _kMor,
       icon: Icons.groups_rounded,
-      color: Color(0xFF7B1FA2),
+      color: _kMor,
       stats: '120 katılımcı',
     ),
   ];
@@ -516,7 +496,6 @@ class _PopularCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 14),
-                // Title
                 Text(
                   item.title,
                   style: const TextStyle(
@@ -528,7 +507,6 @@ class _PopularCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 6),
-                // Subtitle
                 Text(
                   item.subtitle,
                   style: TextStyle(
@@ -540,7 +518,6 @@ class _PopularCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
                 const Spacer(),
-                // Bottom: stats + favorite
                 Row(
                   children: [
                     Text(
@@ -569,7 +546,7 @@ class _PopularCard extends StatelessWidget {
 }
 
 // ══════════════════════════════════════════════════════════════
-// ── SECTION 6: AI Recommendation Panel
+// ── SECTION 7: AI Önerileri Panel — Mor düz renk
 // ══════════════════════════════════════════════════════════════
 
 class _AiRecommendationPanel extends StatelessWidget {
@@ -583,27 +560,27 @@ class _AiRecommendationPanel extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Container(
-        decoration: const BoxDecoration(
-          gradient: AppTheme.primaryGradient,
-          borderRadius: BorderRadius.all(Radius.circular(20)),
+        decoration: BoxDecoration(
+          color: _kMor,
+          borderRadius: const BorderRadius.all(Radius.circular(20)),
           boxShadow: [
             BoxShadow(
-              color: Color(0x4DC62828),
-              blurRadius: 20,
-              offset: Offset(0, 8),
+              color: _kMor.withValues(alpha: 0.3),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
             ),
           ],
         ),
         child: Stack(
           children: [
-            // Pattern
+            // Decorative pattern
             Positioned(
               right: -20,
               top: -20,
               child: Icon(
                 Icons.auto_awesome_rounded,
                 size: 140,
-                color: Colors.white.withValues(alpha: 0.05),
+                color: Colors.white.withValues(alpha: 0.06),
               ),
             ),
             // Content
@@ -650,7 +627,6 @@ class _AiRecommendationPanel extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  // AI suggestions
                   _AiSuggestionChip(
                     icon: Icons.swap_horiz_rounded,
                     text: 'Ankara\'ya becayiş ilanları var — 12 eşleşme',
