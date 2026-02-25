@@ -6,7 +6,7 @@ import 'package:kamulog_superapp/core/theme/app_theme.dart';
 import 'package:kamulog_superapp/features/favorites/data/favorites_service.dart';
 import 'package:kamulog_superapp/features/kariyer/data/models/job_listing_model.dart';
 
-/// Favoriler sayfasi — kategorilere ayrilmis: Is Ilanlari, Becayis, Diger
+/// Favoriler sayfası — kategorilere ayrılmış: İş İlanları, Becayiş, Diğer
 class FavoritesScreen extends ConsumerWidget {
   const FavoritesScreen({super.key});
 
